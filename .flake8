@@ -26,7 +26,6 @@ ignore =
     D202
     N805
     N806
-    B007
 
 max-line-length = 88
 max-complexity = 18

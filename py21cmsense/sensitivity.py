@@ -389,13 +389,11 @@ class PowerSpectrum(Sensitivity):
         """Bin 2D sensitivity down to 1D"""
         sense1d_inv = np.zeros(len(self.k1d)) / un.mK ** 4
 
-        for ind, k_perp in enumerate(
-            tqdm.tqdm(
-                sense.keys(),
-                desc="averaging to 1D",
-                unit="kperp-bins",
-                disable=not config.PROGRESS,
-            )
+        for k_perp in tqdm.tqdm(
+            sense.keys(),
+            desc="averaging to 1D",
+            unit="kperp-bins",
+            disable=not config.PROGRESS,
         ):
             k = np.sqrt(self.observation.kparallel ** 2 + k_perp ** 2)
             good_ks = np.logical_and(self.k_min <= k, k <= self.k_max)
