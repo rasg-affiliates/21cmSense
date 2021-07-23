@@ -65,6 +65,8 @@ setup_args = {
         "methodtools",
         "pyuvdata",
         "cached_property",
+        "rich",
+        "h5py",
     ],
     "extras_require": {
         "docs": ["sphinx>=1.3", "sphinx-rtd-theme", "numpydoc", "nbsphinx", "ipython"],
