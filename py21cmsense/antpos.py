@@ -11,7 +11,7 @@ from astropy import units as un
 from . import _utils as ut
 
 
-def hera(hex_num, separation, dl, units="m"):
+def hera(hex_num, separation, dl, units="m") -> np.ndarray:
     """
     Produce a simple regular hexagonal array.
 
@@ -35,7 +35,8 @@ def hera(hex_num, separation, dl, units="m"):
 
     Returns
     -------
-
+    antpos
+        A 2D array of antenna positions, shape ``(Nants, 3)``.
     """
     separation = ut.apply_or_convert_unit(units)(separation)
     dl = ut.apply_or_convert_unit(units)(dl)
