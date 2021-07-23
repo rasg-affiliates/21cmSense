@@ -1,5 +1,5 @@
 import attr
-from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod, abstractproperty
 from astropy import constants as cnst
 from astropy import units as un
 
@@ -7,7 +7,7 @@ from . import _utils as ut
 
 
 @attr.s(frozen=True)
-class PrimaryBeam(ABC):
+class PrimaryBeam(metaclass=ABCMeta):
     """
     A Base class defining a Primary Beam and the methods it requires to define.
     """
@@ -49,7 +49,8 @@ class PrimaryBeam(ABC):
     def uv_resolution(self):
         pass
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def from_uvbeam(cls):
         pass
 
