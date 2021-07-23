@@ -10,6 +10,8 @@ from . import config
 
 
 class UnitError(ValueError):
+    """An error pertaining to having incorrect units."""
+
     pass
 
 
