@@ -239,7 +239,7 @@ class Observatory:
 
         Returns
         -------
-        dict: a dictionary in which keys are 3-tuples of (u,v, |u|) co-ordinates and
+        dict: a dictionary in which keys are 3-tuples of ``(u,v, |u|)`` co-ordinates and
             values are lists of 2-tuples, where each 2-tuple consists of the indices
             of a pair of antennas with those co-ordinates.
         """

@@ -202,7 +202,7 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def k_max(self):
-        """maximum k value to use in estimates"""
+        """Maximum k value to use in estimates"""
         return self.k_21.max()
 
     @cached_property

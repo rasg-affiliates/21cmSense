@@ -19,10 +19,8 @@ ignore =
     A002
     D414
     D209
-    RST305
     D105
     D101
-    D403
 
 max-line-length = 88
 max-complexity = 18

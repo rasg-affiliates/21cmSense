@@ -61,12 +61,12 @@ def between(min, max):
 
 
 def positive(instance, att, x):
-    """attrs validator that checks a value is positive"""
+    """An attrs validator that checks a value is positive"""
     assert x > 0, "must be positive"
 
 
 def nonnegative(instance, att, x):
-    """attrs validator that checks a value is non-negative"""
+    """An attrs validator that checks a value is non-negative"""
     assert x >= 0, "must be non-negative"
 
 
