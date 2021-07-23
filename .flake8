@@ -7,7 +7,6 @@ ignore =
     F403
     F401
     D103  # TODO: remove this (missing docstring in function )
-    D100  # TODO: remove this (missing docstring in module)
     D400
     D401
     D205
@@ -37,3 +36,6 @@ rst-directives =
     versionchanged
     deprecated
     seealso
+per-file-ignores =
+    tests/*:D
+    setup.py:D

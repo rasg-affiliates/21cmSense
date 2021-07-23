@@ -1,3 +1,4 @@
+"""Simplistic beam definitions."""
 import attr
 from abc import ABCMeta, abstractmethod, abstractproperty
 from astropy import constants as cnst
