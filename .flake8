@@ -1,5 +1,34 @@
 [flake8]
-ignore = E203, E266, E501, W503, F403, F401
+ignore =
+    E203
+    E266
+    E501
+    W503
+    F403
+    F401
+    D103  # TODO: remove this (missing docstring in function )
+    D100  # TODO: remove this (missing docstring in module)
+    D400
+    D401
+    D200
+    RST304
+    N802
+    T001
+    D205
+    D102
+    A002
+    D414
+    D209
+    RST305
+    D105
+    D101
+    D403
+    D202
+    N805
+    N806
+    B007
+    D402
+    D104
+    N813
 max-line-length = 88
 max-complexity = 18
-select = B,C,E,F,W,T4,B9
