@@ -5,7 +5,11 @@ This module modularizes the previous version's `calc_sense.py`, and enables
 multiple sensitivity kinds to be defined. By default, a PowerSpectrum sensitivity class
 is provided, which offers the same results as previous versions.
 """
+from __future__ import annotations
+
 import attr
+import h5py
+import logging
 import numpy as np
 import os
 import pickle
@@ -18,6 +22,7 @@ from cached_property import cached_property
 from collections.abc import Mapping
 from methodtools import lru_cache
 from os import path
+from pathlib import Path
 from scipy import interpolate
 
 from . import _utils as ut
@@ -32,6 +37,8 @@ _K21_DEFAULT, _D21_DEFAULT = np.genfromtxt(
         "data/ps_no_halos_nf0.521457_z9.50_useTs0_zetaX-1.0e+00_200_400Mpc_v2",
     )
 ).T[:2]
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s(kw_only=True)
@@ -93,11 +100,10 @@ def _kconverter(val):
     if not hasattr(val, "unit"):
         # Assume it has the 1/Mpc units (default from 21cmFAST)
         return val * un.littleh / un.Mpc / Planck15.h
-    else:
-        try:
-            return val.to("littleh/Mpc")
-        except un.UnitConversionError:
-            return ((val / Planck15.h) * un.littleh).to("littleh/Mpc")
+    try:
+        return val.to("littleh/Mpc")
+    except un.UnitConversionError:
+        return ((val / Planck15.h) * un.littleh).to("littleh/Mpc")
 
 
 @attr.s(kw_only=True)
@@ -332,16 +338,17 @@ class PowerSpectrum(Sensitivity):
             Keys are cylindrical kperp values and values are arrays aligned with
             `observation.kparallel`, defining uncertainty in mK^2.
         """
-
-        if not (thermal or sample):
-            raise ValueError("Either thermal or sample must be True")
-
-        if thermal and not sample:
+        if thermal and sample:
+            logger.info("Getting Combined Variance")
+            sense = self._nsamples_2d["both"]
+        elif thermal:
+            logger.info("Getting Thermal Variance")
             sense = self._nsamples_2d["thermal"]
-        elif sample and not thermal:
+        elif sample:
+            logger.info("Getting Sample Variance")
             sense = self._nsamples_2d["sample"]
         else:
-            sense = self._nsamples_2d["both"]
+            raise ValueError("Either thermal or sample must be True")
 
         # errors were added in inverse quadrature, now need to invert and take
         # square root to have error bars; also divide errors by number of indep. fields
@@ -422,6 +429,10 @@ class PowerSpectrum(Sensitivity):
         sense = self.calculate_sensitivity_2d(thermal=thermal, sample=sample)
         return self._average_sense_to_1d(sense)
 
+    @property
+    def delta_squared(self):
+        return self.p21(self.k1d)
+
     @lru_cache()
     def calculate_significance(self, thermal=True, sample=True):
         """
@@ -442,7 +453,7 @@ class PowerSpectrum(Sensitivity):
         mask = np.logical_and(self.k1d >= self.k_min, self.k1d <= self.k_max)
         sense1d = self.calculate_sensitivity_1d(thermal=thermal, sample=sample)
 
-        A = self.p21(self.k1d[mask])
+        A = self.delta_squared[mask]
         wA = A / sense1d[mask]
         X = np.dot(wA, wA.T)
         err = np.sqrt(1.0 / np.float(X))
@@ -473,3 +484,71 @@ class PowerSpectrum(Sensitivity):
         cbar.set_label(r"$\log_{10} \delta \Delta^2$ [mK^2]", fontsize=14)
         plt.xlabel(r"$k_\perp$ [h/Mpc]", fontsize=14)
         plt.ylabel(r"$k_{||}$ [h/Mpc]", fontsize=14)
+
+    def write(
+        self,
+        filename: str | Path,
+        thermal: bool = True,
+        sample: bool = True,
+        prefix: str = None,
+    ) -> str | Path:
+        """Save sensitivity results to HDF5 file."""
+        out = self._get_all_sensitivity_combos(thermal, sample)
+        prefix = prefix + "_" if prefix else ""
+        if filename is None:
+            filename = (
+                f"{prefix}{self.foreground_model}_{self.observation.frequency:.3f}.h5"
+            )
+
+        logger.info(f"Writing sensitivies to '{filename}'")
+        with h5py.File(filename, "w") as fl:
+
+            # TODO: We should be careful to try and write everything into this file
+            # i.e. all the parameters etc.
+
+            for k, v in out.items():
+                fl[k] = v
+                fl[k.replace("noise", "snr")] = self.delta_squared / v
+
+            fl["k"] = self.k1d.value
+            fl["delta_squared"] = self.delta_squared
+
+            fl.attrs["k_min"] = self.k_min
+            fl.attrs["k_max"] = self.k_max
+            fl.attrs["total_snr"] = self.calculate_significance()
+            fl.attrs["foreground_model"] = self.foreground_model
+            fl.attrs["horizon_buffer"] = self.horizon_buffer
+
+    def plot_sense_1d(self, sample: bool = True, thermal: bool = True):
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError("matplotlib is required to make plots...")
+
+        out = self._get_all_sensitivity_combos(thermal, sample)
+        for key, value in out.items():
+            plt.plot(self.k1d, value, label=key)
+            plt.xscale("log")
+            plt.yscale("log")
+            plt.xlabel("k [1/Mpc]")
+            plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2/{\rm Mpc}^3$")
+            plt.legend()
+            plt.title(f"z={conv.f2z(self.observation.frequency):.2f}")
+
+        return plt.gcf()
+
+    def _get_all_sensitivity_combos(self, thermal, sample):
+        result = {}
+        if thermal:
+            result["thermal_noise"] = self.calculate_sensitivity_1d(sample=False)
+        if sample:
+            result["sample_noise"] = self.calculate_sensitivity_1d(
+                thermal=False, sample=True
+            )
+
+        if thermal and sample:
+            result["sample+thermal_noise"] = self.calculate_sensitivity_1d(
+                thermal=True, sample=True
+            )
+
+        return result

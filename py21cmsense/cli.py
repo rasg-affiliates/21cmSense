@@ -8,12 +8,14 @@ for the length specified instead of that set by the primary beam.
 from __future__ import division, print_function
 
 import click
+import logging
 import numpy as np
 import os
 import pickle
 import tempfile
 import yaml
 from os import path
+from rich.logging import RichHandler
 
 from . import observation
 from . import sensitivity as sense
@@ -26,6 +28,13 @@ except ImportError:
     HAVE_MPL = False
 
 main = click.Group()
+
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level=logging.INFO, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+
+logger = logging.getLogger("py21cmsense")
 
 
 @main.command()
@@ -119,47 +128,18 @@ def calc_sense(
             yaml.dump(cfg, fl)
 
     sensitivity = sense.PowerSpectrum.from_yaml(configfile)
-
-    out = {}
-    if thermal:
-        print("Getting Thermal Variance")
-        out["thermal"] = sensitivity.calculate_sensitivity_1d(sample=False)
-    if samplevar:
-        print("Getting Sample Variance")
-        out["sample"] = sensitivity.calculate_sensitivity_1d(thermal=False, sample=True)
-    if thermal and samplevar:
-        print("Getting Combined Variance")
-        out["sample+thermal"] = sensitivity.calculate_sensitivity_1d(
-            thermal=True, sample=True
-        )
-
-    # save results to output npz
-    if fname is None:
-        fname = "{pfx}{model}_{freq:.3f}.npz".format(
-            pfx=prefix + "_" if prefix else "",
-            model=sensitivity.foreground_model,
-            freq=sensitivity.observation.frequency,
-        )
-
-    np.savez(os.path.join(direc, fname), ks=sensitivity.k1d.value, **out)
+    sensitivity.write(filename=fname, thermal=thermal, sample=samplevar, prefix=prefix)
 
     if write_significance:
-        sig = sensitivity.calculate_significance(
-            thermal=thermal, sample=samplevar
-        )  # ... ?
-        print("Significance of detection: ", sig)
+        sig = sensitivity.calculate_significance(thermal=thermal, sample=samplevar)
+        logger.info(f"Significance of detection: {sig}")
 
     if plot and HAVE_MPL:
-        for key, value in out.items():
-            plt.plot(sensitivity.k1d, value, label=key)
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.legend()
-        plt.title(plot_title)
-        plt.savefig(
-            "{pfx}{model}_{freq:.3f}.png".format(
-                pfx=prefix + "_" if prefix else "",
-                model=sensitivity.foreground_model,
-                freq=sensitivity.observation.frequency,
-            )
+        fig = sensitivity.plot_sense_1d(thermal=thermal, sample=samplevar)
+        if plot_title:
+            plt.title(plot_title)
+        prefix + "_" if prefix else ""
+        fig.savefig(
+            f"{prefix}{sensitivity.foreground_model}_"
+            f"{sensitivity.observation.frequency:.3f}.png"
         )

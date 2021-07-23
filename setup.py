@@ -68,6 +68,8 @@ setup_args = {
         "methodtools",
         "pyuvdata",
         "cached_property",
+        "rich",
+        "h5py",
     ],
     "extras_require": {"docs": docs_req, "test": test_req, "dev": dev_rq},
     "package_data": {"py21cmsense": ["data/*"]},

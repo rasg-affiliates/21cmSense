@@ -7,6 +7,7 @@ simple, and suited to the needs of this particular package.
 
 import attr
 import collections
+import logging
 import numpy as np
 import tqdm
 import yaml
@@ -19,6 +20,8 @@ from collections import defaultdict
 from . import _utils as ut
 from . import antpos as antpos_module
 from . import beam, config
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s(frozen=True, kw_only=True, cmp=False)
@@ -128,6 +131,20 @@ class Observatory:
                 "antpos must be a function from antpos, or a .npy or ascii "
                 "file, or convertible to a ndarray"
             )
+
+        # Mask out some antennas if a max_antpos is set in the YAML
+        max_antpos = data.pop("max_antpos", np.inf)
+        _n = len(antpos)
+        antpos = antpos[np.sum(np.square(antpos), axis=1) < max_antpos ** 2]
+
+        if max_antpos < np.inf:
+            logger.info(
+                f"Removed {_n - len(antpos)} antennas using given max_antpos={max_antpos} m."
+            )
+
+        # If we get only East and North coords, add zeros for the UP direction.
+        if antpos.shape[1] == 2:
+            antpos = np.hstack((antpos, np.zeros((len(antpos), 1))))
 
         _beam = data.pop("beam")
         kind = _beam.pop("class")
