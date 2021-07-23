@@ -52,7 +52,7 @@ def apply_or_convert_unit(unit, allow_unitless=False, array=False):
 
 
 def between(xmin, xmax):
-    """Return an attrs validation function that validates that a number is within certain bounds"""
+    """Return an attrs validation function that checks a number is within bounds."""
 
     def validator(instance, att, val):
         assert xmin <= val <= xmax
@@ -61,22 +61,22 @@ def between(xmin, xmax):
 
 
 def positive(instance, att, x):
-    """An attrs validator that checks a value is positive"""
+    """An attrs validator that checks a value is positive."""
     assert x > 0, "must be positive"
 
 
 def nonnegative(instance, att, x):
-    """An attrs validator that checks a value is non-negative"""
+    """An attrs validator that checks a value is non-negative."""
     assert x >= 0, "must be non-negative"
 
 
 def find_nearest(array, value):
-    """Find closest value in `array` to `value`"""
+    """Find closest value in `array` to `value`."""
     return np.abs(array.reshape(-1, 1) - value).argmin(0)
 
 
 def trunc(x, ndecimals=0):
-    """Truncate a floating point number to a given number of decimals"""
+    """Truncate a floating point number to a given number of decimals."""
     decade = 10 ** ndecimals
     return np.trunc(x * decade) / decade
 

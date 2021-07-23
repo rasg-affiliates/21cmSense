@@ -16,7 +16,7 @@ class PrimaryBeam(metaclass=ABCMeta):
     )
 
     def new(self, **kwargs):
-        """Return a clone of this instance, but change kwargs"""
+        """Return a clone of this instance, but change kwargs."""
         return attr.evolve(self, **kwargs)
 
     @abstractmethod
@@ -31,17 +31,17 @@ class PrimaryBeam(metaclass=ABCMeta):
 
     @abstractmethod
     def first_null(self, freq=None):
-        """An approximation of the first null of the beam"""
+        """An approximation of the first null of the beam."""
         pass
 
     @abstractmethod
     def sq_area(self, freq=None):
-        """The area of the beam^2"""
+        """The area of the beam^2."""
         pass
 
     @abstractmethod
     def b_eff(self, freq=None):
-        """Effective beam area (Parsons 2014)"""
+        """Effective beam area (Parsons 2014)."""
         pass
 
     @abstractproperty
@@ -89,21 +89,21 @@ class GaussianBeam(PrimaryBeam):
         return 1.13 * self.fwhm(freq) ** 2
 
     def width(self, freq=None):
-        """The width of the beam (i.e. sigma), in radians
+        """The width of the beam (i.e. sigma), in radians.
 
         If frequency is not given, uses the instance's `frequency`
         """
         return un.rad * 0.45 / self.dish_size_in_lambda(freq)
 
     def fwhm(self, freq=None):
-        """The full-width half maximum of the beam
+        """The full-width half maximum of the beam.
 
         If frequency is not given, uses the instance's `frequency`
         """
         return 2.35 * self.width(freq)
 
     def sq_area(self, freq=None):
-        """The integral of the squared beam, in sr
+        """The integral of the squared beam, in sr.
 
         If frequency is not given, uses the instance's `frequency`
         """
@@ -128,7 +128,7 @@ class GaussianBeam(PrimaryBeam):
 
     @property
     def uv_resolution(self):
-        """The appropriate resolution of a UV cell given the beam size"""
+        """The appropriate resolution of a UV cell given the beam size."""
         return self.dish_size_in_lambda()
 
     @classmethod

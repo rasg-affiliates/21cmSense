@@ -63,21 +63,21 @@ class Observatory:
 
     @property
     def frequency(self):
-        """Central frequency of the observation"""
+        """Central frequency of the observation."""
         return self.beam.frequency
 
     @cached_property
     def n_antennas(self):
-        """Number of antennas in the array"""
+        """Number of antennas in the array."""
         return len(self.antpos)
 
     def clone(self, **kwargs):
-        """Return a clone of this instance, but change kwargs"""
+        """Return a clone of this instance, but change kwargs."""
         return attr.evolve(self, **kwargs)
 
     @classmethod
     def from_uvdata(cls, uvdata, beam):
-        """Instantiate an Observatory from a pyuvdata.UVData object or compatible file"""
+        """Instantiate an Observatory from a :class:`pyuvdata.UVData` object or file."""
         try:
             import pyuvdata
         except ImportError:
@@ -206,22 +206,22 @@ class Observatory:
 
     @cached_property
     def baseline_lengths(self):
-        """Lengths of baselines in units of wavelengths, shape (Nant, Nant)"""
+        """Lengths of baselines in units of wavelengths, shape (Nant, Nant)."""
         return np.sqrt(np.sum(self.projected_baselines() ** 2, axis=-1))
 
     @cached_property
     def shortest_baseline(self):
-        """Shortest baseline in units of wavelengths"""
+        """Shortest baseline in units of wavelengths."""
         return np.min(self.baseline_lengths[self.baseline_lengths > 0])
 
     @cached_property
     def longest_baseline(self):
-        """Longest baseline in units of wavelengths"""
+        """Longest baseline in units of wavelengths."""
         return np.max(self.baseline_lengths)
 
     @cached_property
     def observation_duration(self):
-        """The time it takes for the sky to drift through the FWHM"""
+        """The time it takes for the sky to drift through the FWHM."""
         return units.day * self.beam.fwhm() / (2 * np.pi * units.rad)
 
     def get_redundant_baselines(self, bl_min=0, bl_max=np.inf, ndecimals=1):
@@ -312,7 +312,7 @@ class Observatory:
         )
 
     def baseline_coords_from_groups(self, baseline_groups):
-        """Convert a dictionary of baseline groups to an array of ENU co-ordinates"""
+        """Convert a dictionary of baseline groups to an array of ENU co-ordinates."""
         out = np.zeros((len(baseline_groups), 3)) * units.m
         for i, antpairs in enumerate(baseline_groups.values()):
             out[i] = self.baselines_metres[antpairs[0][0], antpairs[0][1]]
@@ -425,12 +425,12 @@ class Observatory:
         return uvsum
 
     def longest_used_baseline(self, bl_max=np.inf):
-        """Determine the maximum baseline length kept in the array"""
+        """Determine the maximum baseline length kept in the array."""
         if np.isinf(bl_max):
             return self.longest_baseline
-        else:
-            bl_max = ut.apply_or_convert_unit("m")(bl_max) * self.metres_to_wavelengths
-            return np.max(self.baseline_lengths[self.baseline_lengths <= bl_max])
+
+        bl_max = ut.apply_or_convert_unit("m")(bl_max) * self.metres_to_wavelengths
+        return np.max(self.baseline_lengths[self.baseline_lengths <= bl_max])
 
     def ugrid_edges(self, bl_max=np.inf):
         """Get a uv grid out to the maximum used baseline smaller than given bl_max.
@@ -461,8 +461,7 @@ class Observatory:
             self.beam.uv_resolution / 2 + n_positive * self.beam.uv_resolution,
             n_positive + 1,
         )
-        edges = np.concatenate((-positive[::-1], positive))
-        return edges
+        return np.concatenate((-positive[::-1], positive))
 
     def ugrid(self, bl_max=np.inf):
         """Centres of the UV grid plane."""

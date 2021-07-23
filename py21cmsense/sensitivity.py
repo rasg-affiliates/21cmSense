@@ -203,7 +203,7 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def k_max(self):
-        """Maximum k value to use in estimates"""
+        """Maximum k value to use in estimates."""
         return self.k_21.max()
 
     @cached_property
@@ -215,7 +215,7 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def X2Y(self):
-        """Cosmological scaling factor X^2*Y (eg. Parsons 2012)"""
+        """Cosmological scaling factor X^2*Y (eg. Parsons 2012)."""
         return conv.X2Y(self.observation.redshift)
 
     @cached_property
@@ -248,13 +248,13 @@ class PowerSpectrum(Sensitivity):
         ).to("")
 
     def thermal_noise(self, k_par, k_perp, trms):
-        """Thermal noise contribution at particular k mode"""
+        """Thermal noise contribution at particular k mode."""
         k = np.sqrt(k_par ** 2 + k_perp ** 2)
         scalar = self.power_normalisation(k)
         return scalar * trms ** 2
 
     def sample_noise(self, k_par, k_perp):
-        """Sample variance contribution at a particular k mode"""
+        """Sample variance contribution at a particular k mode."""
         k = np.sqrt(k_par ** 2 + k_perp ** 2)
         vals = np.full(k.size, np.inf) * un.mK ** 2
         good_ks = np.logical_and(k >= self.k_min, k <= self.k_max)
@@ -382,7 +382,7 @@ class PowerSpectrum(Sensitivity):
             return horizon * np.sin(self.observation.observatory.beam.first_null / 2)
 
     def _average_sense_to_1d(self, sense):
-        """Bin 2D sensitivity down to 1D"""
+        """Bin 2D sensitivity down to 1D."""
         sense1d_inv = np.zeros(len(self.k1d)) / un.mK ** 4
 
         for k_perp in tqdm.tqdm(
@@ -406,7 +406,7 @@ class PowerSpectrum(Sensitivity):
 
     @lru_cache()
     def calculate_sensitivity_1d(self, thermal=True, sample=True):
-        """Calculate a 1D sensitivity curve
+        """Calculate a 1D sensitivity curve.
 
         Parameters
         ----------

@@ -49,7 +49,7 @@ def z2f(z):
 
 def dL_dth(z, cosmo=Planck15):
     """
-    Return the factor to convert radians to transverse distance at redshift z
+    Return the factor to convert radians to transverse distance at redshift z.
 
     Parameters
     ----------

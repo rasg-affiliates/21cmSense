@@ -7,7 +7,6 @@ ignore =
     F403
     F401
     D401  # Imperative mood -- doesn't work for cached-property.
-    D400  # TODO: remove all the rest of them following this one.
     N802  # TODO: remove this (functino name should be lower-case)
 
 max-line-length = 88

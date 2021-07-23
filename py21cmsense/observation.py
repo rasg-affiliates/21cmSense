@@ -160,17 +160,17 @@ class Observation:
 
     @cached_property
     def baseline_group_coords(self):
-        """Co-ordinates of baseline groups in metres"""
+        """Co-ordinates of baseline groups in metres."""
         return self.observatory.baseline_coords_from_groups(self.baseline_groups)
 
     @cached_property
     def baseline_group_counts(self):
-        """The number of baselines in each group"""
+        """The number of baselines in each group."""
         return self.observatory.baseline_weights_from_groups(self.baseline_groups)
 
     @property
     def frequency(self):
-        """Frequency of the observation"""
+        """Frequency of the observation."""
         return self.observatory.frequency
 
     @cached_property
@@ -214,19 +214,19 @@ class Observation:
 
     @cached_property
     def Tsky(self):
-        """Temperature of the sky at the default frequency"""
+        """Temperature of the sky at the default frequency."""
         return self.tsky_amplitude * (self.frequency / self.tsky_ref_freq) ** (
             -self.spectral_index
         )
 
     @cached_property
     def Tsys(self):
-        """System temperature (i.e. Tsky + Trcv)"""
+        """System temperature (i.e. Tsky + Trcv)."""
         return self.Tsky + self.observatory.Trcv
 
     @cached_property
     def redshift(self):
-        """Central redshift of the observation"""
+        """Central redshift of the observation."""
         return conv.f2z(self.frequency)
 
     @cached_property
@@ -249,7 +249,7 @@ class Observation:
 
     @cached_property
     def Trms(self):
-        """Effective radiometric noise temperature per UV bin
+        """Effective radiometric noise temperature per UV bin.
 
         (i.e. divided by bandwidth and integration time).
         The u-values on each side of the grid are given by :func:`ugrid`.
