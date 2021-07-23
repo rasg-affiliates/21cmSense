@@ -267,7 +267,6 @@ class PowerSpectrum(Sensitivity):
         """
         Mid-way product specifying thermal and sample variance over the 2D grid.
         """
-
         # set up blank arrays/dictionaries
         sense = {"sample": {}, "thermal": {}, "both": {}}
 

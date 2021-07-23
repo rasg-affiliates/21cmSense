@@ -108,7 +108,6 @@ def phase(jd, ra, dec, telescope_location, uvws0):
         Array of the same shape as `uvws0`, with entries modified to the new phase
         center.
     """
-
     frame_phase_center = SkyCoord(ra=ra, dec=dec, unit="radian", frame="icrs")
 
     obs_time = Time(np.atleast_1d(jd), format="jd")
