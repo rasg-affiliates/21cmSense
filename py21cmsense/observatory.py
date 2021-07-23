@@ -153,9 +153,10 @@ class Observatory:
         return cls(antpos=antpos, beam=_beam, **data)
 
     @cached_property
-    def baselines_metres(self):
-        """
-        The raw baseline distances in metres for every pair of antennas (shape (Nant, Nant, 3)).
+    def baselines_metres(self) -> np.ndarray:
+        """Raw baseline distances in metres for every pair of antennas.
+
+        Shape is ``(Nant, Nant, 3)``.
         """
         # this does an "outer" subtraction, leaving the inner 2- or 3- length positions
         # as atomic quantities.

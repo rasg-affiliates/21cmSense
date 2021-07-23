@@ -10,9 +10,6 @@ ignore =
     D100  # TODO: remove this (missing docstring in module)
     D400
     D401
-    D200
-    RST304
-    N802
     T001
     D205
     D102
@@ -20,6 +17,24 @@ ignore =
     D209
     D105
     D101
+    N802  # TODO: remove this (functino name should be lower-case)
 
 max-line-length = 88
 max-complexity = 18
+rst-roles =
+    class
+    func
+    mod
+    data
+    const
+    meth
+    attr
+    exc
+    obj
+rst-directives =
+    note
+    warning
+    versionadded
+    versionchanged
+    deprecated
+    seealso

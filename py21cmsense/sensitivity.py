@@ -219,9 +219,7 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def uv_coverage(self):
-        """
-        The UV-coverage of the array, with unused/statistically redundant baselines masked to zero
-        """
+        """The UV-coverage of the array, with unused/redundant baselines set to zero."""
         grid = self.observation.uv_coverage.copy()
         size = grid.shape[0]
 
@@ -264,9 +262,7 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def _nsamples_2d(self):
-        """
-        Mid-way product specifying thermal and sample variance over the 2D grid.
-        """
+        """Mid-way product specifying thermal and sample variance over the 2D grid."""
         # set up blank arrays/dictionaries
         sense = {"sample": {}, "thermal": {}, "both": {}}
 

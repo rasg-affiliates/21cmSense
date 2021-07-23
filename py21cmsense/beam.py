@@ -8,9 +8,7 @@ from . import _utils as ut
 
 @attr.s(frozen=True)
 class PrimaryBeam(metaclass=ABCMeta):
-    """
-    A Base class defining a Primary Beam and the methods it requires to define.
-    """
+    """A Base class defining a Primary Beam and the methods it requires to define."""
 
     frequency = attr.ib(
         converter=ut.apply_or_convert_unit("MHz"), validator=ut.positive

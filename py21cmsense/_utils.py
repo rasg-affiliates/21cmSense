@@ -1,6 +1,4 @@
-"""
-Utility functions for 21cmSense.
-"""
+"""Utility functions for 21cmSense."""
 import numpy as np
 import tqdm
 from astropy import units as un
