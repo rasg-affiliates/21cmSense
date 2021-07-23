@@ -22,12 +22,12 @@ class PrimaryBeam(ABC):
 
     @abstractmethod
     def area(self, freq=None):
-        """Beam area (sr)"""
+        """Beam area [units: sr]."""
         pass
 
     @abstractmethod
     def width(self, freq=None):
-        """Beam width (rad)"""
+        """Beam width [units: rad]."""
         pass
 
     @abstractmethod
