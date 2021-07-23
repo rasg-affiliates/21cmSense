@@ -10,7 +10,6 @@ ignore =
     D100  # TODO: remove this (missing docstring in module)
     D400
     D401
-    T001
     D205
     D102
     D414

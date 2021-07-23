@@ -57,8 +57,8 @@ def grid_baselines(configfile, direc):
     with open(filepath, "wb") as fl:
         pickle.dump(obs, fl)
 
-    print("There are {} baseline types".format(len(obs.baseline_groups)))
-    print("Saving array file as {}".format(filepath))
+    logger.info(f"There are {len(obs.baseline_groups)} baseline types")
+    logger.info(f"Saving array file as {filepath}")
 
 
 @main.command()
