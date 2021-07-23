@@ -100,11 +100,9 @@ class Sensitivity:
 def _kconverter(val):
     if not hasattr(val, "unit"):
         # Assume it has the 1/Mpc units (default from 21cmFAST)
-        return val * un.littleh / un.Mpc / Planck15.h
-    try:
-        return val.to("littleh/Mpc")
-    except un.UnitConversionError:
-        return ((val / Planck15.h) * un.littleh).to("littleh/Mpc")
+        return (val / un.Mpc).to("littleh/Mpc", un.with_H0(config.COSMO.H0))
+    else:
+        return val.to("littleh/Mpc", un.with_H0(config.COSMO.H0))
 
 
 @attr.s(kw_only=True)
@@ -492,14 +490,22 @@ class PowerSpectrum(Sensitivity):
         thermal: bool = True,
         sample: bool = True,
         prefix: str = None,
-    ) -> str | Path:
-        """Save sensitivity results to HDF5 file."""
+    ) -> Path:
+        """Save sensitivity results to HDF5 file.
+
+        Returns
+        -------
+        filename
+            The path to the file that is written.
+        """
         out = self._get_all_sensitivity_combos(thermal, sample)
         prefix = prefix + "_" if prefix else ""
         if filename is None:
-            filename = (
+            filename = Path(
                 f"{prefix}{self.foreground_model}_{self.observation.frequency:.3f}.h5"
             )
+        else:
+            filename = Path(filename)
 
         logger.info(f"Writing sensitivies to '{filename}'")
         with h5py.File(filename, "w") as fl:
@@ -519,6 +525,9 @@ class PowerSpectrum(Sensitivity):
             fl.attrs["total_snr"] = self.calculate_significance()
             fl.attrs["foreground_model"] = self.foreground_model
             fl.attrs["horizon_buffer"] = self.horizon_buffer
+            fl.attrs["k_unit"] = str(self.k1d.unit)
+
+        return filename
 
     def plot_sense_1d(self, sample: bool = True, thermal: bool = True):
         try:
