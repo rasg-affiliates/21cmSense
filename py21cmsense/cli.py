@@ -46,6 +46,7 @@ logger = logging.getLogger("py21cmsense")
     default=".",
 )
 def grid_baselines(configfile, direc):
+    """Grid baselines according to CONFIGFILE."""
     obs = observation.Observation.from_yaml(configfile)
 
     filepath = os.path.join(
@@ -115,6 +116,11 @@ def calc_sense(
     plot_title,
     prefix,
 ):
+    """Calculate the sensitivity of an array.
+
+    This is the primary command of 21cmSense, and can be run independently for a
+    complete sensitivity calculation.
+    """
     # If given an array-file, overwrite the "observation" parameter
     # in the config with the pickled array file, which has already
     # calculated the uv_coverage, hopefully.

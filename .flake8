@@ -6,7 +6,6 @@ ignore =
     W503
     F403
     F401
-    D103  # TODO: remove this (missing docstring in function )
     D400
     D401
     D205
