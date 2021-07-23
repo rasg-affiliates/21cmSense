@@ -451,11 +451,8 @@ class PowerSpectrum(Sensitivity):
         mask = np.logical_and(self.k1d >= self.k_min, self.k1d <= self.k_max)
         sense1d = self.calculate_sensitivity_1d(thermal=thermal, sample=sample)
 
-        A = self.delta_squared[mask]
-        wA = A / sense1d[mask]
-        X = np.dot(wA, wA.T)
-        err = np.sqrt(1.0 / np.float(X))
-        return 1 / err
+        snr = self.delta_squared[mask] / sense1d[mask]
+        return np.sqrt(float(np.dot(snr, snr.T)))
 
     def plot_sense_2d(self, sense2d):
         try:
@@ -475,9 +472,9 @@ class PowerSpectrum(Sensitivity):
                 (len(self.observation.kparallel), x.shape[1])
             )
         )
-        C = np.array([np.fft.fftshift(sense2d[key]) for key in keys]).T
+        z = np.array([np.fft.fftshift(sense2d[key]) for key in keys]).T
 
-        plt.pcolormesh(x, y, np.log10(C))
+        plt.pcolormesh(x, y, np.log10(z))
         cbar = plt.colorbar()
         cbar.set_label(r"$\log_{10} \delta \Delta^2$ [mK^2]", fontsize=14)
         plt.xlabel(r"$k_\perp$ [h/Mpc]", fontsize=14)
