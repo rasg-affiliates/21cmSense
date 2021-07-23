@@ -279,6 +279,7 @@ class Observation:
         return attr.evolve(self, **kwargs)
 
     def __getstate__(self):
+        """Get the pickelable state of the instance."""
         # This is defined so that when writing out a pickled version of the
         # class, the method which actually "does stuff" (i.e. uv_coverage) is run
         # and its output is saved in the pickle.

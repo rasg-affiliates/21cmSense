@@ -493,6 +493,7 @@ class Observatory:
         return np.sqrt(np.sum(grid ** 2, axis=0))
 
     def __eq__(self, other):
+        """Test equality of the observatory with another object."""
         if not self.__class__ == other.__class__:
             return False
         if not (self.Trcv, self.beam, self.latitude) == (
