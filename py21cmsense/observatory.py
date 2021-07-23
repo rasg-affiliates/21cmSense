@@ -320,6 +320,18 @@ class Observatory:
 
     @staticmethod
     def baseline_weights_from_groups(baseline_groups):
+        """Get number of baselines in each group.
+
+        Parameters
+        ----------
+        baseline_groups
+            A dictionary in the format output by :func:`get_redundant_baselines`.
+
+        Returns
+        -------
+        weights
+            An array containing the number of baselines in each group.
+        """
         return np.array([len(antpairs) for antpairs in baseline_groups.values()])
 
     def grid_baselines(

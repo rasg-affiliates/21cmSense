@@ -74,6 +74,7 @@ class Sensitivity:
 
     @classmethod
     def from_yaml(cls, yaml_file):
+        """Construct a :class:`Sensitivity` object from a YAML configuration."""
         data = cls._load_yaml(yaml_file)
 
         klass = data.pop("class", cls)
@@ -424,6 +425,7 @@ class PowerSpectrum(Sensitivity):
 
     @property
     def delta_squared(self):
+        """The fiducial 21cm power spectrum evaluated at :attr:`k1d`."""
         return self.p21(self.k1d)
 
     @lru_cache()
@@ -450,6 +452,7 @@ class PowerSpectrum(Sensitivity):
         return np.sqrt(float(np.dot(snr, snr.T)))
 
     def plot_sense_2d(self, sense2d):
+        """Create a colormap plot of the sensitivity un UV bins."""
         try:
             import matplotlib.pyplot as plt
         except ImportError:
@@ -510,6 +513,7 @@ class PowerSpectrum(Sensitivity):
             fl.attrs["horizon_buffer"] = self.horizon_buffer
 
     def plot_sense_1d(self, sample: bool = True, thermal: bool = True):
+        """Create a plot of the sensitivity in 1D k-bins."""
         try:
             import matplotlib.pyplot as plt
         except ImportError:

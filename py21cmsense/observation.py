@@ -118,6 +118,7 @@ class Observation:
 
     @classmethod
     def from_yaml(cls, yaml_file):
+        """Construct an :class:`Observation` from a YAML file."""
         if isinstance(yaml_file, str):
             with open(yaml_file) as fl:
                 data = yaml.load(fl, Loader=yaml.FullLoader)

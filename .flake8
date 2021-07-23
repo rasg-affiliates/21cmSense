@@ -8,7 +8,6 @@ ignore =
     F401
     D401  # Imperative mood -- doesn't work for cached-property.
     D400  # TODO: remove all the rest of them following this one.
-    D102
     D414
     D209
     D105

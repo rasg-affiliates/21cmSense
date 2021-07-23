@@ -46,11 +46,13 @@ class PrimaryBeam(metaclass=ABCMeta):
 
     @abstractproperty
     def uv_resolution(self):
+        """The resolution of the beam in Fourier UV space."""
         pass
 
     @classmethod
     @abstractmethod
     def from_uvbeam(cls):
+        """Generate the beam object from a :class:`pyuvdata.UVBeam` object."""
         pass
 
 
@@ -108,6 +110,10 @@ class GaussianBeam(PrimaryBeam):
         return self.area(freq) / 2
 
     def b_eff(self, freq=None):
+        r"""Get the effective beam area.
+
+        Defined as :math:`(\int B(\Omega) d \Omega)^2 / \int B^2 d\Omega`.
+        """
         return self.area(freq) ** 2 / self.sq_area(freq)
 
     def first_null(self, freq=None):
@@ -127,4 +133,5 @@ class GaussianBeam(PrimaryBeam):
 
     @classmethod
     def from_uvbeam(cls):
+        """Construct the beam from a :class:`pyuvdata.UVBeam` object."""
         raise NotImplementedError("Coming Soon!")
