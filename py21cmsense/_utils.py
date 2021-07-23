@@ -51,11 +51,11 @@ def apply_or_convert_unit(unit, allow_unitless=False, array=False):
     return converter
 
 
-def between(min, max):
+def between(xmin, xmax):
     """Return an attrs validation function that validates that a number is within certain bounds"""
 
     def validator(instance, att, val):
-        assert min <= val <= max
+        assert xmin <= val <= xmax
 
     return validator
 
