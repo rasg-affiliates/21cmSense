@@ -163,8 +163,9 @@ class Observatory:
         return self.antpos[np.newaxis, :, :] - self.antpos[:, np.newaxis, :]
 
     def projected_baselines(self, baselines=None, time_offset=0):
-        """The *projected* baseline lengths (in wavelengths) phased to a point
-        that has rotated off zenith by some time_offset.
+        """The *projected* baseline lengths (in wavelengths).
+
+        Phased to a point that has rotated off zenith by some time_offset.
 
         Parameters
         ----------
@@ -200,8 +201,7 @@ class Observatory:
 
     @cached_property
     def metres_to_wavelengths(self):
-        """Conversion factor for converting a quantity in m to wavelengths at the fiducial
-        frequency of the observation"""
+        """Conversion factor for metres to wavelengths at fiducial frequency."""
         return (self.frequency / cnst.c).to("1/m")
 
     @cached_property
@@ -280,10 +280,9 @@ class Observatory:
     def time_offsets_from_obs_int_time(
         self, integration_time, observation_duration=None
     ):
-        """
-        Compute a list of time offsets within an LST-bin (i.e. they are added coherently for
-        a given baseline group).
+        """Compute a list of time offsets within an LST-bin.
 
+        The LSTs 'within a bin' are added coherently for a given baseline group.
         Time offsets are with respect to an arbitrary time, and describe the rotation of
         a hypothetical point through zenith.
 
@@ -422,8 +421,8 @@ class Observatory:
             return np.max(self.baseline_lengths[self.baseline_lengths <= bl_max])
 
     def ugrid_edges(self, bl_max=np.inf):
-        """
-        Generate a uv grid out to the maximum used baseline smaller than the given bl_max.
+        """Get a uv grid out to the maximum used baseline smaller than given bl_max.
+
         The resulting array represents the *edges* of the grid (so the number of cells
         is one fewer than this).
 
@@ -460,9 +459,10 @@ class Observatory:
         return (edges[1:] + edges[:-1]) / 2
 
     def grid_baselines_coherent(self, **kwargs):
-        """
-        Produce a UV grid of gridded baselines, where different baseline
-        groups are averaged coherently if they fall into the same UV bin.
+        """Get a UV grid of coherently gridded baselines.
+
+        Different baseline groups are averaged coherently if they fall into the same
+        UV bin.
 
         See :func:`grid_baselines` for parameter details.
         """
@@ -470,9 +470,10 @@ class Observatory:
         return np.sum(grid, axis=0)
 
     def grid_baselines_incoherent(self, **kwargs):
-        """
-        Produce a UV grid of gridded baselines, where different baseline
-        groups are averaged incoherently if they fall into the same UV bin.
+        """Get a UV grid of incoherently gridded baselines.
+
+        Different baseline groups are averaged incoherently if they fall into the same
+        UV bin.
 
         See :func:`grid_baselines` for parameter details.
         """

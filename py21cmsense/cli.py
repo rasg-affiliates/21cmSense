@@ -1,10 +1,4 @@
-#! /usr/bin/env python
-"""
-Creates an array file for use by sensitivity.py.  The main product is the uv coverage produced by the array during the
-time it takes the sky to drift through the primary beam; other array parameters are also saved.
-Array specific information comes from an aipy cal file.  If track is set, produces the uv coverage
-for the length specified instead of that set by the primary beam.
-"""
+"""CLI routines for 21cmSense."""
 from __future__ import division, print_function
 
 import click
