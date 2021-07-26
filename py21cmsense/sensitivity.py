@@ -7,15 +7,9 @@ is provided, which offers the same results as previous versions.
 """
 from __future__ import annotations
 
-import logging
-import os
-import pickle
-from collections.abc import Mapping
-from os import path
-from pathlib import Path
-
 import attr
 import h5py
+import logging
 import numpy as np
 import os
 import pickle
@@ -28,6 +22,7 @@ from cached_property import cached_property
 from collections.abc import Mapping
 from methodtools import lru_cache
 from os import path
+from pathlib import Path
 from scipy import interpolate
 
 from . import _utils as ut

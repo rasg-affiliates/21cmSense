@@ -7,14 +7,13 @@ for the length specified instead of that set by the primary beam.
 """
 from __future__ import division, print_function
 
+import click
 import logging
 import os
 import pickle
 import tempfile
-from os import path
-
-import click
 import yaml
+from os import path
 from rich.logging import RichHandler
 
 from . import observation

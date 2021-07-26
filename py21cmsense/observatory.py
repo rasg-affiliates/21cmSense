@@ -5,10 +5,6 @@ This replaces the original usage of an aipy.AntennaArray with something much mor
 simple, and suited to the needs of this particular package.
 """
 
-import collections
-import logging
-from collections import defaultdict
-
 import attr
 import collections
 import logging
