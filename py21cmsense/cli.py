@@ -12,9 +12,7 @@ import logging
 import os
 import pickle
 import tempfile
-import warnings
 import yaml
-from astropy.utils.exceptions import AstropyDeprecationWarning
 from os import path
 from rich.logging import RichHandler
 
@@ -36,8 +34,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("py21cmsense")
-
-warnings.simplefilter("error", category=AstropyDeprecationWarning)
 
 
 @main.command()
