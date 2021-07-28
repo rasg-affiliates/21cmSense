@@ -12,7 +12,9 @@ import logging
 import os
 import pickle
 import tempfile
+import warnings
 import yaml
+from astropy.utils.exceptions import AstropyDeprecationWarning
 from os import path
 from rich.logging import RichHandler
 
@@ -34,6 +36,8 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("py21cmsense")
+
+warnings.simplefilter("error", category=AstropyDeprecationWarning)
 
 
 @main.command()
@@ -127,6 +131,10 @@ def calc_sense(
             yaml.dump(cfg, fl)
 
     sensitivity = sense.PowerSpectrum.from_yaml(configfile)
+    logger.info(
+        f"Used {len(sensitivity.k1d)} bins between "
+        f"{sensitivity.k1d.min()} and {sensitivity.k1d.max()}"
+    )
     sensitivity.write(filename=fname, thermal=thermal, sample=samplevar, prefix=prefix)
 
     if write_significance:

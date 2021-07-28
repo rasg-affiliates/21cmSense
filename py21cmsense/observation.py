@@ -253,9 +253,12 @@ class Observation:
 
         The u-values on each side of the grid are given by :func:`ugrid`.
         """
-        return self.Tsys / np.sqrt(2 * self.bandwidth * self.total_integration_time).to(
-            ""
-        )
+        out = np.ones(self.total_integration_time.shape) * np.inf * self.Tsys.unit
+        mask = self.total_integration_time > 0
+        out[mask] = self.Tsys / np.sqrt(
+            2 * self.bandwidth * self.total_integration_time[mask]
+        ).to("")
+        return out
 
     @cached_property
     def ugrid(self):

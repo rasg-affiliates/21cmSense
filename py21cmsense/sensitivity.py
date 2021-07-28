@@ -207,6 +207,13 @@ class PowerSpectrum(Sensitivity):
     def k1d(self):
         """1D array of wavenumbers for which sensitivities will be generated."""
         delta = conv.dk_deta(self.observation.redshift) / self.observation.bandwidth
+        if self.k_max.value < delta.value * self.observation.n_channels:
+            logger.warning(
+                "The maximum k value is being restricted by the theoretical signal "
+                "model. Losing ~"
+                f"{int((delta.value * self.observation.n_channels - self.k_max.value)/delta.value)}"
+                " bins."
+            )
         assert delta.unit == self.k_max.unit
         return np.arange(delta.value, self.k_max.value, delta.value) * delta.unit
 
@@ -402,10 +409,9 @@ class PowerSpectrum(Sensitivity):
             )
 
         # invert errors and take square root again for final answer
-        sense1d = np.zeros_like(sense1d_inv) * un.mK ** 6
-        for ind, kbin in enumerate(sense1d_inv):
-            sense1d[ind] = kbin ** -0.5 if kbin else np.inf
-
+        sense1d = np.ones(sense1d_inv.shape) * un.mK ** 2 * np.inf
+        mask = sense1d_inv > 0
+        sense1d[mask] = 1 / np.sqrt(sense1d_inv[mask])
         return sense1d
 
     @lru_cache()
