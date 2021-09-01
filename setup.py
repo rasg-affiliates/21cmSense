@@ -70,6 +70,7 @@ setup_args = {
         "cached_property",
         "rich",
         "h5py",
+        "attrs>=21.1.0",
     ],
     "extras_require": {"docs": docs_req, "test": test_req, "dev": dev_rq},
     "package_data": {"py21cmsense": ["data/*"]},

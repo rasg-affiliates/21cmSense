@@ -24,7 +24,7 @@ from . import beam, config
 logger = logging.getLogger(__name__)
 
 
-@attr.s(frozen=True, kw_only=True)
+@attr.s(frozen=True, kw_only=True, order=False)
 class Observatory:
     """
     A class defining an interferometric Observatory and its properties.
@@ -49,7 +49,9 @@ class Observatory:
         have a "core" and "outriggers". The minimum is inclusive, and maximum exclusive.
     """
 
-    _antpos = attr.ib(converter=ut.apply_or_convert_unit("m"))
+    _antpos = attr.ib(
+        converter=ut.apply_or_convert_unit("m"), eq=attr.cmp_using(eq=np.array_equal)
+    )
     beam = attr.ib(validator=vld.instance_of(beam.PrimaryBeam))
     latitude = attr.ib(
         0,
