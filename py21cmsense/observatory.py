@@ -24,7 +24,7 @@ from . import beam, config
 logger = logging.getLogger(__name__)
 
 
-@attr.s(frozen=True, kw_only=True, cmp=False)
+@attr.s(frozen=True, kw_only=True)
 class Observatory:
     """
     A class defining an interferometric Observatory and its properties.
@@ -121,7 +121,9 @@ class Observatory:
             uv = uvdata
 
         return cls(
-            antpos=uv.antenna_positions, beam=beam, latitude=uv.telescope_lat_lon_alt[0]
+            antpos=uv.antenna_positions,
+            beam=beam,
+            latitude=uv.telescope_location_lat_lon_alt[0],
         )
 
     @classmethod
