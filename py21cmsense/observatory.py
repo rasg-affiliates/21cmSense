@@ -70,6 +70,7 @@ class Observatory:
 
     @cached_property
     def antpos(self) -> np.ndarray:
+        """The positions of antennas in the array in units of metres."""
         # Mask out some antennas if a max_antpos is set in the YAML
         _n = len(self._antpos)
         sq_len = np.sum(np.square(self._antpos), axis=1)
