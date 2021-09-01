@@ -9,6 +9,7 @@ import pickle
 import tempfile
 import yaml
 from os import path
+from pathlib import Path
 from rich.logging import RichHandler
 
 from . import observation
@@ -39,21 +40,30 @@ logger = logging.getLogger("py21cmsense")
     help="directory to save output file",
     default=".",
 )
-def grid_baselines(configfile, direc):
+@click.option(
+    "--outfile",
+    "-o",
+    type=click.Path(exists=False, dir_okay=False, file_okay=True),
+    help="filename of output file",
+    default=None,
+)
+def grid_baselines(configfile, direc, outfile):
     """Grid baselines according to CONFIGFILE."""
     obs = observation.Observation.from_yaml(configfile)
 
-    filepath = os.path.join(
-        direc,
-        "drift_blmin%0.f_blmax%0.f_%.3fGHz_arrayfile.pkl"
-        % (obs.bl_min.value, obs.bl_max.value, obs.frequency.to("GHz").value),
-    )
+    if outfile is None:
+        outfile = Path(direc) / (
+            f"drift_blmin{obs.bl_min.value:.3f}_blmax{obs.bl_max.value:.3f}_"
+            f"{obs.freuency.to('GHz').value:.3f}GHz_arrayfile.pkl"
+        )
+    elif not Path(outfile).is_absolute():
+        outfile = Path(direc) / outfile
 
-    with open(filepath, "wb") as fl:
+    with open(outfile, "wb") as fl:
         pickle.dump(obs, fl)
 
     logger.info(f"There are {len(obs.baseline_groups)} baseline types")
-    logger.info(f"Saving array file as {filepath}")
+    logger.info(f"Saving array file as {outfile}")
 
 
 @main.command()
