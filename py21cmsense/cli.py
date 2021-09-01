@@ -54,7 +54,7 @@ def grid_baselines(configfile, direc, outfile):
     if outfile is None:
         outfile = Path(direc) / (
             f"drift_blmin{obs.bl_min.value:.3f}_blmax{obs.bl_max.value:.3f}_"
-            f"{obs.freuency.to('GHz').value:.3f}GHz_arrayfile.pkl"
+            f"{obs.frequency.to('GHz').value:.3f}GHz_arrayfile.pkl"
         )
     elif not Path(outfile).is_absolute():
         outfile = Path(direc) / outfile
