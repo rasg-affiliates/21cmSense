@@ -38,15 +38,16 @@ repos:
       - flake8-comprehensions
       - flake8-print
 
-- repo: https://github.com/timothycrosley/isort
-  rev: 5.8.0
-  hooks:
-  - id: isort
 
 - repo: https://github.com/psf/black
   rev: 20.8b1
   hooks:
   - id: black
+
+- repo: https://github.com/pre-commit/mirrors-isort
+  rev: v5.9.2
+  hooks:
+  - id: isort
 
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.8.0

@@ -42,9 +42,14 @@ class Observatory:
         Note that longitude is not required, as we assume an isotropic sky.
     Trcv : float or Quantity
         Receiver temperature, assumed to be in mK unless otherwise defined.
+    min_antpos, max_antpos
+        The minimum/maximum radial distance to include antennas (from the origin
+        of the array). Assumed to be in units of meters if no units are supplied.
+        Can be used to limit antennas in arrays like HERA and SKA that
+        have a "core" and "outriggers". The minimum is inclusive, and maximum exclusive.
     """
 
-    antpos = attr.ib(converter=ut.apply_or_convert_unit("m"))
+    _antpos = attr.ib(converter=ut.apply_or_convert_unit("m"))
     beam = attr.ib(validator=vld.instance_of(beam.PrimaryBeam))
     latitude = attr.ib(
         0,
@@ -54,12 +59,34 @@ class Observatory:
     Trcv = attr.ib(
         1e5, converter=ut.apply_or_convert_unit("mK"), validator=ut.nonnegative
     )
+    max_antpos: float = attr.ib(default=np.inf, converter=ut.apply_or_convert_unit("m"))
+    min_antpos: float = attr.ib(default=0.0, converter=ut.apply_or_convert_unit("m"))
 
-    @antpos.validator
+    @_antpos.validator
     def _antpos_validator(self, att, val):
         assert val.ndim == 2
         assert val.shape[-1] == 3
         assert val.shape[0] > 1
+
+    @cached_property
+    def antpos(self) -> np.ndarray:
+        # Mask out some antennas if a max_antpos is set in the YAML
+        _n = len(self._antpos)
+        sq_len = np.sum(np.square(self._antpos), axis=1)
+        antpos = self._antpos[
+            np.logical_and(
+                sq_len >= self.min_antpos ** 2,
+                sq_len < self.max_antpos ** 2,
+            )
+        ]
+
+        if self.max_antpos < np.inf or self.min_antpos > 0:
+            logger.info(
+                f"Removed {_n - len(antpos)} antennas using given "
+                f"max_antpos={self.max_antpos} m and min_antpos={self.min_antpos} m."
+            )
+
+        return antpos
 
     @property
     def frequency(self):
