@@ -7,7 +7,7 @@ ignore =
     F403
     F401
     D401  # Imperative mood -- doesn't work for cached-property.
-    N802  # TODO: remove this (functino name should be lower-case)
+    N802  # TODO: remove this (function name should be lower-case)
 
 max-line-length = 88
 max-complexity = 18
