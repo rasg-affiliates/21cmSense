@@ -1,10 +1,4 @@
-#! /usr/bin/env python
-"""
-Creates an array file for use by sensitivity.py.  The main product is the uv coverage produced by the array during the
-time it takes the sky to drift through the primary beam; other array parameters are also saved.
-Array specific information comes from an aipy cal file.  If track is set, produces the uv coverage
-for the length specified instead of that set by the primary beam.
-"""
+"""CLI routines for 21cmSense."""
 from __future__ import division, print_function
 
 import click
@@ -14,6 +8,7 @@ import pickle
 import tempfile
 import yaml
 from os import path
+from pathlib import Path
 from rich.logging import RichHandler
 
 from . import observation
@@ -44,20 +39,30 @@ logger = logging.getLogger("py21cmsense")
     help="directory to save output file",
     default=".",
 )
-def grid_baselines(configfile, direc):
+@click.option(
+    "--outfile",
+    "-o",
+    type=click.Path(exists=False, dir_okay=False, file_okay=True),
+    help="filename of output file",
+    default=None,
+)
+def grid_baselines(configfile, direc, outfile):
+    """Grid baselines according to CONFIGFILE."""
     obs = observation.Observation.from_yaml(configfile)
 
-    filepath = os.path.join(
-        direc,
-        "drift_blmin%0.f_blmax%0.f_%.3fGHz_arrayfile.pkl"
-        % (obs.bl_min.value, obs.bl_max.value, obs.frequency.to("GHz").value),
-    )
+    if outfile is None:
+        outfile = Path(direc) / (
+            f"drift_blmin{obs.bl_min.value:.3f}_blmax{obs.bl_max.value:.3f}_"
+            f"{obs.frequency.to('GHz').value:.3f}GHz_arrayfile.pkl"
+        )
+    elif not Path(outfile).is_absolute():
+        outfile = Path(direc) / outfile
 
-    with open(filepath, "wb") as fl:
+    with open(outfile, "wb") as fl:
         pickle.dump(obs, fl)
 
-    print("There are {} baseline types".format(len(obs.baseline_groups)))
-    print("Saving array file as {}".format(filepath))
+    logger.info(f"There are {len(obs.baseline_groups)} baseline types")
+    logger.info(f"Saving array file as {outfile}")
 
 
 @main.command()
@@ -114,6 +119,11 @@ def calc_sense(
     plot_title,
     prefix,
 ):
+    """Calculate the sensitivity of an array.
+
+    This is the primary command of 21cmSense, and can be run independently for a
+    complete sensitivity calculation.
+    """
     # If given an array-file, overwrite the "observation" parameter
     # in the config with the pickled array file, which has already
     # calculated the uv_coverage, hopefully.

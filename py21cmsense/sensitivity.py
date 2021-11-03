@@ -74,6 +74,7 @@ class Sensitivity:
 
     @classmethod
     def from_yaml(cls, yaml_file):
+        """Construct a :class:`Sensitivity` object from a YAML configuration."""
         data = cls._load_yaml(yaml_file)
 
         klass = data.pop("class", cls)
@@ -200,7 +201,7 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def k_max(self):
-        """maximum k value to use in estimates"""
+        """Maximum k value to use in estimates."""
         return self.k_21.max()
 
     @cached_property
@@ -228,14 +229,12 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def X2Y(self):
-        """Cosmological scaling factor X^2*Y (eg. Parsons 2012)"""
+        """Cosmological scaling factor X^2*Y (eg. Parsons 2012)."""
         return conv.X2Y(self.observation.redshift)
 
     @cached_property
     def uv_coverage(self):
-        """
-        The UV-coverage of the array, with unused/statistically redundant baselines masked to zero
-        """
+        """The UV-coverage of the array, with unused/redundant baselines set to zero."""
         grid = self.observation.uv_coverage.copy()
         size = grid.shape[0]
 
@@ -263,13 +262,13 @@ class PowerSpectrum(Sensitivity):
         ).to("")
 
     def thermal_noise(self, k_par, k_perp, trms):
-        """Thermal noise contribution at particular k mode"""
+        """Thermal noise contribution at particular k mode."""
         k = np.sqrt(k_par ** 2 + k_perp ** 2)
         scalar = self.power_normalisation(k)
         return scalar * trms ** 2
 
     def sample_noise(self, k_par, k_perp):
-        """Sample variance contribution at a particular k mode"""
+        """Sample variance contribution at a particular k mode."""
         k = np.sqrt(k_par ** 2 + k_perp ** 2)
         vals = np.full(k.size, np.inf) * un.mK ** 2
         good_ks = np.logical_and(k >= self.k_min, k <= self.k_max)
@@ -278,10 +277,7 @@ class PowerSpectrum(Sensitivity):
 
     @cached_property
     def _nsamples_2d(self):
-        """
-        Mid-way product specifying thermal and sample variance over the 2D grid.
-        """
-
+        """Mid-way product specifying thermal and sample variance over the 2D grid."""
         # set up blank arrays/dictionaries
         sense = {"sample": {}, "thermal": {}, "both": {}}
 
@@ -404,19 +400,17 @@ class PowerSpectrum(Sensitivity):
         if self.foreground_model in ["moderate", "pessimistic"]:
             return horizon + self.horizon_buffer
         elif self.foreground_model in ["optimistic"]:
-            return horizon * np.sin(self.observation.observatory.beam.first_null / 2)
+            return horizon * np.sin(self.observation.observatory.beam.first_null() / 2)
 
     def _average_sense_to_1d(self, sense):
-        """Bin 2D sensitivity down to 1D"""
+        """Bin 2D sensitivity down to 1D."""
         sense1d_inv = np.zeros(len(self.k1d)) / un.mK ** 4
 
-        for ind, k_perp in enumerate(
-            tqdm.tqdm(
-                sense.keys(),
-                desc="averaging to 1D",
-                unit="kperp-bins",
-                disable=not config.PROGRESS,
-            )
+        for k_perp in tqdm.tqdm(
+            sense.keys(),
+            desc="averaging to 1D",
+            unit="kperp-bins",
+            disable=not config.PROGRESS,
         ):
             k = np.sqrt(self.observation.kparallel ** 2 + k_perp ** 2)
             good_ks = np.logical_and(self.k_min <= k, k <= self.k_max)
@@ -432,7 +426,7 @@ class PowerSpectrum(Sensitivity):
 
     @lru_cache()
     def calculate_sensitivity_1d(self, thermal=True, sample=True):
-        """Calculate a 1D sensitivity curve
+        """Calculate a 1D sensitivity curve.
 
         Parameters
         ----------
@@ -451,6 +445,7 @@ class PowerSpectrum(Sensitivity):
 
     @property
     def delta_squared(self):
+        """The fiducial 21cm power spectrum evaluated at :attr:`k1d`."""
         return self.p21(self.k1d)
 
     @lru_cache()
@@ -473,13 +468,11 @@ class PowerSpectrum(Sensitivity):
         mask = np.logical_and(self.k1d >= self.k_min, self.k1d <= self.k_max)
         sense1d = self.calculate_sensitivity_1d(thermal=thermal, sample=sample)
 
-        A = self.delta_squared[mask]
-        wA = A / sense1d[mask]
-        X = np.dot(wA, wA.T)
-        err = np.sqrt((1.0 / np.float(X)))
-        return 1 / err
+        snr = self.delta_squared[mask] / sense1d[mask]
+        return np.sqrt(float(np.dot(snr, snr.T)))
 
     def plot_sense_2d(self, sense2d):
+        """Create a colormap plot of the sensitivity un UV bins."""
         try:
             import matplotlib.pyplot as plt
         except ImportError:
@@ -497,9 +490,9 @@ class PowerSpectrum(Sensitivity):
                 (len(self.observation.kparallel), x.shape[1])
             )
         )
-        C = np.array([np.fft.fftshift(sense2d[key]) for key in keys]).T
+        z = np.array([np.fft.fftshift(sense2d[key]) for key in keys]).T
 
-        plt.pcolormesh(x, y, np.log10(C))
+        plt.pcolormesh(x, y, np.log10(z))
         cbar = plt.colorbar()
         cbar.set_label(r"$\log_{10} \delta \Delta^2$ [mK^2]", fontsize=14)
         plt.xlabel(r"$k_\perp$ [h/Mpc]", fontsize=14)
@@ -551,6 +544,7 @@ class PowerSpectrum(Sensitivity):
         return filename
 
     def plot_sense_1d(self, sample: bool = True, thermal: bool = True):
+        """Create a plot of the sensitivity in 1D k-bins."""
         try:
             import matplotlib.pyplot as plt
         except ImportError:
