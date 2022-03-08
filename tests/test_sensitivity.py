@@ -62,6 +62,20 @@ def test_sensitivity_2d(observation):
         ps.calculate_sensitivity_2d(thermal=False, sample=False)
 
 
+def test_sensitivity_2d_grid(observation):
+    ps = PowerSpectrum(observation=observation)
+    sense_ungridded = ps.calculate_sensitivity_2d(thermal=True, sample=True)
+    kperp = (
+        np.array([x.value for x in sense_ungridded.keys()])
+        * list(sense_ungridded.keys())[0].unit
+    )
+    sense = ps.calculate_sensitivity_2d_grid(
+        kperp_edges=np.linspace(kperp.min().value, kperp.max().value, 10) * kperp.unit,
+        kpar_edges=ps.k1d,
+    )
+    assert sense.shape == (9, len(ps.k1d) - 1)
+
+
 def test_plots(observation):
     # this is a dumb test, just checking that it doesn't error.
     ps = PowerSpectrum(observation=observation)
