@@ -20,7 +20,6 @@ from collections import defaultdict
 from pathlib import Path
 
 from . import _utils as ut
-from . import antpos as antpos_module
 from . import beam, config
 from . import types as tp
 
@@ -109,26 +108,13 @@ class Observatory:
         return attr.evolve(self, **kwargs)
 
     @classmethod
-    def from_uvdata(cls, uvdata, beam: beam.PrimaryBeam) -> Observatory:
-        """Instantiate an Observatory from a :class:`pyuvdata.UVData` object or file."""
-        try:
-            import pyuvdata
-        except ImportError:
-            raise ImportError(
-                "cannot construct Observatory from uvdata object without "
-                "pyuvdata being installed!"
-            )
-
-        if isinstance(uvdata, str):
-            uv = pyuvdata.UVData()
-            uv.read(uvdata)
-        else:
-            uv = uvdata
-
+    def from_uvdata(cls, uvdata, beam: beam.PrimaryBeam, **kwargs) -> Observatory:
+        """Instantiate an Observatory from a :class:`pyuvdata.UVData` object."""
         return cls(
-            antpos=uv.antenna_positions,
+            antpos=uvdata.antenna_positions,
             beam=beam,
-            latitude=uv.telescope_location_lat_lon_alt[0],
+            latitude=uvdata.telescope_location_lat_lon_alt[0],
+            **kwargs,
         )
 
     @classmethod
@@ -145,12 +131,14 @@ class Observatory:
             )
 
         # Mask out some antennas if a max_antpos is set in the YAML
-        max_antpos = data.pop("max_antpos", np.inf)
+        max_antpos = data.pop("max_antpos", np.inf * un.m)
         antpos = data.pop("antpos")
         _n = len(antpos)
+        if not hasattr(antpos, "unit"):
+            antpos <<= max_antpos.unit
         antpos = antpos[np.sum(np.square(antpos), axis=1) < max_antpos**2]
 
-        if max_antpos < np.inf:
+        if max_antpos < np.inf * un.m:
             logger.info(
                 f"Removed {_n - len(antpos)} antennas using given max_antpos={max_antpos} m."
             )
@@ -461,7 +449,7 @@ class Observatory:
         if np.isinf(bl_max):
             return self.longest_baseline
 
-        bl_max *= self.metres_to_wavelengths
+        bl_max = bl_max * self.metres_to_wavelengths
         return np.max(self.baseline_lengths[self.baseline_lengths <= bl_max])
 
     def ugrid_edges(self, bl_max: tp.Length = np.inf * un.m) -> np.ndarray:
