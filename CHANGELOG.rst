@@ -20,6 +20,10 @@ Changed
 
 * ``_utils.find_nearest`` can solve for the index of an array of inputs.
 
+Features
+--------
+* Added a parameter ``systematics_mask`` to ``PowerSpectrum`` sensitivity, which enables
+  arbitrary k-modes to be masked out in the sensitivity calculation.
 
 v2.0.0
 ======

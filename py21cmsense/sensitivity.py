@@ -24,6 +24,7 @@ from methodtools import lru_cache
 from os import path
 from pathlib import Path
 from scipy import interpolate
+from typing import Callable
 
 from . import _utils as ut
 from . import config
@@ -131,6 +132,10 @@ class PowerSpectrum(Sensitivity):
     delta_21 : array or Quantity, optional
         An array of Delta^2 power spectrum values used for sample variance.
         If not a Quantity, will assume units of mK^2.
+    systematics_mask : callable
+        A function that takes a single kperp and an array of kpar, and returns a boolean
+        array specifying which of the k's are useable after accounting for systematics.
+        that is, it returns False for k's affected by systematics.
     """
 
     horizon_buffer: tp.Wavenumber = attr.ib(
@@ -150,6 +155,7 @@ class PowerSpectrum(Sensitivity):
         converter=_kconverter,
     )
     delta_21: tp.Delta = attr.ib(_D21_DEFAULT, validator=(tp.vld_unit(un.mK**2)))
+    systematics_mask: Callable | None = attr.ib(None)
 
     @classmethod
     def from_yaml(cls, yaml_file) -> Sensitivity:
@@ -377,6 +383,9 @@ class PowerSpectrum(Sensitivity):
         final_sense = {}
         for k_perp in sense.keys():
             mask = sense[k_perp] > 0
+            if self.systematics_mask is not None:
+                mask &= self.systematics_mask(k_perp, self.observation.kparallel)
+
             final_sense[k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
             final_sense[k_perp][mask] = sense[k_perp][mask] ** -0.5 / np.sqrt(
                 self.observation.n_lst_bins
