@@ -84,6 +84,13 @@ def test_sensitivity_2d_grid(observation, caplog):
     assert "maximum kbin is being restricted" in caplog.text
 
 
+def test_sensitivity_1d_binned(observation):
+    ps = PowerSpectrum(observation=observation)
+    assert np.all(
+        ps.calculate_sensitivity_1d() == ps.calculate_sensitivity_1d_binned(ps.k1d)
+    )
+
+
 def test_plots(observation):
     # this is a dumb test, just checking that it doesn't error.
     ps = PowerSpectrum(observation=observation)
