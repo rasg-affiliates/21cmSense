@@ -448,6 +448,7 @@ class Observatory:
         if np.isinf(bl_max):
             return self.longest_baseline
 
+        # Note we don't do the conversion in-place!
         bl_max = bl_max * self.metres_to_wavelengths
         return np.max(self.baseline_lengths[self.baseline_lengths <= bl_max])
 
