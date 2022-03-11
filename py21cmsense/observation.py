@@ -87,7 +87,7 @@ class Observation:
     track: tp.Time | None = attr.ib(
         None,
         validator=attr.validators.optional(
-            tp.vld_physical_type("time"), ut.between(0, 24 * un.hour)
+            (tp.vld_physical_type("time"), ut.between(0, 24 * un.hour))
         ),
     )
     obs_duration: tp.Time = attr.ib(
