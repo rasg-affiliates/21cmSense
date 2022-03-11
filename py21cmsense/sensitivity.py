@@ -386,6 +386,9 @@ class PowerSpectrum(Sensitivity):
             if self.systematics_mask is not None:
                 mask &= self.systematics_mask(k_perp, self.observation.kparallel)
 
+            if not np.any(mask):
+                continue
+
             final_sense[k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
             final_sense[k_perp][mask] = sense[k_perp][mask] ** -0.5 / np.sqrt(
                 self.observation.n_lst_bins
