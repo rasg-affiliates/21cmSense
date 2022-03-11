@@ -19,3 +19,4 @@ pip-wheel-metadata/
 coverage.xml
 *,cover
 .pytest_cache
+docs/reference/_autosummary
