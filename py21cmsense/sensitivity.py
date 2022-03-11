@@ -408,13 +408,13 @@ class PowerSpectrum(Sensitivity):
         assert np.all(np.diff(kperp_edges) > 0)
         assert np.all(np.diff(kpar_edges) > 0)
 
-        if kpar_edges.min() < self.k_min:
+        if np.sqrt(kpar_edges.min() ** 2 + kperp_edges.min() ** 2) < self.k_min:
             logger.warning(
-                "The minimum kparallel is being restricted by the theoretical model. Some values will be zero."
+                "The minimum kbin is being restricted by the theoretical model. Some values will be zero."
             )
-        if kpar_edges.max() > self.k_max:
+        if np.sqrt(kpar_edges.max() ** 2 + kperp_edges.max() ** 2) > self.k_max:
             logger.warning(
-                "The maximum kparallel is being restricted by the theoretical model. Some values will be zero."
+                "The maximum kbin is being restricted by the theoretical model. Some values will be zero."
             )
 
         for k_perp in tqdm.tqdm(
