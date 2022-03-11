@@ -134,8 +134,7 @@ class Observatory:
         max_antpos = data.pop("max_antpos", np.inf * un.m)
         antpos = data.pop("antpos")
         _n = len(antpos)
-        if not hasattr(antpos, "unit"):
-            antpos <<= max_antpos.unit
+
         antpos = antpos[np.sum(np.square(antpos), axis=1) < max_antpos**2]
 
         if max_antpos < np.inf * un.m:

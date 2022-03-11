@@ -1,4 +1,6 @@
-antpos: !txt mwa_phase2_compact_antpos.txt
+antpos: !astropy.units.Quantity
+    unit: !astropy.units.Unit {unit: m}
+    value: !txt mwa_phase2_compact_antpos.txt
 beam:
   class: GaussianBeam
   frequency: !astropy.units.Quantity
