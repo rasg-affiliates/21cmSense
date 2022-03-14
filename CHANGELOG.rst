@@ -25,6 +25,10 @@ Features
 --------
 * Added a parameter ``systematics_mask`` to ``PowerSpectrum`` sensitivity, which enables
   arbitrary k-modes to be masked out in the sensitivity calculation.
+* ``track`` option to ``Observation``. This is an alias for ``obs_duration`` but has
+  a closer resemblance to the original 21cmSense v1.
+* New ``calculate_sensitivity_2d_grid`` method that makes it easier to obtain a gridded
+  cylindrical power spectrum sensitivity for arbitrary bins.
 
 v2.0.0
 ======
