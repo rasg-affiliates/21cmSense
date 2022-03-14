@@ -21,4 +21,3 @@ coverage.xml
 .pytest_cache
 .vscode/
 *MHz.h5
-
