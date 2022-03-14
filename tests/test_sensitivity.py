@@ -144,12 +144,14 @@ def test_load_yaml_bad():
     ):
         Sensitivity.from_yaml(1)
 
+
 def test_systematics_mask(observation):
     ps = PowerSpectrum(
         observation=observation,
         systematics_mask=lambda kperp, kpar: np.zeros(len(kpar), dtype=bool),
     )
     assert len(ps.calculate_sensitivity_2d()) == 0
+
 
 def test_track(observatory):
     """Test that setting `track` is the same as setting obs_duration."""
