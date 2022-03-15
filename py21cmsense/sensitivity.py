@@ -111,6 +111,10 @@ class Sensitivity:
 
         return klass(observation=observation, **data)
 
+    def clone(self, **kwargs):
+        """Clone the object with new parameters."""
+        return attr.evolve(self, **kwargs)
+
 
 @attr.s(kw_only=True)
 class PowerSpectrum(Sensitivity):
