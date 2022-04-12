@@ -157,8 +157,13 @@ class PowerSpectrum(Sensitivity):
         _K21_DEFAULT,
         validator=tp.vld_unit(littleh / un.Mpc, with_H0(config.COSMO.H0)),
         converter=_kconverter,
+        eq=attr.cmp_using(np.array_equal),
     )
-    delta_21: tp.Delta = attr.ib(_D21_DEFAULT, validator=(tp.vld_unit(un.mK**2)))
+    delta_21: tp.Delta = attr.ib(
+        _D21_DEFAULT,
+        validator=(tp.vld_unit(un.mK**2)),
+        eq=attr.cmp_using(np.array_equal),
+    )
     systematics_mask: Callable | None = attr.ib(None)
 
     @classmethod
