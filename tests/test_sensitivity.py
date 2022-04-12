@@ -159,3 +159,12 @@ def test_track(observatory):
     obs2 = Observation(observatory=observatory, track=1 * units.hour)
 
     assert np.all(obs1.uv_coverage == obs2.uv_coverage)
+
+
+def test_clone(observation):
+    ps = PowerSpectrum(
+        observation=observation,
+    )
+
+    ps2 = ps.clone()
+    assert ps2 == ps
