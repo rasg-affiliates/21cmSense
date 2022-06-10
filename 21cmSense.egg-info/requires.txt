@@ -1,4 +1,4 @@
-numpy
+numpy<1.22
 scipy
 future
 click
@@ -20,6 +20,7 @@ numpydoc
 nbsphinx
 ipython
 commitizen
+pytest-cov
 
 [docs]
 sphinx>=1.3

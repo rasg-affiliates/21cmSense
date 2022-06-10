@@ -9,10 +9,10 @@ CONTRIBUTING.rst
 CONTRIBUTORS.rst
 LICENSE.rst
 README.rst
-moderate_150.000 MHz.h5
 pyproject.toml
 setup.cfg
 setup.py
+.eggs/README.txt
 .github/workflows/deploy.yaml
 .github/workflows/test-deploy.yaml
 .github/workflows/testsuite.yaml
@@ -49,7 +49,6 @@ docs/tutorials/data/observation_mwa.yml
 docs/tutorials/data/observatory_mwa.yml
 docs/tutorials/data/ps_EoS_z9.24.txt
 docs/tutorials/data/sensitivity_mwa.yml
-example_configs/mwa_phase2_compact_antpos.txt
 example_configs/observation_hera.yml
 example_configs/observatory_hera.yml
 example_configs/sensitivity_hera.yml
@@ -64,6 +63,7 @@ py21cmsense/observation.py
 py21cmsense/observatory.py
 py21cmsense/sensitivity.py
 py21cmsense/types.py
+py21cmsense/yaml.py
 py21cmsense/data/__init__.py
 py21cmsense/data/ps_no_halos_nf0.521457_z9.50_useTs0_zetaX-1.0e+00_200_400Mpc_v2
 tests/conftest.py
@@ -73,5 +73,7 @@ tests/test_conversions.py
 tests/test_observation.py
 tests/test_observatory.py
 tests/test_sensitivity.py
+tests/test_types.py
+tests/test_yaml.py
 tests/test_data/test_load_k_0.114.npz
 tests/test_data/test_observatory_dct.yml

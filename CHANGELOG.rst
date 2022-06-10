@@ -29,6 +29,7 @@ Features
   a closer resemblance to the original 21cmSense v1.
 * New ``calculate_sensitivity_2d_grid`` method that makes it easier to obtain a gridded
   cylindrical power spectrum sensitivity for arbitrary bins.
+* Ability to use builtin observatories that set certain parameters.
 
 v2.0.0
 ======

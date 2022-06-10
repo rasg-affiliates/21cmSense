@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: 21cmSense
-Version: 2.0.0b1.dev14+g8464956.d20220121
+Version: 2.0.0b1.dev42+g7de0639.d20220610
 Summary: Compute sensitivies of radio interferometers to the cosmic 21cm signal.
 Home-page: https://github.com/steven-murray/21cmSense
 Author: Jonathan Pober

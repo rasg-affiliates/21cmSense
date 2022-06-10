@@ -25,6 +25,14 @@ from . import types as tp
 
 logger = logging.getLogger(__name__)
 
+DATA = Path(__file__).parent / "data"
+
+
+def get_builtin_profiles() -> list[str]:
+    """Print available built-in profiles."""
+    fls = (DATA / "profiles").glob("*.yaml")
+    return [fl.stem for fl in fls]
+
 
 @attr.s(frozen=True, kw_only=True, order=False)
 class Observatory:
@@ -122,7 +130,9 @@ class Observatory:
         """Instantiate an Observatory from a compatible YAML config file."""
         if isinstance(yaml_file, (str, Path)):
             with open(yaml_file) as fl:
-                data = yaml.load(fl)
+                lines = fl.read()
+                lines = lines.replace("{{ DATA_PATH }}", str(DATA.absolute()))
+                data = yaml.load(lines)
         elif isinstance(yaml_file, collections.abc.Mapping):
             data = yaml_file
         else:
@@ -151,6 +161,30 @@ class Observatory:
         _beam = getattr(beam, kind)(**_beam)
 
         return cls(antpos=antpos, beam=_beam, **data)
+
+    @classmethod
+    def from_profile(cls, profile: str, **kwargs):
+        """Instantiate the Observatory from a builtin profile.
+
+        Parameters
+        ----------
+        profile
+            A string label identifying the observatory. Available built-in observatories
+            can be obtained with :func:`get_builtin_profiles`.
+
+        Other Parameters
+        ----------------
+        All other parameters passed will be passed into the initializer for the class,
+        overwriting the profile.
+        """
+        fl = DATA / "profiles" / (profile + ".yaml")
+        if not fl.exists():
+            raise FileNotFoundError(
+                f"profile {profile} not available. Available profiles: {get_builtin_profiles()}"
+            )
+
+        obj = cls.from_yaml(fl)
+        return obj.clone(**kwargs)
 
     @cached_property
     def baselines_metres(self) -> tp.Meters:
