@@ -1,5 +1,5 @@
 antpos: !astropy.units.Quantity
-  value: !txt "{{ DATA_PATH }}/antpos/mwa_phase2_compact_antpos.txt"
+  value: !txt "{{ DATA_PATH }}/antpos/layout_enu_ska_central.txt"
   unit: !astropy.units.Unit {unit: m}
 beam:
   class: GaussianBeam
@@ -8,10 +8,10 @@ beam:
     value: 150
   dish_size: !astropy.units.Quantity
     unit: !astropy.units.Unit {unit: m}
-    value: 4
+    value: 35
 latitude: !astropy.units.Quantity
   unit: !astropy.units.Unit {unit: rad}
-  value: -0.4660
+  value: -0.4681814012852413
 Trcv: !astropy.units.Quantity
   unit: !astropy.units.Unit {unit: K}
   value: 100

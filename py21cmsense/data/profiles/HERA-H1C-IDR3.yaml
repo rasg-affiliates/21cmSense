@@ -11,7 +11,7 @@ beam:
     value: 14.0
 latitude: !astropy.units.Quantity
   unit: !astropy.units.Unit {unit: rad}
-  value: 0.536189
+  value: -0.536189
 Trcv: !astropy.units.Quantity
   unit: !astropy.units.Unit {unit: K}
   value: 100
