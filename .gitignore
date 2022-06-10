@@ -22,3 +22,4 @@ coverage.xml
 .vscode/
 *MHz.h5
 docs/reference/_autosummary
+*.egg-info/
