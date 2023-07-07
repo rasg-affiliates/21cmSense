@@ -50,7 +50,6 @@ def sensitivity_config(tmpdirec, observation_config):
 
 
 def test_gridding_baselines(runner, observation_config, tmpdirec):
-
     output = runner.invoke(
         cli.main, ["grid-baselines", observation_config, "--direc", str(tmpdirec)]
     )

@@ -266,7 +266,6 @@ class Observatory:
             disable=not config.PROGRESS,
         ):
             for j in range(i + 1, self.n_antennas):
-
                 bl_len = self.baseline_lengths[i, j]  # in wavelengths
                 if bl_len < bl_min or bl_len > bl_max:
                     continue
