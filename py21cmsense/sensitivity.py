@@ -466,9 +466,8 @@ class PowerSpectrum(Sensitivity):
             good_ks = k >= k1d.min()
             good_ks &= k < k1d.max()
 
-            sense1d_inv[ut.find_nearest(k1d, k[good_ks])] += (
-                1.0 / sense[k_perp][good_ks] ** 2
-            )
+            for cnt, kbin in enumerate(ut.find_nearest(k1d, k[good_ks])):
+                sense1d_inv[kbin] += 1.0 / sense[k_perp][good_ks][cnt] ** 2
 
         # invert errors and take square root again for final answer
         sense1d = np.ones(sense1d_inv.shape) * un.mK**2 * np.inf
@@ -594,7 +593,6 @@ class PowerSpectrum(Sensitivity):
 
         logger.info(f"Writing sensitivies to '{filename}'")
         with h5py.File(filename, "w") as fl:
-
             # TODO: We should be careful to try and write everything into this file
             # i.e. all the parameters etc.
 
