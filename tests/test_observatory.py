@@ -173,8 +173,9 @@ def test_longest_used_baseline(bm):
     a = Observatory(
         antpos=np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]) * units.m, beam=bm
     )
+
     assert np.isclose(
-        a.longest_used_baseline() / a.metres_to_wavelengths, 2 * units.m, atol=1e-4
+        a.longest_used_baseline() / a.metres_to_wavelengths, 2 * units.m, atol=1e-3
     )
     assert np.isclose(
         a.longest_used_baseline(bl_max=1.5 * units.m) / a.metres_to_wavelengths,

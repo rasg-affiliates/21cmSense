@@ -50,6 +50,7 @@ jobs:
           papermill -k sense docs/tutorials/${{ matrix.demo }}.ipynb output-${{ matrix.demo }}.ipynb
 
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: ${{ matrix.demo }}
           path: output-${{ matrix.demo }}.ipynb
