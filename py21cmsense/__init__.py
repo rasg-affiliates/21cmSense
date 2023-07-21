@@ -1,5 +1,12 @@
 """A package for calculate sensitivies of 21-cm interferometers."""
-__version__ = "2.0.0.beta"
+from pkg_resources import DistributionNotFound, get_distribution
+
+try:
+    __version__ = get_distribution("21cmSense").version
+except DistributionNotFound:
+    __version__ = "unknown"
+finally:
+    del get_distribution, DistributionNotFound
 
 from . import yaml
 from .antpos import hera

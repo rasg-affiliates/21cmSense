@@ -17,6 +17,7 @@ import logging
 import numpy as np
 import tqdm
 from astropy import units as un
+from astropy.cosmology import LambdaCDM
 from astropy.cosmology.units import littleh, with_H0
 from astropy.io.misc import yaml
 from attr import validators as vld
@@ -34,16 +35,6 @@ from . import conversions as conv
 from . import observation as obs
 from . import types as tp
 from .theory import _ALL_THEORY_POWER_SPECTRA, EOS2021, TheoryModel
-
-
-def _kconverter(val, allow_unitless=False):
-    if hasattr(val, "unit"):
-        return val.to(littleh / un.Mpc, with_H0(config.COSMO.H0))
-    if not allow_unitless:
-        raise ValueError("no units supplied!")
-    # Assume it has the 1/Mpc units (default from 21cmFAST)
-    return (val / un.Mpc).to(littleh / un.Mpc, with_H0(config.COSMO.H0))
-
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +98,11 @@ class Sensitivity:
         """Clone the object with new parameters."""
         return attr.evolve(self, **kwargs)
 
+    @property
+    def cosmo(self) -> LambdaCDM:
+        """The cosmology to use in the sensitivity calculations."""
+        return self.observation.cosmo
+
 
 @attr.s(kw_only=True)
 class PowerSpectrum(Sensitivity):
@@ -138,22 +134,21 @@ class PowerSpectrum(Sensitivity):
         A function that takes a single kperp and an array of kpar, and returns a boolean
         array specifying which of the k's are useable after accounting for systematics.
         that is, it returns False for k's affected by systematics.
+
     """
 
-    horizon_buffer: tp.Wavenumber = attr.ib(
-        default=0.1 * littleh / un.Mpc,
-        validator=(
-            tp.vld_unit(littleh / un.Mpc, with_H0(config.COSMO.H0)),
-            ut.nonnegative,
-        ),
-        converter=_kconverter,
-    )
+    horizon_buffer: tp.Wavenumber = attr.ib(default=0.1 * littleh / un.Mpc)
     foreground_model: str = attr.ib(
         default="moderate", validator=vld.in_(["moderate", "optimistic"])
     )
     theory_model: TheoryModel = attr.ib()
 
     systematics_mask: Callable | None = attr.ib(None)
+
+    @horizon_buffer.validator
+    def _horizon_buffer_validator(self, att, val):
+        tp.vld_unit(littleh / un.Mpc, with_H0(self.cosmo.H0))(self, att, val)
+        ut.nonnegative(self, att, val)
 
     @classmethod
     def from_yaml(cls, yaml_file) -> Sensitivity:
@@ -202,7 +197,11 @@ class PowerSpectrum(Sensitivity):
     def k1d(self) -> tp.Wavenumber:
         """1D array of wavenumbers for which sensitivities will be generated."""
         delta = (
-            conv.dk_deta(self.observation.redshift, config.COSMO)
+            conv.dk_deta(
+                self.observation.redshift,
+                self.cosmo,
+                approximate=self.observation.use_approximate_cosmo,
+            )
             / self.observation.bandwidth
         )
         dv = delta.value
@@ -211,7 +210,10 @@ class PowerSpectrum(Sensitivity):
     @cached_property
     def X2Y(self) -> un.Quantity[un.Mpc**3 / littleh**3 / un.steradian / un.GHz]:
         """Cosmological scaling factor X^2*Y (eg. Parsons 2012)."""
-        return conv.X2Y(self.observation.redshift)
+        return conv.X2Y(
+            self.observation.redshift,
+            approximate=self.observation.use_approximate_cosmo,
+        )
 
     @cached_property
     def uv_coverage(self) -> np.ndarray:
@@ -232,7 +234,8 @@ class PowerSpectrum(Sensitivity):
 
     def power_normalisation(self, k: tp.Wavenumber) -> float:
         """Normalisation constant for power spectrum."""
-        k = _kconverter(k)
+        assert hasattr(k, "unit")
+        assert k.unit.is_equivalent(littleh / un.Mpc)
 
         return (
             self.X2Y
@@ -254,7 +257,7 @@ class PowerSpectrum(Sensitivity):
         """Sample variance contribution at a particular k mode."""
         k = np.sqrt(k_par**2 + k_perp**2).to_value(
             littleh / un.Mpc if self.theory_model.use_littleh else un.Mpc**-1,
-            with_H0(config.COSMO.H0),
+            with_H0(self.cosmo.H0),
         )
         return self.theory_model.delta_squared(self.observation.redshift, k)
 
@@ -282,7 +285,11 @@ class PowerSpectrum(Sensitivity):
                 continue
 
             umag = np.sqrt(u**2 + v**2)
-            k_perp = umag * conv.dk_du(self.observation.redshift, config.COSMO)
+            k_perp = umag * conv.dk_du(
+                self.observation.redshift,
+                self.cosmo,
+                approximate=self.observation.use_approximate_cosmo,
+            )
 
             hor = self.horizon_limit(umag)
 
@@ -437,7 +444,11 @@ class PowerSpectrum(Sensitivity):
             Horizon limit, in h/Mpc.
         """
         horizon = (
-            conv.dk_deta(self.observation.redshift, config.COSMO)
+            conv.dk_deta(
+                self.observation.redshift,
+                self.cosmo,
+                approximate=self.observation.use_approximate_cosmo,
+            )
             * umag
             / self.observation.frequency
         )
@@ -506,7 +517,7 @@ class PowerSpectrum(Sensitivity):
         """The fiducial 21cm power spectrum evaluated at :attr:`k1d`."""
         k = self.k1d.to_value(
             littleh / un.Mpc if self.theory_model.use_littleh else un.Mpc**-1,
-            with_H0(config.COSMO.H0),
+            with_H0(self.cosmo.H0),
         )
         return self.theory_model.delta_squared(self.observation.redshift, k)
 
@@ -600,7 +611,7 @@ class PowerSpectrum(Sensitivity):
                 fl[k] = v
                 fl[k.replace("noise", "snr")] = self.delta_squared / v
 
-            fl["k"] = self.k1d.to("1/Mpc", with_H0(config.COSMO.H0)).value
+            fl["k"] = self.k1d.to("1/Mpc", with_H0(self.cosmo.H0)).value
             fl["delta_squared"] = self.delta_squared
 
             fl.attrs["total_snr"] = self.calculate_significance()
@@ -622,8 +633,8 @@ class PowerSpectrum(Sensitivity):
             plt.plot(self.k1d, value, label=key)
             plt.xscale("log")
             plt.yscale("log")
-            plt.xlabel("k [1/Mpc]")
-            plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2/{\rm Mpc}^3$")
+            plt.xlabel("k [h/Mpc]")
+            plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2$")
             plt.legend()
             plt.title(f"z={conv.f2z(self.observation.frequency):.2f}")
 

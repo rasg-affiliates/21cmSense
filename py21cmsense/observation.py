@@ -5,6 +5,7 @@ import attr
 import collections
 import numpy as np
 from astropy import units as un
+from astropy.cosmology import LambdaCDM, Planck15
 from astropy.io.misc import yaml
 from attr import validators as vld
 from collections import defaultdict
@@ -79,6 +80,10 @@ class Observation:
     tsky_ref_freq : float or Quantity
         Frequency at which the foreground model is equal to `tsky_amplitude`.
         See `spectral_index`. Default assumed to be in MHz.
+    use_approximate_cosmo : bool
+        Whether to use approximate cosmological conversion factors. Doing so will give
+        the same results as the original 21cmSense code, but non-approximate versions
+        that use astropy are preferred.
     """
 
     observatory: obs.Observatory = attr.ib(validator=vld.instance_of(obs.Observatory))
@@ -124,6 +129,8 @@ class Observation:
         validator=ut.nonnegative,
     )
     tsky_ref_freq: tp.Frequency = attr.ib(default=150 * un.MHz, validator=ut.positive)
+    use_approximate_cosmo: bool = attr.ib(default=False, converter=bool)
+    cosmo: LambdaCDM = attr.ib(default=Planck15)
 
     @classmethod
     def from_yaml(cls, yaml_file):
@@ -283,7 +290,12 @@ class Observation:
 
         Order of the values is the same as `fftfreq` (i.e. zero-first)
         """
-        return conv.dk_deta(self.redshift, config.COSMO) * self.eta
+        return (
+            conv.dk_deta(
+                self.redshift, self.cosmo, approximate=self.use_approximate_cosmo
+            )
+            * self.eta
+        )
 
     @cached_property
     def total_integration_time(self) -> un.Quantity[un.s]:
