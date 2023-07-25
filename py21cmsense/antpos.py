@@ -4,6 +4,8 @@ Each function here defined may take arbitrary parameters, but must return
 a single array of shape (Nant, 3) with units of meters, corresponding to (x,y,z) positions
 of antennae centred at zero.
 """
+from __future__ import annotations
+
 import numpy as np
 from astropy import units as un
 from typing import Optional
@@ -13,9 +15,8 @@ from . import yaml
 
 
 @yaml.yaml_func()
-@un.quantity_input(equivalencies=tp.time_as_distance)
 def hera(
-    hex_num: int,
+    hex_num,
     separation: tp.Length = 14 * un.m,
     split_core: bool = False,
     outriggers: bool = False,
