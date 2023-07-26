@@ -257,9 +257,10 @@ class Observatory:
         bl_min = bl_min.to("m") * self.metres_to_wavelengths
         bl_max = bl_max.to("m") * self.metres_to_wavelengths
 
-        uvw = self.projected_baselines()[:, :, :2]
+        # Everything here is in wavelengths
+        uvw = self.projected_baselines()[:, :, :2].value
         uvw = np.round(uvw, decimals=ndecimals)
-        bl_lens = np.round(self.baseline_lengths, decimals=ndecimals)
+        bl_lens = np.round(self.baseline_lengths.value, decimals=ndecimals)
 
         # group redundant baselines
         for i in tqdm.tqdm(
