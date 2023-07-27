@@ -8,7 +8,7 @@ except PackageNotFoundError:
 finally:
     del version, PackageNotFoundError
 
-from . import yaml
+from . import data, yaml
 from .antpos import hera
 from .beam import GaussianBeam
 from .observation import Observation
