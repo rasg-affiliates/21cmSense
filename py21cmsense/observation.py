@@ -12,9 +12,9 @@ from collections import defaultdict
 from functools import cached_property
 from hickleable import hickleable
 from os import path
+from typing import Any
 
 from . import _utils as ut
-from . import config
 from . import conversions as conv
 from . import observatory as obs
 from . import types as tp
@@ -84,6 +84,8 @@ class Observation:
         Whether to use approximate cosmological conversion factors. Doing so will give
         the same results as the original 21cmSense code, but non-approximate versions
         that use astropy are preferred.
+    cosmo : LambdaCDM
+        An astropy cosmology object to use.
     """
 
     observatory: obs.Observatory = attr.ib(validator=vld.instance_of(obs.Observatory))
@@ -130,7 +132,7 @@ class Observation:
     )
     tsky_ref_freq: tp.Frequency = attr.ib(default=150 * un.MHz, validator=ut.positive)
     use_approximate_cosmo: bool = attr.ib(default=False, converter=bool)
-    cosmo: LambdaCDM = attr.ib(default=Planck15)
+    cosmo: LambdaCDM = attr.ib(default=Planck15, converter=Planck15.from_format)
 
     @classmethod
     def from_yaml(cls, yaml_file):
@@ -156,6 +158,19 @@ class Observation:
 
         observatory = obs.Observatory.from_yaml(data.pop("observatory"))
         return cls(observatory=observatory, **data)
+
+    def __gethstate__(self) -> dict[str, Any]:
+        """Get the hickle state."""
+        d = attr.asdict(self, recurse=False)
+        d["cosmo"] = d["cosmo"].to_format("mapping")
+        del d["cosmo"]["cosmology"]  # The class.
+        return d
+
+    def __sethstate__(self, d: dict[str, Any]) -> None:
+        """Set the hickle state."""
+        d["cosmo"]["cosmology"] = type(Planck15)
+        d["cosmo"] = Planck15.from_format(d["cosmo"])
+        self.__dict__.update(d)
 
     @obs_duration.validator
     def _obs_duration_vld(self, att, val):
