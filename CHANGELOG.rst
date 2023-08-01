@@ -5,10 +5,15 @@ Changelog
 Unreleased
 ==========
 
+Documentation
+-------------
+- Added a tutorial that reproduces Pober (2015) HERA memo results.
+
 Fixed
 -----
 * Bug in ``dL_df`` (missing square).
-* Use ``yaml.SafeLoader`` instead of ``yaml.FullyLoader``.
+* Use ``yaml.SafeLoader`` instead of ``yaml.FullLoader``.
+* Bug when averaging from 2D to 1D that got about half the sensitivity.
 
 Changed
 -------
