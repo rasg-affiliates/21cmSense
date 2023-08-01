@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        demo: ["getting_started", "understanding_21cmsense"]
+        demo: ["getting_started", "understanding_21cmsense", "reproducing_pober_2015"]
     steps:
       - uses: actions/checkout@master
         with:
@@ -27,7 +27,7 @@ jobs:
           mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: true
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.10"
           environment-file: ci/${{ env.ENV_NAME }}.yaml
           activate-environment: ${{ env.ENV_NAME }}
 
@@ -50,6 +50,7 @@ jobs:
           papermill -k sense docs/tutorials/${{ matrix.demo }}.ipynb output-${{ matrix.demo }}.ipynb
 
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: ${{ matrix.demo }}
           path: output-${{ matrix.demo }}.ipynb

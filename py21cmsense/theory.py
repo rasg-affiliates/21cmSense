@@ -94,15 +94,18 @@ class EOS2021(TheoryModel):
         """
         if np.any(k > self.k.max()):
             warnings.warn(
-                f"Extrapolating above the simulated theoretical k: {k.max()} > {self.k.max()}"
+                f"Extrapolating above the simulated theoretical k: {k.max()} > {self.k.max()}",
+                stacklevel=2,
             )
         if np.any(k < self.k.min()):
             warnings.warn(
-                f"Extrapolating below the simulated theoretical k: {k.min()} < {self.k.min()}"
+                f"Extrapolating below the simulated theoretical k: {k.min()} < {self.k.min()}",
+                stacklevel=2,
             )
         if not self.z.min() <= z <= self.z.max():
             warnings.warn(
-                f"Extrapolating beyond simulated redshift range: {z} not in range ({self.z.min(), self.z.max()})"
+                f"Extrapolating beyond simulated redshift range: {z} not in range ({self.z.min(), self.z.max()})",
+                stacklevel=2,
             )
 
         return self.spline(z, k, grid=False) << un.mK**2
@@ -140,13 +143,18 @@ class Legacy21cmFAST(TheoryModel):
         """
         if np.any(k > self.k.max()):
             warnings.warn(
-                f"Extrapolating above the simulated theoretical k: {k.max()} > {self.k.max()}"
+                f"Extrapolating above the simulated theoretical k: {k.max()} > {self.k.max()}",
+                stacklevel=2,
             )
         if np.any(k < self.k.min()):
             warnings.warn(
-                f"Extrapolating below the simulated theoretical k: {k.min()} < {self.k.min()}"
+                f"Extrapolating below the simulated theoretical k: {k.min()} < {self.k.min()}",
+                stacklevel=2,
             )
         if not 9 < z < 10:
-            warnings.warn(f"Theory power corresponds to z=9.5, not z={z:.2f}")
+            warnings.warn(
+                f"Theory power corresponds to z=9.5, not z={z:.2f}",
+                stacklevel=2,
+            )
 
         return self.spline(k) << un.mK**2

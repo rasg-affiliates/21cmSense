@@ -21,5 +21,6 @@ dependencies:
   - pandoc
   - pip
   - python=3.10
-  - sphinx_rtd_theme
   - setuptools_scm
+  - pip:
+    - furo

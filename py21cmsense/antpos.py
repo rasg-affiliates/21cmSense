@@ -4,6 +4,8 @@ Each function here defined may take arbitrary parameters, but must return
 a single array of shape (Nant, 3) with units of meters, corresponding to (x,y,z) positions
 of antennae centred at zero.
 """
+from __future__ import annotations
+
 import numpy as np
 from astropy import units as un
 from typing import Optional
@@ -13,12 +15,12 @@ from . import yaml
 
 
 @yaml.yaml_func()
-@un.quantity_input(equivalencies=tp.time_as_distance)
 def hera(
-    hex_num: int,
+    hex_num,
     separation: tp.Length = 14 * un.m,
     split_core: bool = False,
     outriggers: bool = False,
+    row_separation: tp.Length | None = None,
 ) -> tp.Meters:
     """
     Produce a simple regular hexagonal array.
@@ -45,18 +47,23 @@ def hera(
     """
     sep = separation.to_value("m")
 
+    if row_separation is None:
+        row_sep = sep * np.sqrt(3) / 2
+    else:
+        row_sep = row_separation.to_value("m")
+
     # construct the main hexagon
     positions = []
     for row in range(hex_num - 1, -hex_num + split_core, -1):
         # adding split_core deletes a row if it's true
         for col in range(2 * hex_num - abs(row) - 1):
             x_pos = sep * ((2 - (2 * hex_num - abs(row))) / 2 + col)
-            y_pos = row * sep * np.sqrt(3) / 2
+            y_pos = row * row_sep
             positions.append([x_pos, y_pos, 0])
 
     # basis vectors (normalized to sep)
-    up_right = sep * np.asarray([0.5, np.sqrt(3) / 2, 0])
-    up_left = sep * np.asarray([-0.5, np.sqrt(3) / 2, 0])
+    up_right = sep * np.asarray([0.5, row_sep / sep, 0])
+    up_left = sep * np.asarray([-0.5, row_sep / sep, 0])
 
     # split the core if desired
     if split_core:
@@ -90,7 +97,7 @@ def hera(
                     * sep
                     * (hex_num - 1)
                 )
-                y_pos = row * sep * (hex_num - 1) * np.sqrt(3) / 2
+                y_pos = row * (hex_num - 1) * row_sep
                 theta = np.arctan2(y_pos, x_pos)
                 if np.sqrt(x_pos**2 + y_pos**2) > sep * (hex_num + 1):
                     if 0 < theta <= 2 * np.pi / 3 + 0.01:

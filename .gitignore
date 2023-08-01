@@ -99,7 +99,6 @@ cython_debug/
 pip-wheel-metadata/
 .tox/
 *.pkl
-*.npz
 *.png
 .vscode/
 *MHz.h5

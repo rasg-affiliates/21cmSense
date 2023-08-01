@@ -257,7 +257,11 @@ class Observatory:
         bl_min = bl_min.to("m") * self.metres_to_wavelengths
         bl_max = bl_max.to("m") * self.metres_to_wavelengths
 
-        uvw = self.projected_baselines()
+        # Everything here is in wavelengths
+        uvw = self.projected_baselines()[:, :, :2].value
+        uvw = np.round(uvw, decimals=ndecimals)
+        bl_lens = np.round(self.baseline_lengths.value, decimals=ndecimals)
+
         # group redundant baselines
         for i in tqdm.tqdm(
             range(self.n_antennas - 1),
@@ -266,22 +270,15 @@ class Observatory:
             disable=not config.PROGRESS,
         ):
             for j in range(i + 1, self.n_antennas):
-
-                bl_len = self.baseline_lengths[i, j]  # in wavelengths
+                bl_len = bl_lens[i, j]  # in wavelengths
                 if bl_len < bl_min or bl_len > bl_max:
                     continue
 
-                u, v = uvw[i, j][:2]
-
-                uvbin = (
-                    ut.trunc(u, ndecimals=ndecimals),
-                    ut.trunc(v, ndecimals=ndecimals),
-                    ut.trunc(bl_len, ndecimals=ndecimals),
-                )
+                u, v = uvw[i, j]
 
                 # add the uv point and its inverse to the redundant baseline dict.
-                uvbins[uvbin].append((i, j))
-                uvbins[(-uvbin[0], -uvbin[1], uvbin[2])].append((j, i))
+                uvbins[(u, v, bl_len)].append((i, j))
+                uvbins[(-u, -v, bl_len)].append((j, i))
 
         return uvbins
 
