@@ -3,11 +3,12 @@
 This is simply so that one can calculate sample variance values for a particular
 theoretical model, with a uniform interface.
 
-To register a class as a theory power spectrum, simply decorate it with ``theorypower``.
-You must define two things on the class: (1) a class attribute "use_littleh" which
-says whether the function that evaluates the power spectrum expects the wavenumber in
-h/Mpc or 1/Mpc, and (2) a ``__call__`` method, which takes in a float redshift and
-an array of wavenumbers, and returns Delta^2 as an astropy Quantity with units mK^2.
+To register a class as a theory power spectrum, simply make it a subclass of
+``TheoryModel``. You must define two things on the class: (1) a class attribute
+"use_littleh" which says whether the function that evaluates the power spectrum expects
+the wavenumber in h/Mpc or 1/Mpc, and (2) a ``__call__`` method, which takes in a float
+redshift and an array of wavenumbers, and returns Delta^2 as an astropy Quantity with
+units mK^2.
 """
 import abc
 import numpy as np
