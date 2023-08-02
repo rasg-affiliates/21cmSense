@@ -6,7 +6,7 @@ from astropy import units
 from astropy.cosmology.units import littleh
 
 from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum
-from py21cmsense.sensitivity import Sensitivity, _kconverter
+from py21cmsense.sensitivity import Sensitivity
 
 
 @pytest.fixture(scope="module")
@@ -94,11 +94,6 @@ def test_write_to_custom_filename(observation, tmp_path):
         ps = PowerSpectrum(observation=observation)
         out2 = ps.write(filename=out)
     assert out2 == out
-
-
-def test_kconverter():
-    with pytest.raises(ValueError, match="no units supplied!"):
-        _kconverter(1)
 
 
 def test_load_yaml_bad():

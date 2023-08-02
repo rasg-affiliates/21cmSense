@@ -1,7 +1,14 @@
 """A package for calculate sensitivies of 21-cm interferometers."""
-__version__ = "2.0.0.beta"
+from importlib.metadata import PackageNotFoundError, version
 
-from . import theory, yaml
+try:
+    __version__ = version("21cmSense")
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "unknown"
+finally:
+    del version, PackageNotFoundError
+
+from . import data, theory, yaml
 from .antpos import hera
 from .baseline_filters import BaselineRange
 from .beam import GaussianBeam

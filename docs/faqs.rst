@@ -33,6 +33,19 @@ this.
 How do I use my custom theory function from the CLI?
 ----------------------------------------------------
 
+If you have defined a custom theory model as in the previous question, you can use it
+from the command line by adding a couple of lines to your sensitivity YAML
+configuration. Imagine you wrote a package called ``my_theory``, within which there
+was a module called ``module`` containing the ``PowerLaw`` class defined above (in
+practice, whatever module ``PowerLaw`` resides in just has to be importable on the
+``PYTHONPATH`` of your environment). You would then add the following lines to your
+sensitivity YAML configuration::
+
+    plugins:
+      my_theory.module
+
+    theory_model:
+      PowerLaw
 
 
 How do I change cosmology?
