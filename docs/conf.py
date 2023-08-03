@@ -53,16 +53,16 @@ html_use_smartypants = True
 html_last_updated_fmt = "%b %d, %Y"
 html_split_index = False
 
-# html_sidebars = {
-#     "**": [
-#         "sidebar/scroll-start.html",
-#         "sidebar/brand.html",
-#         "sidebar/search.html",
-#         "sidebar/navigation.html",
-#         "sidebar/ethical-ads.html",
-#         "sidebar/scroll-end.html",
-#     ]
-# }
+html_sidebars = {
+    "**": [
+        "sidebar/scroll-start.html",
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/navigation.html",
+        "sidebar/ethical-ads.html",
+        "sidebar/scroll-end.html",
+    ]
+}
 html_short_title = f"{project}-{version}"
 
 napoleon_use_ivar = True
