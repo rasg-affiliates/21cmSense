@@ -151,7 +151,7 @@ def X2Y(
     z: Union[float, np.array],
     cosmo: FLRW = Planck15,
     approximate=False,
-) -> un.Quantity[un.Mpc**3 / littleh**3 / un.steradian / un.GHz]:
+) -> un.Quantity[un.Mpc**3 / littleh**3 / un.steradian / un.MHz]:
     """
     Obtain the conversion factor between observing co-ordinates and cosmological volume.
 
