@@ -11,6 +11,7 @@ jobs:
         shell: bash -l {0}
     env:
       ENV_NAME: testing
+      CODECOV_TOKEN: 33e4e5c9-35d9-49d0-9eeb-4dee15c131a4
     strategy:
       fail-fast: false
       matrix:
