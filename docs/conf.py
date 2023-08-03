@@ -20,6 +20,7 @@ extensions = [
     "numpydoc",
     "nbsphinx",
     "IPython.sphinxext.ipython_console_highlighting",
+    "sphinx_design",
 ]
 if os.getenv("SPELLCHECK"):
     extensions += ("sphinxcontrib.spelling",)
