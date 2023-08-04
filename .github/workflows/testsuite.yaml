@@ -12,6 +12,7 @@ jobs:
     env:
       ENV_NAME: testing
       CODECOV_TOKEN: 33e4e5c9-35d9-49d0-9eeb-4dee15c131a4
+      CODECOV_STATIC_ANALYSIS: ${{ secrets.CODECOV_STATIC_ANALYSIS }}
     strategy:
       fail-fast: false
       matrix:
@@ -20,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2.0.0
@@ -52,4 +53,5 @@ jobs:
           pip install codecov-cli
           codecovcli create-commit
           codecovcli create-report
+          codecovcli static-analysis --token=${{ env.CODECOV_STATIC_ANALYSIS }}
           codecovcli do-upload
