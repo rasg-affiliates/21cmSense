@@ -11,6 +11,7 @@ jobs:
         shell: bash -l {0}
     env:
       ENV_NAME: testing
+      CODECOV_TOKEN: 33e4e5c9-35d9-49d0-9eeb-4dee15c131a4
     strategy:
       fail-fast: false
       matrix:
@@ -46,7 +47,9 @@ jobs:
         run: |
           python -m pytest --cov=py21cmsense --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
 
-      - uses: codecov/codecov-action@v2
-        if: success()
-        with:
-          file: ./coverage.xml #optional
+      - name: Upload Coverage
+        run: |
+          pip install codecov-cli
+          codecovcli create-commit
+          codecovcli create-report
+          codecovcli do-upload
