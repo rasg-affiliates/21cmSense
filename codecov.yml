@@ -1,0 +1,26 @@
+# codecov:
+#   notify:
+#     require_ci_to_pass: yes
+#   max_report_age: off
+
+# coverage:
+#   precision: 2
+#   round: down
+#   range: "70...90"
+
+#   status:
+#     project: yes
+#     patch: yes
+#     changes: no
+
+beta_groups:
+  - "labels"
+
+flag_management:
+  individual_flags:
+    - name: smart-tests
+      carryforward: true
+      carryforward_mode: "labels"
+      statuses:
+        - type: "project"
+        - type: "patch"
