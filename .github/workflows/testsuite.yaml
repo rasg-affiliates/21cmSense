@@ -54,4 +54,6 @@ jobs:
           codecovcli create-commit
           codecovcli create-report
           codecovcli static-analysis --token=${{ env.CODECOV_STATIC_ANALYSIS }}
+          BASE_COMMIT=$(git merge-base ${{ github.sha }}^ origin/main)
+          codecovcli label-analysis --token=${{ env.CODECOV_STATIC_ANALYSIS }} --base-sha=${BASE_COMMIT}
           codecovcli do-upload
