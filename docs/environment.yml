@@ -24,3 +24,4 @@ dependencies:
   - setuptools_scm
   - pip:
     - furo
+    - sphinx_design

@@ -51,12 +51,11 @@ sensitivity YAML configuration::
 How do I change cosmology?
 --------------------------
 
-You can change the cosmology via the ``config`` module, eg.::
+You can change the cosmology in the ``Obervation`` class::
 
-    >>> from py21cmsense import config
+    >>> from py21cmsense import Observation
     >>> from astropy.cosmology import WMAP9
-    >>> config.COSMO = WMAP9
-    >>> # Run standard 21cmSense calculations...
+    >>> obs = Observation(cosmo=WMAP9, ...)
 
 In practice, the cosmology makes little difference in the calculcations.
 

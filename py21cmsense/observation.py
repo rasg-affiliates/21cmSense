@@ -171,7 +171,7 @@ class Observation:
     @lst_bin_size.validator
     def _obs_duration_vld(self, att, val):
         if val > self.time_per_day:
-            raise ValueError("obs_duration must be <= time_per_day")
+            raise ValueError("lst_bin_size must be <= time_per_day")
 
     @integration_time.validator
     def _integration_time_vld(self, att, val):

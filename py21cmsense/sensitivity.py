@@ -144,9 +144,6 @@ class PowerSpectrum(Sensitivity):
         A function that takes a single kperp and an array of kpar, and returns a boolean
         array specifying which of the k's are useable after accounting for systematics.
         that is, it returns False for k's affected by systematics.
-    taper
-        A frequency taper function used to ensure smoothness of a Fourier transform
-        over frequency. This reduces the effective amount of data actually used
     """
 
     horizon_buffer: tp.Wavenumber = attr.ib(default=0.1 * littleh / un.Mpc)
@@ -156,7 +153,11 @@ class PowerSpectrum(Sensitivity):
     theory_model: TheoryModel = attr.ib()
 
     systematics_mask: Callable | None = attr.ib(None)
-    taper: Callable | None = attr.ib(None)
+
+    @horizon_buffer.validator
+    def _horizon_buffer_validator(self, att, val):
+        tp.vld_unit(littleh / un.Mpc, with_H0(self.cosmo.H0))(self, att, val)
+        ut.nonnegative(self, att, val)
 
     @horizon_buffer.validator
     def _horizon_buffer_validator(self, att, val):
