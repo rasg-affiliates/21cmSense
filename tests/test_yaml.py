@@ -2,6 +2,7 @@ import pytest
 
 import numpy as np
 import pickle
+from astropy import units as un
 from astropy.io.misc import yaml
 
 from py21cmsense.yaml import LoadError
@@ -46,3 +47,15 @@ def test_npz_loader(tmpdirec):
     for k, v in d.items():
         assert k in obj
         assert np.allclose(v, obj[k])
+
+
+def test_txt_loader_with_unit(tmpdirec):
+    txt = tmpdirec / "test-txt.txt"
+
+    obj = np.linspace(0, 1, 10)
+
+    np.savetxt(txt, obj)
+
+    d = yaml.load(f"!txt {txt} | m")
+    assert d.unit == un.m
+    assert np.allclose(d, obj * un.m)

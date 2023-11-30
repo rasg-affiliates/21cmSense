@@ -3,6 +3,7 @@ import inspect
 import numpy as np
 import pickle
 import yaml
+from astropy import units as un
 from astropy.io.misc.yaml import AstropyLoader
 from functools import wraps
 
@@ -18,7 +19,12 @@ class LoadError(IOError):
 
 
 def data_loader(tag=None):
-    """A decorator that turns a function into a YAML tag for loading external datafiles."""
+    """A decorator that turns a function into a YAML tag for loading external datafiles.
+
+    The form of the tag is::
+
+        !<tag> <path_to_data> [| <unit>]
+    """
 
     def inner(fnc):
         _DATA_LOADERS[fnc.__name__] = fnc
@@ -39,7 +45,18 @@ def data_loader(tag=None):
                 raise LoadError(str(e))
 
         def yaml_fnc(loader, node):
-            return wrapper(node.value)
+            args = node.value.split("|")
+            if len(args) == 1:
+                return wrapper(node.value)
+            elif len(args) == 2:
+                # Return with a unit
+                return wrapper(args[0].strip()) * getattr(un, args[1].strip())
+            else:
+                raise ValueError(
+                    f"Too many arguments in {new_tag} tag. "
+                    "Should be of the form: "
+                    f"!{new_tag} <path_to_data> | <unit>"
+                )
 
         for loader in _YAML_LOADERS:
             yaml.add_constructor(f"!{new_tag}", yaml_fnc, Loader=loader)
