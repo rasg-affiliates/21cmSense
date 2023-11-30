@@ -159,11 +159,6 @@ class PowerSpectrum(Sensitivity):
         tp.vld_unit(littleh / un.Mpc, with_H0(self.cosmo.H0))(self, att, val)
         ut.nonnegative(self, att, val)
 
-    @horizon_buffer.validator
-    def _horizon_buffer_validator(self, att, val):
-        tp.vld_unit(littleh / un.Mpc, with_H0(self.cosmo.H0))(self, att, val)
-        ut.nonnegative(self, att, val)
-
     @classmethod
     def from_yaml(cls, yaml_file) -> Sensitivity:
         """
