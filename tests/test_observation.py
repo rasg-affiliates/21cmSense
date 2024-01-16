@@ -26,7 +26,7 @@ def test_units(observatory):
     obs = Observation(observatory=observatory)
 
     assert obs.time_per_day.unit == units.hour
-    assert obs.lst_bin_width.to("min").unit == units.min
+    assert obs.lst_bin_size.to("min").unit == units.min
     assert obs.integration_time.to("s").unit == units.s
     assert obs.bandwidth.to("MHz").unit == units.MHz
     assert obs.bl_min.to("m").unit == units.m

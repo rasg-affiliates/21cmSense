@@ -129,7 +129,7 @@ def test_systematics_mask(observation):
 
 def test_track(observatory):
     """Test that setting `track` is the same as setting lst_bin_width."""
-    obs1 = Observation(observatory=observatory, lst_bin_width=1 * units.hour)
+    obs1 = Observation(observatory=observatory, lst_bin_size=1 * units.hour)
     obs2 = Observation(observatory=observatory, track=1 * units.hour)
 
     assert np.all(obs1.uv_coverage == obs2.uv_coverage)
