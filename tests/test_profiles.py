@@ -1,3 +1,5 @@
+import pytest
+
 import astropy.units as un
 import numpy as np
 
@@ -20,9 +22,13 @@ def test_load_hera_with_custom():
     assert hera.Trcv == 200 * un.K
 
 
-def test_load_others():
-    obs = []
-    for profile in get_builtin_profiles():
-        obs.append(Observatory.from_profile(profile))
+all_profiles = [Observatory.from_profile(p) for p in get_builtin_profiles()]
 
-    assert len({np.sum(o.antpos) for o in obs}) == len(obs)
+
+def test_load_others():
+    assert len({np.sum(o.antpos) for o in all_profiles}) == len(all_profiles)
+
+
+def test_bad_profile():
+    with pytest.raises(FileNotFoundError, match="profile invalid not available"):
+        Observatory.from_profile("invalid")
