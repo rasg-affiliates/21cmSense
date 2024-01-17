@@ -113,6 +113,11 @@ class Sensitivity:
         """The cosmology to use in the sensitivity calculations."""
         return self.observation.cosmo
 
+    @property
+    def frequency(self) -> un.Quantity[un.MHz]:
+        """The frequency of the observation."""
+        return self.observation.frequency
+
 
 @attr.s(kw_only=True)
 class PowerSpectrum(Sensitivity):

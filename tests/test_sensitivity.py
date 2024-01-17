@@ -144,6 +144,16 @@ def test_clone(observation):
     assert ps2 == ps
 
 
+def test_at_freq(observation):
+    ps = PowerSpectrum(
+        observation=observation,
+    )
+    ps2 = ps.at_frequency(1.1 * observation.frequency)
+
+    assert ps2.frequency == 1.1 * observation.frequency
+    assert ps.calculate_significance() != ps2.calculate_significance()
+
+
 def test_bad_theory(observation):
     with pytest.raises(
         ValueError, match="The theory_model must be an instance of TheoryModel"

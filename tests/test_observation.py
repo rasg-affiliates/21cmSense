@@ -84,3 +84,27 @@ def test_from_yaml(observatory):
 
     with pytest.raises(ValueError, match="yaml_file must be a string filepath"):
         Observation.from_yaml(3)
+
+
+def test_huge_lst_bin_size(observatory: Observatory):
+    with pytest.raises(ValueError, match="lst_bin_size must be <= time_per_day"):
+        Observation(observatory=observatory, lst_bin_size=23 * units.hour)
+
+
+def test_huge_integration_time(observatory: Observatory):
+    with pytest.raises(ValueError, match="integration_time must be <= lst_bin_size"):
+        Observation(
+            observatory=observatory,
+            lst_bin_size=1 * units.hour,
+            integration_time=2 * units.hour,
+        )
+
+
+def test_trcv_func(observatory: Observatory):
+    observatory = observatory.clone(Trcv=lambda f: (f / units.MHz) * 10 * units.mK)
+
+    obs = Observation(
+        observatory=observatory,
+    )
+    assert obs.Trcv.unit == units.K
+    assert obs.Trcv == (observatory.beam.frequency / units.MHz) * 0.01 * units.K

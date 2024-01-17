@@ -99,13 +99,19 @@ class Observatory:
 
     @Trcv.validator
     def _trcv_vld(self, att, val):
-        try:
-            y = val(1 * un.MHz)
+        if callable(val):
+            try:
+                y = val(1 * un.MHz)
+            except Exception as e:
+                raise ValueError(
+                    "Trcv function must take a frequency Quantity and return a temperature Quantity."
+                ) from e
+
             if not (
                 isinstance(y, un.Quantity) and y.unit.physical_type == "temperature"
             ):
                 raise ValueError("Trcv function must return a temperature Quantity.")
-        except Exception:
+        else:
             tp.vld_physical_type("temperature")(self, att, val)
 
     @property

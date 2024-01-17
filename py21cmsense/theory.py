@@ -116,24 +116,25 @@ class EOS2021(TheorySpline):
         self.spline = RectBivariateSpline(self.z, self.k, self.coeval_ps, ky=1)
 
 
+def _get_eos2016_data(name: str):
+    pth = Path(__file__).parent / f"data/{name}"
+    all_files = sorted(pth.glob("ps_no_halos*"))
+    z = np.array([float(f.name.split("_")[3][1:]) for f in all_files])
+    k = np.genfromtxt(all_files[0])[:, 0]
+
+    coeval_ps = np.array([np.genfromtxt(fl)[:, 1] for fl in all_files])
+
+    spline = RectBivariateSpline(z, k, coeval_ps, ky=1)
+    return z, k, coeval_ps, spline
+
+
 class EOS2016Faint(TheorySpline):
     """Theory model from EOS2016 Faint Galaxies."""
 
     use_littleh = False
 
     def __init__(self):
-        pth = Path(__file__).parent / "data/eos16-faint"
-        all_files = sorted(pth.glob("ps_no_halos*"))
-        self.z = np.array([float(f.name.split("_")[3][1:]) for f in all_files])
-
-        # TODO: we divide by 2.5 here as the k values on the EOS2021 GDrive are wrong --
-        # they are for the 600 Mpc box instead of the 1.5 Gpc box. Later when that's
-        # fixed we should just fix the data here.
-        self.k = np.genfromtxt(all_files[0])[:, 0]
-
-        self.coeval_ps = np.array([np.genfromtxt(fl)[:, 1] for fl in all_files])
-
-        self.spline = RectBivariateSpline(self.z, self.k, self.coeval_ps, ky=1)
+        self.z, self.k, self.coeval_ps, self.spline = _get_eos2016_data("eos16-faint")
 
 
 class EOS2016Bright(TheorySpline):
@@ -142,18 +143,7 @@ class EOS2016Bright(TheorySpline):
     use_littleh = False
 
     def __init__(self):
-        pth = Path(__file__).parent / "data/eos16-bright"
-        all_files = sorted(pth.glob("ps_no_halos*"))
-        self.z = np.array([float(f.name.split("_")[3][1:]) for f in all_files])
-
-        # TODO: we divide by 2.5 here as the k values on the EOS2021 GDrive are wrong --
-        # they are for the 600 Mpc box instead of the 1.5 Gpc box. Later when that's
-        # fixed we should just fix the data here.
-        self.k = np.genfromtxt(all_files[0])[:, 0]
-
-        self.coeval_ps = np.array([np.genfromtxt(fl)[:, 1] for fl in all_files])
-
-        self.spline = RectBivariateSpline(self.z, self.k, self.coeval_ps, ky=1)
+        self.z, self.k, self.coeval_ps, self.spline = _get_eos2016_data("eos16-bright")
 
 
 class Legacy21cmFAST(TheoryModel):

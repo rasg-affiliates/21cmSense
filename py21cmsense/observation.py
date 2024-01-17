@@ -169,14 +169,14 @@ class Observation:
         self.__dict__.update(d)
 
     @lst_bin_size.validator
-    def _obs_duration_vld(self, att, val):
+    def _lst_bin_size_vld(self, att, val):
         if val > self.time_per_day:
             raise ValueError("lst_bin_size must be <= time_per_day")
 
     @integration_time.validator
     def _integration_time_vld(self, att, val):
         if val > self.lst_bin_size:
-            raise ValueError("integration_time must be <= obs_duration")
+            raise ValueError("integration_time must be <= lst_bin_size")
 
     @lst_bin_size.default
     def _obstime_default(self):
