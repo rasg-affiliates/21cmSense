@@ -7,6 +7,7 @@ from astropy.coordinates import EarthLocation
 from pathlib import Path
 
 from py21cmsense import Observatory
+from py21cmsense.baseline_filters import BaselineRange
 from py21cmsense.beam import GaussianBeam
 
 
@@ -39,6 +40,20 @@ def test_observatory_class(bm):
 def test_Trcv(bm):
     a = Observatory(antpos=np.zeros((3, 3)) * units.m, beam=bm, Trcv=10 * units.mK)
     assert a.Trcv.unit == units.mK
+
+
+def test_Trcv_func(bm):
+    a = Observatory(
+        antpos=np.zeros((3, 3)) * units.m,
+        beam=bm,
+        Trcv=lambda f: (f / units.MHz) * 10 * units.mK,
+    )
+    assert a.Trcv(7 * units.Hz).unit.is_equivalent(units.K)
+
+
+def test_Trcv_func_bad(bm):
+    with pytest.raises(ValueError, match="Trcv function must return a temperature"):
+        Observatory(antpos=np.zeros((3, 3)) * units.m, beam=bm, Trcv=lambda f: 3)
 
 
 def test_observatory(bm):
@@ -199,3 +214,17 @@ def test_from_yaml(bm):
 
     with pytest.raises(ValueError):
         Observatory.from_yaml(3)
+
+
+def test_get_redundant_baselines(bm):
+    a = Observatory(
+        antpos=np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]) * units.m, beam=bm
+    )
+
+    reds = a.get_redundant_baselines()
+    assert len(reds) == 4  # len-1, len-2 and backwards
+
+    reds = a.get_redundant_baselines(
+        baseline_filters=BaselineRange(bl_max=1.5 * units.m)
+    )
+    assert len(reds) == 2  # len-1

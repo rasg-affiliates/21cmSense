@@ -52,7 +52,6 @@ html_theme = "furo"
 html_use_smartypants = True
 html_last_updated_fmt = "%b %d, %Y"
 html_split_index = False
-
 html_sidebars = {
     "**": [
         "sidebar/scroll-start.html",

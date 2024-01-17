@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 
-from py21cmsense.theory import EOS2021, Legacy21cmFAST
+from py21cmsense.theory import EOS2021, EOS2016Bright, EOS2016Faint, Legacy21cmFAST
 
 
 def test_eos_extrapolation():
@@ -40,3 +40,10 @@ def test_legacy():
         UserWarning, match="Extrapolating below the simulated theoretical k"
     ):
         theory.delta_squared(9.5, np.array([0.0001, 0.1]))
+
+
+def test_eos_2016():
+    faint = EOS2016Faint()
+    bright = EOS2016Bright()
+
+    assert faint.delta_squared(9.1, 1.0) != bright.delta_squared(9.1, 1.0)

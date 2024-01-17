@@ -8,8 +8,9 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
-from . import data, yaml
+from . import data, theory, yaml
 from .antpos import hera
+from .baseline_filters import BaselineRange
 from .beam import GaussianBeam
 from .observation import Observation
 from .observatory import Observatory

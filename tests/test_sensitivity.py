@@ -5,7 +5,7 @@ import warnings
 from astropy import units
 from astropy.cosmology.units import littleh
 
-from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum
+from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum, theory
 from py21cmsense.sensitivity import Sensitivity
 
 
@@ -128,8 +128,8 @@ def test_systematics_mask(observation):
 
 
 def test_track(observatory):
-    """Test that setting `track` is the same as setting obs_duration."""
-    obs1 = Observation(observatory=observatory, obs_duration=1 * units.hour)
+    """Test that setting `track` is the same as setting lst_bin_width."""
+    obs1 = Observation(observatory=observatory, lst_bin_size=1 * units.hour)
     obs2 = Observation(observatory=observatory, track=1 * units.hour)
 
     assert np.all(obs1.uv_coverage == obs2.uv_coverage)
@@ -142,6 +142,17 @@ def test_clone(observation):
 
     ps2 = ps.clone()
     assert ps2 == ps
+
+
+def test_at_freq(observation):
+    ps = PowerSpectrum(observation=observation, theory_model=theory.EOS2016Bright())
+    ps2 = ps.at_frequency(0.9 * observation.frequency)
+
+    assert ps2.frequency == 0.9 * observation.frequency
+    with pytest.warns(
+        UserWarning, match="Extrapolating above the simulated theoretical"
+    ):
+        assert ps.calculate_significance() != ps2.calculate_significance()
 
 
 def test_bad_theory(observation):
