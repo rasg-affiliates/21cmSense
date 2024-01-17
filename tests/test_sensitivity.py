@@ -5,7 +5,7 @@ import warnings
 from astropy import units
 from astropy.cosmology.units import littleh
 
-from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum
+from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum, theory
 from py21cmsense.sensitivity import Sensitivity
 
 
@@ -145,13 +145,14 @@ def test_clone(observation):
 
 
 def test_at_freq(observation):
-    ps = PowerSpectrum(
-        observation=observation,
-    )
-    ps2 = ps.at_frequency(1.1 * observation.frequency)
+    ps = PowerSpectrum(observation=observation, theory_model=theory.EOS2016Bright())
+    ps2 = ps.at_frequency(0.9 * observation.frequency)
 
-    assert ps2.frequency == 1.1 * observation.frequency
-    assert ps.calculate_significance() != ps2.calculate_significance()
+    assert ps2.frequency == 0.9 * observation.frequency
+    with pytest.warns(
+        UserWarning, match="Extrapolating above the simulated theoretical"
+    ):
+        assert ps.calculate_significance() != ps2.calculate_significance()
 
 
 def test_bad_theory(observation):
