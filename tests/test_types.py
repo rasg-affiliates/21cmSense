@@ -35,3 +35,20 @@ def test_vld_unit():
         K(1 * u.s)
 
     assert K(1 * u.MHz).a.unit.physical_type == "frequency"
+
+
+def test_tuplify():
+    x = tp._tuplify(1)
+    assert x == (1,)
+
+    x = tp._tuplify([1])
+    assert x == (1,)
+
+    x = tp._tuplify((1,))
+    assert x == (1,)
+
+    x = tp._tuplify((1, 2))
+    assert x == (1, 2)
+
+    x = tp._tuplify(None, n=3)
+    assert x == (None, None, None)

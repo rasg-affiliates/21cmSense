@@ -98,10 +98,25 @@ class Sensitivity:
         """Clone the object with new parameters."""
         return attr.evolve(self, **kwargs)
 
+    def at_frequency(self, frequency: un.Quantity[un.MHz]) -> Sensitivity:
+        """Return a new object at a new frequency."""
+        return self.clone(
+            observation=self.observation.clone(
+                observatory=self.observation.observatory.clone(
+                    beam=self.observation.observatory.beam.clone(frequency=frequency)
+                )
+            )
+        )
+
     @property
     def cosmo(self) -> LambdaCDM:
         """The cosmology to use in the sensitivity calculations."""
         return self.observation.cosmo
+
+    @property
+    def frequency(self) -> un.Quantity[un.MHz]:
+        """The frequency of the observation."""
+        return self.observation.frequency
 
 
 @attr.s(kw_only=True)
@@ -134,7 +149,6 @@ class PowerSpectrum(Sensitivity):
         A function that takes a single kperp and an array of kpar, and returns a boolean
         array specifying which of the k's are useable after accounting for systematics.
         that is, it returns False for k's affected by systematics.
-
     """
 
     horizon_buffer: tp.Wavenumber = attr.ib(default=0.1 * littleh / un.Mpc)
@@ -317,6 +331,8 @@ class PowerSpectrum(Sensitivity):
             thermal = self.thermal_noise(kpars, k_perp, trms)
             sample = self.sample_noise(kpars, k_perp)
 
+            # The following assumes that the power spectra are averaged with inverse
+            # variance weighting.
             t = 1.0 / thermal**2
             s = 1.0 / sample**2
             ts = 1.0 / (thermal + sample) ** 2
@@ -373,9 +389,23 @@ class PowerSpectrum(Sensitivity):
                 continue
 
             final_sense[k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
-            final_sense[k_perp][mask] = sense[k_perp][mask] ** -0.5 / np.sqrt(
-                self.observation.n_lst_bins
-            )
+            if thermal:
+                total_std = thermal_std = 1 / np.sqrt(
+                    self._nsamples_2d["thermal"][k_perp][mask]
+                    * self.observation.n_lst_bins
+                )
+            if sample:
+                total_std = sample_std = 1 / np.sqrt(
+                    self._nsamples_2d["sample"][k_perp][mask]
+                    * (
+                        self.observation.time_per_day
+                        / self.observation.beam_crossing_time
+                    ).to("")
+                )
+            if thermal and sample:
+                total_std = thermal_std + sample_std
+
+            final_sense[k_perp][mask] = total_std
 
         return final_sense
 
