@@ -77,7 +77,7 @@ Some of the key new features introduced in this version of 21cmSense include:
    class from which the sensitivity of differing summary statistics can be defined.
    Currently, its only implementation is the `PowerSpectrum` class, which computes the
    classic sensitivity of the (map-making style) power spectrum. However, the framework
-   can be extended to other summaries, for example wavelets [@greig].
+   can be extended to other summaries, for example wavelets [@Trott2016a].
 6. Improved speed: the new version of 21cmSense is significantly faster than the legacy
    version, due to a number of vectorization improvements in the code.
 7. Built-in profiles for several major experiments: MWA, HERA and SKA-1. These can be
@@ -89,26 +89,10 @@ Some of the key new features introduced in this version of 21cmSense include:
 
 `21cmSense` provides a simple interface for computing the expected sensitivity of
 radio interferometers that aim to measure the 21cm line of neutral hydrogen.
-This field is growing rapidly, with a number of experiments currently underway or
-in the planning stages. `21cmSense` provides a tool for the design of these experiments,
-as already used in [@pober14; @pober16; @Greig2020], and also for forecasting parameter constraints
-from the data they will produce, as seen in eg. [@Greig2015; @Greig2017; @Greig2018, @Breitman2024].
-
-
-# Citations
-
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
-
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
-
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
-
+This field is growing rapidly, with a number of experiments currently underway or in the planning stages.
+Historically, `21cmSense` has been a trusted tool for the design of these experiments [@Pober2013; @Pober2014; @Greig2020] and for forecasting parameter constraints [@Greig2015; @Greig2017; @Greig2018].
+This overhauled, modularized version of `21cmSense` provides a more user-friendly interface, improved performance, and the extensibility required for the next generation, as evidenced by its usage in the
+literature [@Brietman2024,@Schosser2024].
 
 # Acknowledgements
 
