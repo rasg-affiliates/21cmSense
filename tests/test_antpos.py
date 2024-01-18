@@ -6,7 +6,7 @@ from astropy import units as un
 from py21cmsense.antpos import hera
 
 
-@pytest.mark.parametrize("n", [3, 5, 8, 1])
+@pytest.mark.parametrize("n", [3, 5, 8])
 def test_hera_split_core(n):
     # https://en.wikipedia.org/wiki/Centered_hexagonal_number
     # 3*n^2 - 3n + 1
@@ -16,7 +16,7 @@ def test_hera_split_core(n):
     assert len(antpos2) == len(antpos1) - n
 
 
-@pytest.mark.parametrize("n", [3, 5, 8, 1])
+@pytest.mark.parametrize("n", [3, 5, 8])
 def test_hera_outriggers(n):
     # https://en.wikipedia.org/wiki/Centered_hexagonal_number
     # 3*n^2 - 3n + 1

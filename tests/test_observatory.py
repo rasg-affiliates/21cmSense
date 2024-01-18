@@ -28,7 +28,7 @@ def test_antpos(bm):
         Observatory(antpos=np.zeros((10, 3)) * units.s, beam=bm)
 
     # Need more than one antenna
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError, match="antpos must have at least two antennas"):
         Observatory(antpos=np.zeros((1, 3)) * units.m, beam=bm)
 
 
