@@ -34,3 +34,8 @@ def test_hera_set_row_sep():
 
     antpos3 = hera(4, row_separation=12.12 * un.m)
     assert not np.allclose(antpos1, antpos3)
+
+
+def test_bad_hex_num():
+    with pytest.raises(ValueError):
+        hera(1)

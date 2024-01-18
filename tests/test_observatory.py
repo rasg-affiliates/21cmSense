@@ -2,6 +2,7 @@ import pytest
 
 import numpy as np
 import pyuvdata
+import re
 from astropy import units
 from astropy.coordinates import EarthLocation
 from pathlib import Path
@@ -30,6 +31,14 @@ def test_antpos(bm):
     # Need more than one antenna
     with pytest.raises(ValueError, match="antpos must have at least two antennas"):
         Observatory(antpos=np.zeros((1, 3)) * units.m, beam=bm)
+
+    with pytest.raises(ValueError, match="antpos must be a 2D array"):
+        Observatory(antpos=np.zeros(10) * units.m, beam=bm)
+
+    with pytest.raises(
+        ValueError, match=re.escape("antpos must have shape (Nants, 3)")
+    ):
+        Observatory(antpos=np.zeros((10, 2)) * units.m, beam=bm)
 
 
 def test_observatory_class(bm):
