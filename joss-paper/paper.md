@@ -33,17 +33,17 @@ bibliography: paper.bib
 The 21cm line of neutral hydrogen is a powerful probe of the high-redshift
 universe, and is the subject of a number of current and upcoming
 low-frequency radio experiments, including the MWA [@mwa], LOFAR [@lofar], HERA [@hera]
-and the SKA [@ska].
+and the SKA [@Pritchard2015].
 21cmSense is a Python package that provides a modular framework for calculating the
 sensitivity of these experiments, in order to enhance the process of their design.
 This paper presents version 2 of 21cmSense, which has been re-written from the ground up
 to be more modular and extensible, and to provide a more user-friendly interface -- as
-well as converting the well-used legacy package, presented in [@pober14] from Python 2 to 3.
+well as converting the well-used legacy package, presented in [@Pober2014] from Python 2 to 3.
 
 21cmSense computes noise estimates under the framework of *map-making*, in which the
 many baselines of an interferometer are binned into a UV grid before a Fourier Transform
 over the frequency axis is performed. This is a common approach in the field, although
-other approaches exist, such the delay-spectrum method [@parsons12].
+other approaches exist, such the delay-spectrum method [@Parsons2012].
 The full sensitivity calculation in the map-making approach is rather involved and
 computationally expensive in its most general form [@fhd], however 21cmSense uses a few
 key assumptions to accelerate the calculation:
@@ -70,7 +70,7 @@ Some of the key new features introduced in this version of 21cmSense include:
    in other code.
 2. Command-line interface: the library can be called from the command-line, allowing
    for easy scripting and automation of sensitivity calculations.
-3. More accurate cosmological calculations using `astropy` [@astropy]
+3. More accurate cosmological calculations using `astropy` [@Robitaille2013; @astropy]
 4. Improved documentation and examples, including a Jupyter notebook that walks through
    the calculation step-by-step.
 5. Generalization of the sensitivity calculation. The `Sensitivity` class is an abstract
@@ -90,9 +90,9 @@ Some of the key new features introduced in this version of 21cmSense include:
 `21cmSense` provides a simple interface for computing the expected sensitivity of
 radio interferometers that aim to measure the 21cm line of neutral hydrogen.
 This field is growing rapidly, with a number of experiments currently underway or
-in the planning stages. `21cmSense` provides a tool for the design of these experiments
-[see e.g. @pober14, @pober16, @kolopanis19], and also for forecasting parameter constraints
-from the data they will produce [see e.g. @greig15, @greig18, @breitman2023].
+in the planning stages. `21cmSense` provides a tool for the design of these experiments,
+as already used in [@pober14; @pober16; @Greig2020], and also for forecasting parameter constraints
+from the data they will produce, as seen in eg. [@Greig2015; @Greig2017; @Greig2018, @Breitman2024].
 
 
 # Citations
