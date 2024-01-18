@@ -97,8 +97,8 @@ def test_grid_baselines(bm):
     with pytest.raises(ValueError):
         a.grid_baselines(bl_coords)
 
-    grid0 = a.grid_baselines()
-    grid1 = a.grid_baselines(bl_coords, bl_counts)
+    grid0 = a.grid_baselines(coherent=True)
+    grid1 = a.grid_baselines(coherent=True, baselines=bl_coords, weights=bl_counts)
     assert np.allclose(grid0, grid1)
 
 
