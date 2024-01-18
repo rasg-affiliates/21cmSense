@@ -9,6 +9,7 @@ from pathlib import Path
 from py21cmsense import Observatory
 from py21cmsense.baseline_filters import BaselineRange
 from py21cmsense.beam import GaussianBeam
+from py21cmsense.data import PATH
 
 
 @pytest.fixture(scope="module")
@@ -228,3 +229,45 @@ def test_get_redundant_baselines(bm):
         baseline_filters=BaselineRange(bl_max=1.5 * units.m)
     )
     assert len(reds) == 2  # len-1
+
+
+def test_no_up_coordinate(tmp_path: Path):
+    mwafl = PATH / "antpos" / "mwa_phase2_compact_antpos.txt"
+    enu = np.genfromtxt(mwafl)
+
+    # Save with only EN coordinates
+    with open(tmp_path / "mwa_antpos.txt", "w") as fl:
+        np.savetxt(fl, enu[:, :2])
+
+    new_yaml = """
+antpos: !astropy.units.Quantity
+  value: !txt "%s/mwa_antpos.txt"
+  unit: !astropy.units.Unit {unit: m}
+beam:
+  class: GaussianBeam
+  frequency: !astropy.units.Quantity
+    unit: !astropy.units.Unit {unit: MHz}
+    value: 150
+  dish_size: !astropy.units.Quantity
+    unit: !astropy.units.Unit {unit: m}
+    value: 35
+latitude: !astropy.units.Quantity
+  unit: !astropy.units.Unit {unit: rad}
+  value: -0.4681819
+Trcv: !astropy.units.Quantity
+  unit: !astropy.units.Unit {unit: K}
+  value: 100
+""" % (
+        tmp_path
+    )
+
+    with open(tmp_path / "mwa.yaml", "w") as fl:
+        fl.write(new_yaml)
+
+    obs = Observatory.from_yaml(tmp_path / "mwa.yaml")
+    assert np.all(obs.antpos[:, 2] == 0)
+
+
+def test_setting_freq_in_profile():
+    obs = Observatory.from_profile("MWA-PhaseII", frequency=75 * units.MHz)
+    assert obs.frequency == 75 * units.MHz
