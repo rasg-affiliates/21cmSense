@@ -1,0 +1,17 @@
+antpos: !astropy.units.Quantity
+  value: !txt "{{ DATA_PATH }}/antpos/mwa_phase2_compact_antpos.txt"
+  unit: !astropy.units.Unit {unit: m}
+beam:
+  class: GaussianBeam
+  frequency: !astropy.units.Quantity
+    unit: !astropy.units.Unit {unit: MHz}
+    value: 150
+  dish_size: !astropy.units.Quantity
+    unit: !astropy.units.Unit {unit: m}
+    value: 4
+latitude: !astropy.units.Quantity
+  unit: !astropy.units.Unit {unit: rad}
+  value: -0.4660
+Trcv: !astropy.units.Quantity
+  unit: !astropy.units.Unit {unit: K}
+  value: 100

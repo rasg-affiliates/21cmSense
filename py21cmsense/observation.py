@@ -261,12 +261,8 @@ class Observation:
         Defined after earth rotation synthesis for a particular LST bin.
         The u-values on each side of the grid are given by :func:`ugrid`.
         """
-        if not self.coherent:
-            fnc = self.observatory.grid_baselines_incoherent
-        else:
-            fnc = self.observatory.grid_baselines_coherent
-
-        return fnc(
+        return self.observatory.grid_baselines(
+            coherent=self.coherent,
             baselines=self.baseline_group_coords,
             weights=self.baseline_group_counts,
             integration_time=self.integration_time,

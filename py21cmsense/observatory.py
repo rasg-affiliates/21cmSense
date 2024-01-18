@@ -27,6 +27,14 @@ from . import types as tp
 
 logger = logging.getLogger(__name__)
 
+DATA = Path(__file__).parent / "data"
+
+
+def get_builtin_profiles() -> list[str]:
+    """Print available built-in profiles."""
+    fls = (DATA / "profiles").glob("*.yaml")
+    return [fl.stem for fl in fls]
+
 
 @hickleable(evaluate_cached_properties=True)
 @attr.s(kw_only=True, order=False)
@@ -139,11 +147,15 @@ class Observatory:
         )
 
     @classmethod
-    def from_yaml(cls, yaml_file: str | dict) -> Observatory:
+    def from_yaml(
+        cls, yaml_file: str | dict, frequency: tp.Frequency | None = None
+    ) -> Observatory:
         """Instantiate an Observatory from a compatible YAML config file."""
         if isinstance(yaml_file, (str, Path)):
             with open(yaml_file) as fl:
-                data = yaml.load(fl)
+                lines = fl.read()
+                lines = lines.replace("{{ DATA_PATH }}", str(DATA.absolute()))
+                data = yaml.load(lines)
         elif isinstance(yaml_file, collections.abc.Mapping):
             data = yaml_file
         else:
@@ -168,10 +180,41 @@ class Observatory:
             antpos = np.hstack((antpos, np.zeros((len(antpos), 1))))
 
         _beam = data.pop("beam")
+        if frequency is not None:
+            _beam["frequency"] = frequency
+
         kind = _beam.pop("class")
         _beam = getattr(beam, kind)(**_beam)
 
         return cls(antpos=antpos, beam=_beam, **data)
+
+    @classmethod
+    def from_profile(
+        cls, profile: str, frequency: tp.Frequency | None = None, **kwargs
+    ):
+        """Instantiate the Observatory from a builtin profile.
+
+        Parameters
+        ----------
+        profile
+            A string label identifying the observatory. Available built-in observatories
+            can be obtained with :func:`get_builtin_profiles`.
+        frequency
+            The frequency at which to specify the observatory.
+
+        Other Parameters
+        ----------------
+        All other parameters passed will be passed into the initializer for the class,
+        overwriting the profile.
+        """
+        fl = DATA / "profiles" / f"{profile}.yaml"
+        if not fl.exists():
+            raise FileNotFoundError(
+                f"profile {profile} not available. Available profiles: {get_builtin_profiles()}"
+            )
+
+        obj = cls.from_yaml(fl, frequency=frequency)
+        return obj.clone(**kwargs)
 
     @cached_property
     def baselines_metres(self) -> tp.Meters:
@@ -367,6 +410,7 @@ class Observatory:
 
     def grid_baselines(
         self,
+        coherent: bool,
         baselines: tp.Length | None = None,
         weights: np.ndarray | None = None,
         integration_time: tp.Time = 60.0 * un.s,
@@ -451,17 +495,19 @@ class Observatory:
         dim = len(self.ugrid(bl_max))
         edges = self.ugrid_edges(bl_max)
 
-        uvsum = np.zeros((len(baselines), dim, dim))
-        for cnt, (uvw, nbls) in enumerate(
-            tqdm.tqdm(
-                zip(uvws, weights),
-                desc="gridding baselines",
-                unit="baselines",
-                disable=not config.PROGRESS,
-                total=len(weights),
-            )
+        uvsum = np.zeros((dim, dim))
+        for uvw, nbls in tqdm.tqdm(
+            zip(uvws, weights),
+            desc="gridding baselines",
+            unit="baselines",
+            disable=not config.PROGRESS,
+            total=len(weights),
         ):
-            uvsum[cnt] = np.histogram2d(uvw[:, 0], uvw[:, 1], bins=edges)[0] * nbls
+            hist = np.histogram2d(uvw[:, 0], uvw[:, 1], bins=edges)[0] * nbls
+
+            uvsum += hist if coherent else hist**2
+        if not coherent:
+            uvsum = np.sqrt(uvsum)
 
         return uvsum
 
@@ -510,25 +556,3 @@ class Observatory:
         # Shift the edges by half a cell, and omit the last one
         edges = self.ugrid_edges(bl_max)
         return (edges[1:] + edges[:-1]) / 2
-
-    def grid_baselines_coherent(self, **kwargs) -> np.ndarray:
-        """Get a UV grid of coherently gridded baselines.
-
-        Different baseline groups are averaged coherently if they fall into the same
-        UV bin.
-
-        See :func:`grid_baselines` for parameter details.
-        """
-        grid = self.grid_baselines(**kwargs)
-        return np.sum(grid, axis=0)
-
-    def grid_baselines_incoherent(self, **kwargs) -> np.ndarray:
-        """Get a UV grid of incoherently gridded baselines.
-
-        Different baseline groups are averaged incoherently if they fall into the same
-        UV bin.
-
-        See :func:`grid_baselines` for parameter details.
-        """
-        grid = self.grid_baselines(**kwargs)
-        return np.sqrt(np.sum(grid**2, axis=0))
