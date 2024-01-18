@@ -16,7 +16,7 @@ from . import yaml
 
 @yaml.yaml_func()
 def hera(
-    hex_num,
+    hex_num: int,
     separation: tp.Length = 14 * un.m,
     split_core: bool = False,
     outriggers: bool = False,
@@ -46,6 +46,9 @@ def hera(
     antpos
         A 2D array of antenna positions, shape ``(Nants, 3)``.
     """
+    if hex_num <= 1:
+        raise ValueError("hex_num must be greater than 1")
+
     sep = separation.to_value("m")
 
     if row_separation is None:

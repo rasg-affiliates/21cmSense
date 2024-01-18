@@ -10,9 +10,9 @@ Bug reports/Feature Requests/Feedback/Questions
 It is incredibly helpful to us when users report bugs, unexpected behaviour, or request
 features. You can do the following:
 
-    * `Report a bug <https://github.com/steven-murray/21cmSense/issues/new?template=bug_report.md>`
-    * `Request a Feature <https://github.com/steven-murray/21cmSense/issues/new?template=feature_request.md>`
-    * `Ask a Question <https://github.com/steven-murray/21cmSense/issues/new?template=question.md>`
+    * `Report a bug <https://github.com/rasg-affiliates/21cmSense/issues/new?template=bug_report.md>`
+    * `Request a Feature <https://github.com/rasg-affiliates/21cmSense/issues/new?template=feature_request.md>`
+    * `Ask a Question <https://github.com/rasg-affiliates/21cmSense/issues/new?template=question.md>`
 
 When doing any of these, please try to be as succinct, but detailed, as possible, and use
 a "Minimum Working Example" whenever applicable.
@@ -32,7 +32,7 @@ pre-commit hooks will run that enforce the ``black`` coding style. If you do not
 install these requirements, you must manually run black before committing your changes,
 otherwise your changes will likely fail continuous integration.
 
-1. First fork `21cmSense <https://github.com/steven-murray/21cmSense>`_
+1. First fork `21cmSense <https://github.com/rasg-affiliates/21cmSense>`_
    (look for the "Fork" button), then clone the fork locally::
 
     git clone git@github.com:your_name_here/21cmSense.git

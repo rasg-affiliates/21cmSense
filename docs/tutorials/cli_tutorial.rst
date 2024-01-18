@@ -13,13 +13,13 @@ files::
 
 These are all the configuration and data files we will need to perform the sensitivity
 estimate. You can obtain them
-`here <https://github.com/steven-murray/21cmSense/tree/main/docs/tutorials/data>`_.
+`here <https://github.com/rasg-affiliates/21cmSense/tree/main/docs/tutorials/data>`_.
 
 Antenna Positions
 ~~~~~~~~~~~~~~~~~
 In general you do not need a file of antenna positions -- you could alternatively specify
 a function to generate them (eg. see the default example
-`observatory config <https://github.com/steven-murray/21cmSense/blob/master/example_configs/observatory_hera.yml>`_).
+`observatory config <https://github.com/rasg-affiliates/21cmSense/blob/master/example_configs/observatory_hera.yml>`_).
 Typically, however, you will have a given list of positions. These can be in the format
 of a ``.npy`` array, a pickle file, or a simple ASCII file. In any case, the array must
 be of shape ``(Nant, 3)``, where the three columns are East, North and Elevation, all
