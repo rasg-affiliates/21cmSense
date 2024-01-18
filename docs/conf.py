@@ -43,8 +43,8 @@ templates_path = ["templates"]
 
 pygments_style = "trac"
 extlinks = {
-    "issue": ("https://github.com/steven-murray/21cmSense/issues/%s", "#"),
-    "pr": ("https://github.com/steven-murray/21cmSense/pull/%s", "PR #"),
+    "issue": ("https://github.com/rasg-affiliates/21cmSense/issues/%s", "#"),
+    "pr": ("https://github.com/rasg-affiliates/21cmSense/pull/%s", "PR #"),
 }
 
 html_theme = "furo"

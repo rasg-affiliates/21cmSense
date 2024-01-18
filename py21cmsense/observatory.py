@@ -80,9 +80,14 @@ class Observatory:
     @_antpos.validator
     def _antpos_validator(self, att, val):
         tp.vld_physical_type("length")(self, att, val)
-        assert val.ndim == 2
-        assert val.shape[-1] == 3
-        assert val.shape[0] > 1
+        if val.ndim != 2:
+            raise ValueError("antpos must be a 2D array.")
+
+        if val.shape[-1] != 3:
+            raise ValueError("antpos must have shape (Nants, 3).")
+
+        if val.shape[0] <= 1:
+            raise ValueError("antpos must have at least two antennas.")
 
     @cached_property
     def antpos(self) -> np.ndarray:

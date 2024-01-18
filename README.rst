@@ -2,15 +2,17 @@
 21cmSense
 =========
 
-.. image:: https://travis-ci.org/steven-murray/21cmSense.svg?branch=master
-    :target: https://travis-ci.org/steven-murray/21cmSense
-.. image:: https://codecov.io/gh/steven-murray/21cmSense/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/steven-murray/21cmSense
+.. image:: https://img.shields.io/pypi/pyversions/21cmSense
+   :alt: PyPI - Python Version
+.. image:: https://codecov.io/gh/rasg-affiliates/21cmSense/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/rasg-affiliates/21cmSense
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-  :target: https://github.com/psf/black
+    :target: https://github.com/psf/black
 .. image:: https://readthedocs.org/projects/21cmsense/badge/?version=latest
-  :target: https://21cmsense.readthedocs.io/en/latest/?badge=latest
-  :alt: Documentation Status
+    :target: https://21cmsense.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+.. image:: https://img.shields.io/github/license/Ileriayo/markdown-badges?style=flat
+    :target: ./LICENSE.rst
 
 A python package for calculating the expected sensitivities of 21cm experiments
 to the Epoch of Reionization and/or Cosmic Dawn power spectrum.
