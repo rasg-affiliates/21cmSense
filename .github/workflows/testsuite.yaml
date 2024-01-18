@@ -50,3 +50,4 @@ jobs:
         if: success()
         with:
           file: ./coverage.xml #optional
+          token: ${{ secrets.CODECOV_TOKEN }} #required
