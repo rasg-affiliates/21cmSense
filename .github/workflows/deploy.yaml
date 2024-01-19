@@ -11,6 +11,8 @@ jobs:
     env:
       ENV_NAME: publish
       PYTHON: "3.10"
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
       - uses: actions/checkout@main
         with:
@@ -30,6 +32,3 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.11
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
