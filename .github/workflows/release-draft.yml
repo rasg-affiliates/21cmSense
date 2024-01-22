@@ -1,6 +1,8 @@
 name: Update Draft Release
 
-on: push
+on:
+  push:
+    branches: main
 
 jobs:
   draft-release:
