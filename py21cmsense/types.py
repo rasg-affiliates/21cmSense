@@ -1,4 +1,5 @@
 """Module dealing with types and units throughout the package."""
+
 from __future__ import annotations
 
 import attr

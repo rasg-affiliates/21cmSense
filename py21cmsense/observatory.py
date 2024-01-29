@@ -4,6 +4,7 @@ Module providing the definition of an Observatory.
 This replaces the original usage of an aipy.AntennaArray with something much more
 simple, and suited to the needs of this particular package.
 """
+
 from __future__ import annotations
 
 import attr

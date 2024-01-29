@@ -1,4 +1,5 @@
 """A module defining interferometric observation objects."""
+
 from __future__ import annotations
 
 import attr
