@@ -1,4 +1,5 @@
 """Module defining new YAML tags for py21cmsense."""
+
 import inspect
 import numpy as np
 import pickle
