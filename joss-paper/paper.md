@@ -1,5 +1,5 @@
 ---
-title: '21cmSense: A modular, open-source 21 cm sensitivity calculator'
+title: '21cmSense v2: A modular, open-source 21 cm sensitivity calculator'
 tags:
   - Python
   - astronomy
@@ -38,7 +38,7 @@ and the SKA [@Pritchard2015].
 sensitivity of these experiments, in order to enhance the process of their design.
 This paper presents version v2.0.0 of 21cmSense, which has been re-written from the ground up
 to be more modular and extensible, and to provide a more user-friendly interface -- as
-well as converting the well-used legacy package, presented in [@Pober2014] from Python 2 to 3.
+well as converting the well-used legacy package, presented in [@Pober2013,@Pober2014] from Python 2 to 3.
 
 21cmSense can compute sensitivity estimates for both map-making [@fhd] and
 delay-spectrum [@Parsons2012] approaches to power-spectrum estimation.
