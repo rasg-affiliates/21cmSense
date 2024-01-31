@@ -13,16 +13,16 @@ authors:
   - name: Jonathan Pober
     equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
     affiliation: 2
-    orcid: 0000-0000-0000-0000
+    orcid: 0000-0002-3492-0433
   - name: Matthew Kolopanis
     affiliation: 3
     orcid: 0000-0002-2950-2974
 affiliations:
  - name: Scuola Normale Superiore, Italy
    index: 1
- - name: Brown University, USA
+ - name: Department of Physics, Brown University, Providence, RI, USA
    index: 2
- - name: Arizona State University, USA
+ - name: School of Earth and Space Exploration, Arizona State University, Tempe, AZ, USA
    index: 3
 date: 18 January 2024
 bibliography: paper.bib
@@ -36,16 +36,14 @@ low-frequency radio experiments, including the MWA [@mwa], LOFAR [@lofar], HERA 
 and the SKA [@Pritchard2015].
 21cmSense is a Python package that provides a modular framework for calculating the
 sensitivity of these experiments, in order to enhance the process of their design.
-This paper presents version 2 of 21cmSense, which has been re-written from the ground up
+This paper presents version v2.0.0 of 21cmSense, which has been re-written from the ground up
 to be more modular and extensible, and to provide a more user-friendly interface -- as
 well as converting the well-used legacy package, presented in [@Pober2014] from Python 2 to 3.
 
-21cmSense computes noise estimates under the framework of *map-making*, in which the
-many baselines of an interferometer are binned into a UV grid before a Fourier Transform
-over the frequency axis is performed. This is a common approach in the field, although
-other approaches exist, such the delay-spectrum method [@Parsons2012].
-The full sensitivity calculation in the map-making approach is rather involved and
-computationally expensive in its most general form [@fhd], however 21cmSense uses a few
+21cmSense can compute sensitivity estimates for both map-making [@fhd] and
+delay-spectrum [@Parsons2012] approaches to power-spectrum estimation.
+The full sensitivity calculation is rather involved and
+computationally expensive in its most general form, however 21cmSense uses a few
 key assumptions to accelerate the calculation:
 
 1. The UV grid is chosen to have cells that are comparable to the instrument's beam size.
@@ -55,11 +53,6 @@ key assumptions to accelerate the calculation:
    the need to perform a beam convolution, which can be expensive.
 2. We do not consider flagging of visibilities due to RFI and other systematics, which
    can complicate the propagation of uncertainties.
-
-Beyond these assumptions, there is also the current limitation that 21cmSense computes
-the sensitivity under the map-making framework. Nevertheless, the modularity included
-in this new version provides a path forward to include delay-spectrum calculations in
-the future.
 
 Some of the key new features introduced in this version of 21cmSense include:
 
@@ -76,7 +69,7 @@ Some of the key new features introduced in this version of 21cmSense include:
 5. Generalization of the sensitivity calculation. The `Sensitivity` class is an abstract
    class from which the sensitivity of differing summary statistics can be defined.
    Currently, its only implementation is the `PowerSpectrum` class, which computes the
-   classic sensitivity of the (map-making style) power spectrum. However, the framework
+   classic sensitivity of the power spectrum. However, the framework
    can be extended to other summaries, for example wavelets [@Trott2016a].
 6. Improved speed: the new version of 21cmSense is significantly faster than the legacy
    version, due to a number of vectorization improvements in the code.
