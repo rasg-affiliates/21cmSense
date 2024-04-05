@@ -46,9 +46,19 @@ The full sensitivity calculation is rather involved and
 computationally expensive in its most general form, however 21cmSense uses a few
 key assumptions to accelerate the calculation:
 
-1. The UV grid is chosen to have cells that are comparable to the instrument's beam size.
-   This maximizes UV-resolution while keeping the covariance between UV cells small
-   (since the UV footprint of a visibility does not extend beyond the cell significantly).
+1. Each baseline (pair of antennas) in the interferometer intrinsically measures a dense
+   blob of 2D spatial Fourier modes of the sky intensity distribution, centred at a
+   particular Fourier  coordinate *(u,v)* given by the displacement vector between the
+   antennas forming the baseline, and covering an area in this *(u,v)*-space that is given
+   by the Fourier-transform of the primary beam of the instrument.
+   The Fourier-space representation of the sky is thus
+   built up by collecting many baselines that cover the so-called "*(u,v)*-plane".
+   ``21cmSense`` approximates this process of synthesising many baselines by
+   nearest-grid-point interpolation onto a regular grid in the *(u,v)*-plane.
+   Furthermore, importantly the *(u,v)*-grid is chosen to have cells that are comparable
+   to the instrument's Fourier-space beam size, so that a particular baseline essentially
+   measures a single cell in the grid, and no more.
+   This maximizes resolution while keeping the covariance between cells small.
    This removes the need for tracking the full covariance between cells, and also removes
    the need to perform a beam convolution, which can be expensive.
 2. We do not consider flagging of visibilities due to RFI and other systematics, which
@@ -82,10 +92,13 @@ Some of the key new features introduced in this version of 21cmSense include:
 
 `21cmSense` provides a simple interface for computing the expected sensitivity of
 radio interferometers that aim to measure the 21cm line of neutral hydrogen.
-This field is growing rapidly, with a number of experiments currently underway or in the planning stages.
-Historically, `21cmSense` has been a trusted tool for the design of these experiments [@Pober2013; @Pober2014; @Greig2020] and for forecasting parameter constraints [@Greig2015; @Greig2017; @Greig2018].
-This overhauled, modularized version of `21cmSense` provides a more user-friendly interface, improved performance, and the extensibility required for the next generation, as evidenced by its usage in the
-literature [@Brietman2024,@Schosser2024].
+This field is growing rapidly, with a number of experiments currently underway or in
+the planning stages. Historically, `21cmSense` has been a trusted tool for the design of
+these experiments [@Pober2013; @Pober2014; @Greig2020] and for forecasting parameter
+constraints [@Greig2015; @Greig2017; @Greig2018].
+This overhauled, modularized version of `21cmSense` provides a more user-friendly
+interface, improved performance, and the extensibility required for the next generation,
+as evidenced by its usage in the literature [@Brietman2024,@Schosser2024].
 
 # Acknowledgements
 
