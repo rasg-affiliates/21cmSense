@@ -3,16 +3,16 @@
 =========
 
 .. image:: https://img.shields.io/pypi/pyversions/21cmSense
-   :alt: PyPI - Python Version
+  :alt: PyPI - Python Version
 .. image:: https://codecov.io/gh/rasg-affiliates/21cmSense/branch/main/graph/badge.svg
-    :target: https://codecov.io/gh/rasg-affiliates/21cmSense
+  :target: https://codecov.io/gh/rasg-affiliates/21cmSense
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/psf/black
+  :target: https://github.com/psf/black
 .. image:: https://readthedocs.org/projects/21cmsense/badge/?version=latest
-    :target: https://21cmsense.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
+  :target: https://21cmsense.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
 .. image:: https://img.shields.io/github/license/Ileriayo/markdown-badges?style=flat
-    :target: ./LICENSE.rst
+  :target: ./LICENSE.rst
 
 A python package for calculating the expected sensitivities of 21cm experiments
 to the Epoch of Reionization and/or Cosmic Dawn power spectrum.
@@ -27,6 +27,9 @@ If you are a ``conda`` user (which we recommend), you may want to install the fo
 using ``conda`` rather than them being automatically installed with pip::
 
     $ conda install numpy scipy pyyaml astropy
+
+To test that the package has installed correctly, install with ``pip install -e .[test]``
+and run ``pytest`` in the top-level directory.
 
 For Development
 ---------------

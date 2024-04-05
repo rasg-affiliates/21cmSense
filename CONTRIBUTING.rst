@@ -10,9 +10,9 @@ Bug reports/Feature Requests/Feedback/Questions
 It is incredibly helpful to us when users report bugs, unexpected behaviour, or request
 features. You can do the following:
 
-    * `Report a bug <https://github.com/rasg-affiliates/21cmSense/issues/new?template=bug_report.md>`
-    * `Request a Feature <https://github.com/rasg-affiliates/21cmSense/issues/new?template=feature_request.md>`
-    * `Ask a Question <https://github.com/rasg-affiliates/21cmSense/issues/new?template=question.md>`
+    * `Report a bug <https://github.com/rasg-affiliates/21cmSense/issues/new?template=bug_report.md>`_
+    * `Request a Feature <https://github.com/rasg-affiliates/21cmSense/issues/new?template=feature_request.md>`_
+    * `Ask a Question <https://github.com/rasg-affiliates/21cmSense/issues/new?template=question.md>`_
 
 When doing any of these, please try to be as succinct, but detailed, as possible, and use
 a "Minimum Working Example" whenever applicable.
