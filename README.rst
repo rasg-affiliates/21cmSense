@@ -2,8 +2,9 @@
 21cmSense
 =========
 
-.. image:: https://img.shields.io/pypi/pyversions/21cmSense
-  :alt: PyPI - Python Version
+.. image:: https://img.shields.io/pypi/v/21cmSense
+   :alt: PyPI - Version
+   :target: https://pypi.org/project/21cmSense
 .. image:: https://codecov.io/gh/rasg-affiliates/21cmSense/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/rasg-affiliates/21cmSense
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
