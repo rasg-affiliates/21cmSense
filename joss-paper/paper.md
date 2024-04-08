@@ -31,9 +31,16 @@ bibliography: paper.bib
 # Summary
 
 The 21cm line of neutral hydrogen is a powerful probe of the high-redshift
-universe, and is the subject of a number of current and upcoming
+universe (Cosmic Dawn and the Epoch of Reionization), with an unprecedented potential to
+inform us about key processes of early galaxy formation, the first stars and even
+cosmology and structure formation [@Liu2020], via intensity mapping.
+It is the subject of a number of current and upcoming
 low-frequency radio experiments, including the MWA [@mwa], LOFAR [@lofar], HERA [@hera]
-and the SKA [@Pritchard2015].
+and the SKA [@Pritchard2015], which complement the detailed information concerning the
+brightest sources in these early epochs from powerful optical and near-infrared telescopes
+such as the JWST [@jwst].
+
+
 21cmSense is a Python package that provides a modular framework for calculating the
 sensitivity of these experiments, in order to enhance the process of their design.
 This paper presents version v2.0.0 of 21cmSense, which has been re-written from the ground up
@@ -48,14 +55,14 @@ key assumptions to accelerate the calculation:
 
 1. Each baseline (pair of antennas) in the interferometer intrinsically measures a dense
    blob of 2D spatial Fourier modes of the sky intensity distribution, centred at a
-   particular Fourier  coordinate *(u,v)* given by the displacement vector between the
-   antennas forming the baseline, and covering an area in this *(u,v)*-space that is given
+   particular Fourier  coordinate $(u,v)$ given by the displacement vector between the
+   antennas forming the baseline, and covering an area in this $(u,v)$-space that is given
    by the Fourier-transform of the primary beam of the instrument.
    The Fourier-space representation of the sky is thus
-   built up by collecting many baselines that cover the so-called "*(u,v)*-plane".
+   built up by collecting many baselines that cover the so-called "$(u,v)$-plane".
    ``21cmSense`` approximates this process of synthesising many baselines by
-   nearest-grid-point interpolation onto a regular grid in the *(u,v)*-plane.
-   Furthermore, importantly the *(u,v)*-grid is chosen to have cells that are comparable
+   nearest-grid-point interpolation onto a regular grid in the $(u,v)$-plane.
+   Furthermore, importantly the $(u,v)$-grid is chosen to have cells that are comparable
    to the instrument's Fourier-space beam size, so that a particular baseline essentially
    measures a single cell in the grid, and no more.
    This maximizes resolution while keeping the covariance between cells small.
@@ -86,7 +93,17 @@ Some of the key new features introduced in this version of 21cmSense include:
 7. Built-in profiles for several major experiments: MWA, HERA and SKA-1. These can be
    used as-is, or as a starting point for defining a custom instrument.
 
+An example of the predicted sensitivity of the HERA experiment after a year's observation
+at $z=8.5$ is shown in Figure \ref{sense}, corresponding to the sampling of the $(u,v)$-grid
+shown in Figure \ref{uvsampling}. The sensivity here is a signal-to-noise,
+assuming a signal magnitude computed using a semi-numerical model from the 21cmFAST
+code [@21cmfast], using parameters from [@Munoz22].
+This figure also demonstrates that the new
+21cmSense is capable of producing sensitivity predictions in the cylindrically-averaged
+2D power spectrum space, which is helpful for upcoming experiments.
 
+![Sampling of the $(u,v)$-plane for the HERA experiment during a full year of observations.]{label="uvsampling"}(uv-sampling.png)
+![Predicted sensitivity of 1000 hours (one year) of HERA observations, as a function of perpendicular and line-of-sight fourier scale. The sensitivity is represented as the signal-to-noise on each $k$-mode, assuming a particular astrophysical model.]{label="sense"}(2dps.png)
 
 # Statement of need
 
