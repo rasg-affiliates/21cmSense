@@ -42,6 +42,9 @@ pre-commit hook checks.
 We recommend using the ``commitizen`` tool to write commit messages -- we use the commit
 messages to do our versioning!
 
+See the `contributing docs <https://21cmsense.readthedocs.io/en/latest/contributing.html>`_
+for more information about how to contribute to the project!
+
 Usage
 =====
 There are two ways to use this code: as a python library or via the CLI.
