@@ -103,6 +103,7 @@ This figure also demonstrates that the new
 2D power spectrum space, which is helpful for upcoming experiments.
 
 ![Sampling of the $(u,v)$-plane for the HERA experiment during a full year of observations.\label{uvsampling}](uv-sampling.png)
+
 ![Predicted sensitivity of 1000 hours (one year) of HERA observations, as a function of perpendicular and line-of-sight fourier scale. The sensitivity is represented as the signal-to-noise on each $k$-mode, assuming a particular astrophysical model.\label{sense}](2dps.png)
 
 # Statement of need
