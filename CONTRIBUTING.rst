@@ -8,13 +8,9 @@ little bit helps, and credit will always be given.
 Bug reports/Feature Requests/Feedback/Questions
 ===============================================
 It is incredibly helpful to us when users report bugs, unexpected behaviour, or request
-features. You can do the following:
-
-    * `Report a bug <https://github.com/rasg-affiliates/21cmSense/issues/new?template=bug_report.md>`_
-    * `Request a Feature <https://github.com/rasg-affiliates/21cmSense/issues/new?template=feature_request.md>`_
-    * `Ask a Question <https://github.com/rasg-affiliates/21cmSense/issues/new?template=question.md>`_
-
-When doing any of these, please try to be as succinct, but detailed, as possible, and use
+features. You can do any one of these, or simply ask a question about how to use 21cmSense,
+by filing an issue `here <https://github.com/rasg-affiliates/21cmSense/issues/new>`_.
+When doing tjos, please try to be as succinct, but detailed, as possible, and use
 a "Minimum Working Example" whenever applicable.
 
 Documentation improvements
@@ -37,19 +33,23 @@ otherwise your changes will likely fail continuous integration.
 
     git clone git@github.com:your_name_here/21cmSense.git
 
-2. Install `pre-commit <https://pre-commit.com/>`_ to do style checking automatically::
+2. Install the package in dev mode::
+
+    pip install -e .[dev]
+
+3. Install `pre-commit <https://pre-commit.com/>`_ to do style checking automatically::
 
     pre-commit install
 
-3. Create a branch for local development::
+4. Create a branch for local development::
 
     git checkout -b name-of-your-bugfix-or-feature
 
-4. When you're done making changes, run all the checks with `pytest <https://docs.pytest.org/en/latest/>`_::
+5. When you're done making changes, run all the checks with `pytest <https://docs.pytest.org/en/latest/>`_::
 
     pytest
 
-5. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub::
 
     git add .
     git commit -m "Your detailed description of your changes."
