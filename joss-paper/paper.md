@@ -102,9 +102,9 @@ This figure also demonstrates that the new
 21cmSense is capable of producing sensitivity predictions in the cylindrically-averaged
 2D power spectrum space, which is helpful for upcoming experiments.
 
-![Sampling of the $(u,v)$-plane for the HERA experiment during a full year of observations.\label{uvsampling}](joss-paper/uv-sampling.png)
+![Sampling of the $(u,v)$-plane for the HERA experiment during a full year of observations.\label{uvsampling}](uv-sampling.pdf)
 
-![Predicted sensitivity of 1000 hours (one year) of HERA observations, as a function of perpendicular and line-of-sight fourier scale. The sensitivity is represented as the signal-to-noise on each $k$-mode, assuming a particular astrophysical model.\label{sense}](joss-paper/2dps.png)
+![Predicted sensitivity of 1000 hours (one year) of HERA observations, as a function of perpendicular and line-of-sight fourier scale. The sensitivity is represented as the signal-to-noise on each $k$-mode, assuming a particular astrophysical model.\label{sense}](2dps.pdf)
 
 # Statement of need
 
