@@ -10,6 +10,7 @@ the wavenumber in h/Mpc or 1/Mpc, and (2) a ``__call__`` method, which takes in 
 redshift and an array of wavenumbers, and returns Delta^2 as an astropy Quantity with
 units mK^2.
 """
+
 import abc
 import numpy as np
 import warnings

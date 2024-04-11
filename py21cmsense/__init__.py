@@ -1,4 +1,5 @@
 """A package for calculate sensitivies of 21-cm interferometers."""
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:

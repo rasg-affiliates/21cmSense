@@ -15,7 +15,7 @@ jobs:
           git describe --tags
           git describe --tags $(git rev-list --tags --max-count=1)
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.x
       - name: Install build

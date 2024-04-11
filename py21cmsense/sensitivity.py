@@ -7,6 +7,7 @@ sensitivity class is provided, which offers the same results as previous version
 In the future, we may provide things like ``ImagingSensitivity`` or
 ``WaveletSensitivity`` for example.
 """
+
 from __future__ import annotations
 
 import attr

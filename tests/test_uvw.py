@@ -1,4 +1,5 @@
 """Tests of the phasing code for calculating UVWs."""
+
 import pytest
 
 import numpy as np

@@ -5,6 +5,7 @@ co-ordinates) and returns a bool, this module provides standard kinds of filters
 using baselines within a certain length range). It also enables loading the filters
 from string names, useful for YAML files.
 """
+
 import abc
 import attr
 import numpy as np
