@@ -95,16 +95,15 @@ Some of the key new features introduced in this version of 21cmSense include:
 
 An example of the predicted sensitivity of the HERA experiment after a year's observation
 at $z=8.5$ is shown in Figure \ref{sense}, corresponding to the sampling of the $(u,v)$-grid
-shown in Figure \ref{uvsampling}. The sensivity here is a signal-to-noise,
-assuming a signal magnitude computed using a semi-numerical model from the 21cmFAST
-code [@Mesinger2011; @Murray2020], using parameters from [@Munoz2022].
+shown in Figure \ref{uvsampling}. The sensivity here is represented as a "noise power"
+(i.e. the contribution to the power spectrum from thermal noise).
 This figure also demonstrates that the new
 21cmSense is capable of producing sensitivity predictions in the cylindrically-averaged
 2D power spectrum space, which is helpful for upcoming experiments.
 
 ![Sampling of the $(u,v)$-plane for the HERA experiment during a full year of observations.\label{uvsampling}](uv-sampling.pdf)
 
-![Predicted sensitivity of 1000 hours (one year) of HERA observations, as a function of perpendicular and line-of-sight fourier scale. The sensitivity is represented as the signal-to-noise on each $k$-mode, assuming a particular astrophysical model.\label{sense}](2dps.pdf)
+![Predicted noise-power of 1000 hours (one year) of HERA observations, as a function of perpendicular and line-of-sight fourier scale. The noise-power is represented for each $k$-model.\label{sense}](2dps.pdf)
 
 # Statement of need
 
