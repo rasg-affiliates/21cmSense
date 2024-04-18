@@ -9,7 +9,7 @@ readme = "README.rst"
 authors = [
   {name="Jonathan Pober", email="jonathon_pober@brown.edu"},
   {name="Steven Murray", email="murray.steveng@gmail.com"},
-  {name="Matt Kolopanis", email="matthew.kolopanis@asu.edu"},
+  {name="Matt Kolopanis", email="matthew.kolopanis@gmail.com"},
 ]
 requires-python = ">=3.9"
 # Add here all kinds of additional classifiers as defined under
