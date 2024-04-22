@@ -18,7 +18,7 @@ from typing import Any, Callable
 from . import _utils as ut
 from . import conversions as conv
 from . import observatory as obs
-from . import types as tp
+from . import units as tp
 
 
 @hickleable(evaluate_cached_properties=True)

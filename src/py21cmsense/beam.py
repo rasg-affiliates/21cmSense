@@ -9,7 +9,7 @@ from astropy import units as un
 from hickleable import hickleable
 
 from . import _utils as ut
-from . import types as tp
+from . import units as tp
 
 
 @hickleable(evaluate_cached_properties=True)

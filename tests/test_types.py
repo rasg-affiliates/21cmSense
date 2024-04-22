@@ -3,7 +3,7 @@ import pytest
 import attr
 from astropy import units as u
 
-from py21cmsense import types as tp
+from py21cmsense import units as tp
 
 
 def test_vld_physical_type():

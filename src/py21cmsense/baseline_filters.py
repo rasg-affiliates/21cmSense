@@ -13,7 +13,7 @@ import warnings
 from astropy import units as un
 from pathlib import Path
 
-from . import types as tp
+from . import units as tp
 
 _ALL_BASELINE_FILTERS = {}
 
