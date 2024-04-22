@@ -34,7 +34,7 @@ from . import _utils as ut
 from . import config
 from . import conversions as conv
 from . import observation as obs
-from . import types as tp
+from . import units as tp
 from .theory import _ALL_THEORY_POWER_SPECTRA, EOS2021, TheoryModel
 
 logger = logging.getLogger(__name__)
