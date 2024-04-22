@@ -10,7 +10,7 @@ Bug reports/Feature Requests/Feedback/Questions
 It is incredibly helpful to us when users report bugs, unexpected behaviour, or request
 features. You can do any one of these, or simply ask a question about how to use 21cmSense,
 by filing an issue `here <https://github.com/rasg-affiliates/21cmSense/issues/new>`_.
-When doing tjos, please try to be as succinct, but detailed, as possible, and use
+When doing this, please try to be as succinct, but detailed, as possible, and use
 a "Minimum Working Example" whenever applicable.
 
 Documentation improvements
