@@ -2,17 +2,18 @@
 21cmSense
 =========
 
-.. image:: https://img.shields.io/pypi/pyversions/21cmSense
-   :alt: PyPI - Python Version
+.. image:: https://img.shields.io/pypi/v/21cmSense
+   :alt: PyPI - Version
+   :target: https://pypi.org/project/21cmSense
 .. image:: https://codecov.io/gh/rasg-affiliates/21cmSense/branch/main/graph/badge.svg
-    :target: https://codecov.io/gh/rasg-affiliates/21cmSense
+  :target: https://codecov.io/gh/rasg-affiliates/21cmSense
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/psf/black
+  :target: https://github.com/psf/black
 .. image:: https://readthedocs.org/projects/21cmsense/badge/?version=latest
-    :target: https://21cmsense.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
+  :target: https://21cmsense.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
 .. image:: https://img.shields.io/github/license/Ileriayo/markdown-badges?style=flat
-    :target: ./LICENSE.rst
+  :target: ./LICENSE.rst
 
 A python package for calculating the expected sensitivities of 21cm experiments
 to the Epoch of Reionization and/or Cosmic Dawn power spectrum.
@@ -28,6 +29,9 @@ using ``conda`` rather than them being automatically installed with pip::
 
     $ conda install numpy scipy pyyaml astropy
 
+To test that the package has installed correctly, install with ``pip install -e .[test]``
+and run ``pytest`` in the top-level directory.
+
 For Development
 ---------------
 Clone/download the package and run ``pip install [-e] .[dev]`` in the top-level.
@@ -37,6 +41,9 @@ pre-commit hook checks.
 
 We recommend using the ``commitizen`` tool to write commit messages -- we use the commit
 messages to do our versioning!
+
+See the `contributing docs <https://21cmsense.readthedocs.io/en/latest/contributing.html>`_
+for more information about how to contribute to the project!
 
 Usage
 =====

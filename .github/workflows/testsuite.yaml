@@ -15,14 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.9, "3.10"]
+        python-version: [3.9, "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@master
         with:
           fetch-depth: 1
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3.0.3
+        uses: conda-incubator/setup-miniconda@v3.0.4
         with:
           auto-update-conda: true
           mamba-version: "*"
@@ -44,7 +44,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          python -m pytest --cov=py21cmsense --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
+          python -m pytest --cov=py21cmsense --cov-config=.coveragerc --cov-report xml:./coverage.xml
 
       - uses: codecov/codecov-action@v4
         if: success()

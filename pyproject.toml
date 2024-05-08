@@ -2,11 +2,92 @@
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "21cmSense"
+description = "Compute sensitivies of radio interferometers to the cosmic 21cm signal."
+readme = "README.rst"
+authors = [
+  {name="Jonathan Pober", email="jonathon_pober@brown.edu"},
+  {name="Steven Murray", email="murray.steveng@gmail.com"},
+  {name="Matt Kolopanis", email="matthew.kolopanis@gmail.com"},
+]
+requires-python = ">=3.9"
+# Add here all kinds of additional classifiers as defined under
+# https://pypi.python.org/pypi?%3Aaction=list_classifiers
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dynamic = ['version']
+
+
+# Add here dependencies of your project (semicolon/line-separated), e.g.
+dependencies = [
+  "numpy",
+  "scipy",
+  "future",
+  "click",
+  "tqdm",
+  "pyyaml",
+  "astropy>=5",
+  "methodtools",
+  "pyuvdata",
+  "cached_property",
+  "rich",
+  "attrs",
+  "hickleable>=0.1.1",
+]
+
+[project.optional-dependencies]
+docs = [
+  "sphinx>=1.3",
+  "sphinx-rtd-theme",
+  "numpydoc",
+  "nbsphinx",
+  "ipython",
+]
+test = [
+  "pre-commit",
+  "pytest",
+  "matplotlib",
+  "pytest-cov",
+  "pytest-xdist",
+]
+dev = [
+  "21cmSense[docs,test]",
+  "pre-commit",
+  "commitizen",
+]
+
+[project.scripts]
+sense = "py21cmsense.cli:main"
+
+
 [tool.setuptools_scm]
+
+
+[tool.pytest.ini_options]
+# Options for py.test:
+# Specify command line options as you would do when invoking py.test directly.
+# e.g. --cov-report html (or xml) for html/xml output or --junitxml junit.xml
+# in order to write a coverage file that can be read by Jenkins.
+addopts = "--cov py21cmsense --cov-report term-missing --verbose"
+norecursedirs = [
+  "dist",
+  "build",
+  ".tox",
+]
+testpaths = "tests"
 
 [tool.black]
 line-length = 88
-py36 = true
 exclude = '''
 /(
     \.eggs

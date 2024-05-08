@@ -11,7 +11,7 @@ from astropy.cosmology import FLRW, Planck15
 from astropy.cosmology.units import littleh
 from typing import Union
 
-from . import types as tp
+from . import units as tp
 
 # The frequency of the 21cm line emission.
 f21 = 1.42040575177 * un.GHz

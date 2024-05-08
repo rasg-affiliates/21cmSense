@@ -34,7 +34,7 @@ from . import _utils as ut
 from . import config
 from . import conversions as conv
 from . import observation as obs
-from . import types as tp
+from . import units as tp
 from .theory import _ALL_THEORY_POWER_SPECTRA, EOS2021, TheoryModel
 
 logger = logging.getLogger(__name__)
@@ -600,7 +600,7 @@ class PowerSpectrum(Sensitivity):
 
         plt.pcolormesh(x, y, np.log10(z))
         cbar = plt.colorbar()
-        cbar.set_label(r"$\log_{10} \delta \Delta^2$ [mK^2]", fontsize=14)
+        cbar.set_label(r"$\log_{10} \delta \Delta^2\ \  [{\rm mK}^2]$", fontsize=14)
         plt.xlabel(r"$k_\perp$ [h/Mpc]", fontsize=14)
         plt.ylabel(r"$k_{||}$ [h/Mpc]", fontsize=14)
 
@@ -665,7 +665,7 @@ class PowerSpectrum(Sensitivity):
             plt.xscale("log")
             plt.yscale("log")
             plt.xlabel("k [h/Mpc]")
-            plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2$")
+            plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2]$")
             plt.legend()
             plt.title(f"z={conv.f2z(self.observation.frequency):.2f}")
 

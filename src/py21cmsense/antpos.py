@@ -11,7 +11,7 @@ import numpy as np
 from astropy import units as un
 from typing import Sequence
 
-from . import types as tp
+from . import units as tp
 from . import yaml
 
 

@@ -24,7 +24,7 @@ from typing import Callable
 
 from . import _utils as ut
 from . import beam, config
-from . import types as tp
+from . import units as tp
 
 logger = logging.getLogger(__name__)
 
