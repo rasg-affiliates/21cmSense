@@ -1,0 +1,44 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Murray
+  given-names: Steven G.
+  orcid: "https://orcid.org/0000-0003-3059-3823"
+- family-names: Pober
+  given-names: Jonathan
+  orcid: "https://orcid.org/0000-0002-3492-0433"
+- family-names: Kolopanis
+  given-names: Matthew
+  orcid: "https://orcid.org/0000-0002-2950-2974"
+contact:
+- family-names: Murray
+  given-names: Steven G.
+  orcid: "https://orcid.org/0000-0003-3059-3823"
+doi: 10.5281/zenodo.11127253
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Murray
+    given-names: Steven G.
+    orcid: "https://orcid.org/0000-0003-3059-3823"
+  - family-names: Pober
+    given-names: Jonathan
+    orcid: "https://orcid.org/0000-0002-3492-0433"
+  - family-names: Kolopanis
+    given-names: Matthew
+    orcid: "https://orcid.org/0000-0002-2950-2974"
+  date-published: 2024-05-09
+  doi: 10.21105/joss.06501
+  issn: 2475-9066
+  issue: 97
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6501
+  title: "21cmSense v2: A modular, open-source 21 cm sensitivity
+    calculator"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.06501"
+  volume: 9
+title: "21cmSense v2: A modular, open-source 21 cm sensitivity
+  calculator"
