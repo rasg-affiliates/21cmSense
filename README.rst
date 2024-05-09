@@ -14,6 +14,8 @@
   :alt: Documentation Status
 .. image:: https://img.shields.io/github/license/Ileriayo/markdown-badges?style=flat
   :target: ./LICENSE.rst
+.. image:: https://joss.theoj.org/papers/10.21105/joss.06501/status.svg
+   :target: https://doi.org/10.21105/joss.06501
 
 A python package for calculating the expected sensitivities of 21cm experiments
 to the Epoch of Reionization and/or Cosmic Dawn power spectrum.
