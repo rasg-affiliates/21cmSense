@@ -45,7 +45,7 @@ such as the JWST [@jwst].
 sensitivity of these experiments, in order to enhance the process of their design.
 This paper presents version v2.0.0 of 21cmSense, which has been re-written from the ground up
 to be more modular and extensible, and to provide a more user-friendly interface -- as
-well as converting the well-used legacy package, presented in [@Pober2013,@Pober2014] from Python 2 to 3.
+well as converting the well-used legacy package, presented in [@Pober2013; @Pober2014] from Python 2 to 3.
 
 21cmSense can compute sensitivity estimates for both map-making [@fhd] and
 delay-spectrum [@Parsons2012] approaches to power-spectrum estimation.
@@ -115,7 +115,7 @@ these experiments [@Pober2013; @Pober2014; @Greig2020] and for forecasting param
 constraints [@Greig2015; @Greig2017; @Greig2018].
 This overhauled, modularized version of `21cmSense` provides a more user-friendly
 interface, improved performance, and the extensibility required for the next generation,
-as evidenced by its usage in the literature [@Brietman2024,@Schosser2024].
+as evidenced by its usage in the literature [@Breitman2024; @Schosser2024].
 
 # Acknowledgements
 
