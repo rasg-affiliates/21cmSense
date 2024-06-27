@@ -1,9 +1,8 @@
-import pytest
+"""Test the conversions module."""
 
 import numpy as np
 from astropy import units
 from astropy.cosmology import Planck15
-
 from py21cmsense import conversions as cnv
 
 

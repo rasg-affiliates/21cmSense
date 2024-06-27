@@ -12,10 +12,11 @@ units mK^2.
 """
 
 import abc
-import numpy as np
 import warnings
-from astropy import units as un
 from pathlib import Path
+
+import numpy as np
+from astropy import units as un
 from scipy.interpolate import InterpolatedUnivariateSpline, RectBivariateSpline
 
 _ALL_THEORY_POWER_SPECTRA = {}
@@ -52,7 +53,7 @@ class TheoryModel(abc.ABC):
         delta_squared
             An array of delta_squared values in units of mK^2.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
 
 class TheorySpline(TheoryModel):
@@ -86,7 +87,8 @@ class TheorySpline(TheoryModel):
             )
         if not self.z.min() <= z <= self.z.max():
             warnings.warn(
-                f"Extrapolating beyond simulated redshift range: {z} not in range ({self.z.min(), self.z.max()})",
+                f"Extrapolating beyond simulated redshift range: {z} not in "
+                f"range ({self.z.min(), self.z.max()})",
                 stacklevel=2,
             )
 

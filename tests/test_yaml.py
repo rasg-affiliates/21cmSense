@@ -1,15 +1,16 @@
-import pytest
+"""Test the yaml module."""
+
+import pickle
 
 import numpy as np
-import pickle
+import pytest
 from astropy import units as un
 from astropy.io.misc import yaml
-
 from py21cmsense.yaml import LoadError
 
 
 def test_file_not_found():
-    with pytest.raises(IOError):
+    with pytest.raises(IOError, match="not found"):
         yaml.load("!txt non-existent-file.txt")
 
 

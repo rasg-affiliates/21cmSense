@@ -1,12 +1,13 @@
 """Module defining new YAML tags for py21cmsense."""
 
 import inspect
-import numpy as np
 import pickle
+from functools import wraps
+
+import numpy as np
 import yaml
 from astropy import units as un
 from astropy.io.misc.yaml import AstropyLoader
-from functools import wraps
 
 _DATA_LOADERS = {}
 
@@ -16,11 +17,9 @@ _YAML_LOADERS = (yaml.FullLoader, yaml.SafeLoader, yaml.Loader, AstropyLoader)
 class LoadError(IOError):
     """Error raised on trying to load data from YAML files."""
 
-    pass
-
 
 def data_loader(tag=None):
-    """A decorator that turns a function into a YAML tag for loading external datafiles.
+    """Convert a function into a YAML tag for loading external datafiles.
 
     The form of the tag is::
 
@@ -43,7 +42,7 @@ def data_loader(tag=None):
             except OSError:
                 raise
             except Exception as e:
-                raise LoadError(str(e))
+                raise LoadError(str(e)) from e
 
         def yaml_fnc(loader, node):
             args = node.value.split("|")
@@ -94,7 +93,7 @@ def txt_loader(data):
 
 
 def yaml_func(tag=None):
-    """A decorator that turns a function into a YAML tag."""
+    """Convert a function into a YAML tag."""
 
     def inner(fnc):
         new_tag = tag or fnc.__name__

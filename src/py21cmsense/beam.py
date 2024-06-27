@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from abc import ABCMeta, abstractmethod
+
 import attr
-from abc import ABCMeta, abstractmethod, abstractproperty
 from astropy import constants as cnst
 from astropy import units as un
 from hickleable import hickleable
@@ -37,25 +38,25 @@ class PrimaryBeam(metaclass=ABCMeta):
         """Get a copy of the object at a new frequency."""
         return attr.evolve(self, frequency=frequency)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def area(self) -> un.Quantity[un.steradian]:
         """Beam area [units: sr]."""
-        pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def width(self) -> un.Quantity[un.radians]:
         """Beam width [units: rad]."""
-        pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def first_null(self) -> un.Quantity[un.radians]:
         """An approximation of the first null of the beam."""
-        pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def sq_area(self) -> un.Quantity[un.steradian]:
         """The area of the beam^2."""
-        pass
 
     @property
     def b_eff(self) -> un.Quantity[un.steradian]:
@@ -65,10 +66,10 @@ class PrimaryBeam(metaclass=ABCMeta):
         """
         return self.area**2 / self.sq_area
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def uv_resolution(self) -> un.Quantity[1 / un.radians]:
         """The UV footprint of the beam."""
-        pass
 
     @classmethod
     def from_uvbeam(cls) -> PrimaryBeam:
@@ -91,9 +92,7 @@ class GaussianBeam(PrimaryBeam):
         otherwise defined. This generates the beam size.
     """
 
-    dish_size: tp.Length = attr.ib(
-        validator=(tp.vld_physical_type("length"), ut.positive)
-    )
+    dish_size: tp.Length = attr.ib(validator=(tp.vld_physical_type("length"), ut.positive))
 
     @property
     def wavelength(self) -> un.Quantity[un.m]:

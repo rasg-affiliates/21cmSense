@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+"""Configuration for docs."""
 
 import os
 from datetime import datetime
+
 from py21cmsense import __version__
 
 extensions = [
@@ -35,9 +35,9 @@ numpydoc_show_class_members = False
 source_suffix = ".rst"
 master_doc = "index"
 project = "21cmSense"
-year = str(datetime.now().year)
+year = str(datetime.now(tz=datetime.tzinfo).year)
 author = "Jonathan Pober and Steven Murray"
-copyright = "{0}, {1}".format(year, author)
+copyright = f"{year}, {author}"
 version = release = __version__
 templates_path = ["templates"]
 
@@ -68,9 +68,7 @@ napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
 
-mathjax_path = (
-    "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-)
+mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 
 exclude_patterns = [
     "_build",

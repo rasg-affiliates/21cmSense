@@ -7,20 +7,21 @@ simple, and suited to the needs of this particular package.
 
 from __future__ import annotations
 
-import attr
 import collections
 import logging
+from collections import defaultdict
+from functools import cached_property
+from pathlib import Path
+from typing import Callable
+
+import attr
 import numpy as np
 import tqdm
 from astropy import constants as cnst
 from astropy import units as un
 from astropy.io.misc import yaml
 from attr import validators as vld
-from cached_property import cached_property
-from collections import defaultdict
 from hickleable import hickleable
-from pathlib import Path
-from typing import Callable
 
 from . import _utils as ut
 from . import beam, config
@@ -118,12 +119,11 @@ class Observatory:
                 y = val(1 * un.MHz)
             except Exception as e:
                 raise ValueError(
-                    "Trcv function must take a frequency Quantity and return a temperature Quantity."
+                    "Trcv function must take a frequency Quantity and "
+                    "return a temperature Quantity."
                 ) from e
 
-            if not (
-                isinstance(y, un.Quantity) and y.unit.physical_type == "temperature"
-            ):
+            if not (isinstance(y, un.Quantity) and y.unit.physical_type == "temperature"):
                 raise ValueError("Trcv function must return a temperature Quantity.")
         else:
             tp.vld_physical_type("temperature")(self, att, val)
@@ -153,9 +153,7 @@ class Observatory:
         )
 
     @classmethod
-    def from_yaml(
-        cls, yaml_file: str | dict, frequency: tp.Frequency | None = None
-    ) -> Observatory:
+    def from_yaml(cls, yaml_file: str | dict, frequency: tp.Frequency | None = None) -> Observatory:
         """Instantiate an Observatory from a compatible YAML config file."""
         if isinstance(yaml_file, (str, Path)):
             with open(yaml_file) as fl:
@@ -165,9 +163,7 @@ class Observatory:
         elif isinstance(yaml_file, collections.abc.Mapping):
             data = yaml_file
         else:
-            raise ValueError(
-                "yaml_file must be a string filepath or a raw dict from such a file."
-            )
+            raise ValueError("yaml_file must be a string filepath or a raw dict from such a file.")
 
         # Mask out some antennas if a max_antpos is set in the YAML
         max_antpos = data.pop("max_antpos", np.inf * un.m)
@@ -195,9 +191,7 @@ class Observatory:
         return cls(antpos=antpos, beam=_beam, **data)
 
     @classmethod
-    def from_profile(
-        cls, profile: str, frequency: tp.Frequency | None = None, **kwargs
-    ):
+    def from_profile(cls, profile: str, frequency: tp.Frequency | None = None, **kwargs):
         """Instantiate the Observatory from a builtin profile.
 
         Parameters
@@ -235,7 +229,7 @@ class Observatory:
     def projected_baselines(
         self, baselines: tp.Length | None = None, time_offset: tp.Time = 0 * un.hour
     ) -> np.ndarray:
-        """The *projected* baseline lengths (in wavelengths).
+        """Compute the *projected* baseline lengths (in wavelengths).
 
         Phased to a point that has rotated off zenith by some time_offset.
 
@@ -322,10 +316,7 @@ class Observatory:
         baseline_filters = tp._tuplify(baseline_filters, 1)
 
         def filt(blm):
-            for filt in baseline_filters:
-                if not filt(blm):
-                    return False
-            return True
+            return all(filt(blm) for filt in baseline_filters)
 
         # Everything here is in wavelengths
         uvw = self.projected_baselines()[:, :, :2].value
@@ -485,13 +476,9 @@ class Observatory:
         bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
 
         if weights is None:
-            raise ValueError(
-                "If baselines are provided, weights must also be provided."
-            )
+            raise ValueError("If baselines are provided, weights must also be provided.")
 
-        time_offsets = self.time_offsets_from_obs_int_time(
-            integration_time, observation_duration
-        )
+        time_offsets = self.time_offsets_from_obs_int_time(integration_time, observation_duration)
 
         uvws = self.projected_baselines(baselines, time_offsets).reshape(
             baselines.shape[0], time_offsets.size, 3
@@ -545,9 +532,7 @@ class Observatory:
         bl_max = self.longest_used_baseline(bl_max)
 
         # We're doing edges of bins here, and the first edge is at uv_res/2
-        n_positive = int(
-            np.ceil((bl_max - self.beam.uv_resolution / 2) / self.beam.uv_resolution)
-        )
+        n_positive = int(np.ceil((bl_max - self.beam.uv_resolution / 2) / self.beam.uv_resolution))
 
         # Grid from uv_res/2 to just past (or equal to) bl_max, in steps of resolution.
         positive = np.linspace(

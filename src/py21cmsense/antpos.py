@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import numpy as np
 from astropy import units as un
-from typing import Sequence
 
 from . import units as tp
 from . import yaml
@@ -52,10 +51,7 @@ def hera(
 
     sep = separation.to_value("m")
 
-    if row_separation is None:
-        row_sep = sep * np.sqrt(3) / 2
-    else:
-        row_sep = row_separation.to_value("m")
+    row_sep = sep * np.sqrt(3) / 2 if row_separation is None else row_separation.to_value("m")
 
     # construct the main hexagon
     positions = []
@@ -97,11 +93,7 @@ def hera(
         exterior_hex_num = outriggers + 2
         for row in range(exterior_hex_num - 1, -exterior_hex_num, -1):
             for col in range(2 * exterior_hex_num - abs(row) - 1):
-                x_pos = (
-                    ((2 - (2 * exterior_hex_num - abs(row))) / 2 + col)
-                    * sep
-                    * (hex_num - 1)
-                )
+                x_pos = ((2 - (2 * exterior_hex_num - abs(row))) / 2 + col) * sep * (hex_num - 1)
                 y_pos = row * (hex_num - 1) * row_sep
                 theta = np.arctan2(y_pos, x_pos)
                 if np.sqrt(x_pos**2 + y_pos**2) > sep * (hex_num + 1):

@@ -10,11 +10,17 @@ In the future, we may provide things like ``ImagingSensitivity`` or
 
 from __future__ import annotations
 
+import importlib
+import logging
+from collections.abc import Mapping
+from functools import cached_property
+from os import path
+from pathlib import Path
+from typing import Callable
+
 import attr
 import h5py
 import hickle
-import importlib
-import logging
 import numpy as np
 import tqdm
 from astropy import units as un
@@ -22,13 +28,8 @@ from astropy.cosmology import LambdaCDM
 from astropy.cosmology.units import littleh, with_H0
 from astropy.io.misc import yaml
 from attr import validators as vld
-from cached_property import cached_property
-from collections.abc import Mapping
 from hickleable import hickleable
 from methodtools import lru_cache
-from os import path
-from pathlib import Path
-from typing import Callable
 
 from . import _utils as ut
 from . import config
@@ -67,9 +68,7 @@ class Sensitivity:
         elif isinstance(yaml_file, Mapping):
             data = yaml_file
         else:
-            raise ValueError(
-                "yaml_file must be a string filepath or a raw dict from such a file."
-            )
+            raise ValueError("yaml_file must be a string filepath or a raw dict from such a file.")
         return data
 
     @classmethod
@@ -89,9 +88,7 @@ class Sensitivity:
         elif h5py.is_hdf5(obsfile):
             observation = hickle.load(obsfile)
         else:
-            raise ValueError(
-                "observation must be a filename with extension .yml or .h5"
-            )
+            raise ValueError("observation must be a filename with extension .yml or .h5")
 
         return klass(observation=observation, **data)
 
@@ -184,7 +181,7 @@ class PowerSpectrum(Sensitivity):
             for mdl in data.pop("plugins"):
                 try:
                     importlib.import_module(mdl)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     raise ImportError(f"Could not import {mdl}") from e
 
         if "theory_model" in data:
@@ -309,15 +306,9 @@ class PowerSpectrum(Sensitivity):
             hor = self.horizon_limit(umag)
 
             if k_perp not in sense["thermal"]:
-                sense["thermal"][k_perp] = (
-                    np.zeros(len(self.observation.kparallel)) / un.mK**4
-                )
-                sense["sample"][k_perp] = (
-                    np.zeros(len(self.observation.kparallel)) / un.mK**4
-                )
-                sense["both"][k_perp] = (
-                    np.zeros(len(self.observation.kparallel)) / un.mK**4
-                )
+                sense["thermal"][k_perp] = np.zeros(len(self.observation.kparallel)) / un.mK**4
+                sense["sample"][k_perp] = np.zeros(len(self.observation.kparallel)) / un.mK**4
+                sense["both"][k_perp] = np.zeros(len(self.observation.kparallel)) / un.mK**4
 
             # Exclude parallel modes dominated by foregrounds
             kpars = self.observation.kparallel[self.observation.kparallel >= hor]
@@ -381,7 +372,7 @@ class PowerSpectrum(Sensitivity):
         # errors were added in inverse quadrature, now need to invert and take
         # square root to have error bars; also divide errors by number of indep. fields
         final_sense = {}
-        for k_perp in sense.keys():
+        for k_perp in sense:
             mask = sense[k_perp] > 0
             if self.systematics_mask is not None:
                 mask &= self.systematics_mask(k_perp, self.observation.kparallel)
@@ -392,16 +383,12 @@ class PowerSpectrum(Sensitivity):
             final_sense[k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
             if thermal:
                 total_std = thermal_std = 1 / np.sqrt(
-                    self._nsamples_2d["thermal"][k_perp][mask]
-                    * self.observation.n_lst_bins
+                    self._nsamples_2d["thermal"][k_perp][mask] * self.observation.n_lst_bins
                 )
             if sample:
                 total_std = sample_std = 1 / np.sqrt(
                     self._nsamples_2d["sample"][k_perp][mask]
-                    * (
-                        self.observation.time_per_day
-                        / self.observation.beam_crossing_time
-                    ).to("")
+                    * (self.observation.time_per_day / self.observation.beam_crossing_time).to("")
                 )
             if thermal and sample:
                 total_std = thermal_std + sample_std
@@ -426,9 +413,7 @@ class PowerSpectrum(Sensitivity):
         kpar_edges
             The edges of the bins in kpar.
         """
-        sense2d_inv = np.zeros((len(kperp_edges) - 1, len(kpar_edges) - 1)) << (
-            1 / un.mK**4
-        )
+        sense2d_inv = np.zeros((len(kperp_edges) - 1, len(kpar_edges) - 1)) << (1 / un.mK**4)
         sense = self.calculate_sensitivity_2d(thermal=thermal, sample=sample)
 
         assert np.all(np.diff(kperp_edges) > 0)
@@ -450,9 +435,7 @@ class PowerSpectrum(Sensitivity):
             good_ks = kpar_indx >= 0
             good_ks &= kpar_indx < len(kpar_edges) - 1
 
-            sense2d_inv[kperp_indx][kpar_indx[good_ks]] += (
-                1.0 / sense[k_perp][good_ks] ** 2
-            )
+            sense2d_inv[kperp_indx][kpar_indx[good_ks]] += 1.0 / sense[k_perp][good_ks] ** 2
 
         # invert errors and take square root again for final answer
         sense2d = np.ones(sense2d_inv.shape) * un.mK**2 * np.inf
@@ -518,9 +501,7 @@ class PowerSpectrum(Sensitivity):
         return sense1d
 
     @lru_cache()
-    def calculate_sensitivity_1d(
-        self, thermal: bool = True, sample: bool = True
-    ) -> tp.Delta:
+    def calculate_sensitivity_1d(self, thermal: bool = True, sample: bool = True) -> tp.Delta:
         """Calculate a 1D sensitivity curve.
 
         Parameters
@@ -553,9 +534,7 @@ class PowerSpectrum(Sensitivity):
         return self.theory_model.delta_squared(self.observation.redshift, k)
 
     @lru_cache()
-    def calculate_significance(
-        self, thermal: bool = True, sample: bool = True
-    ) -> float:
+    def calculate_significance(self, thermal: bool = True, sample: bool = True) -> float:
         """
         Calculate significance of a detection of the default cosmological power spectrum.
 
@@ -581,8 +560,8 @@ class PowerSpectrum(Sensitivity):
         """Create a colormap plot of the sensitivity un UV bins."""
         try:
             import matplotlib.pyplot as plt
-        except ImportError:  # pragma: no cover
-            raise ImportError("matplotlib is required to make plots...")
+        except ImportError as e:  # pragma: no cover
+            raise ImportError("matplotlib is required to make plots...") from e
 
         keys = sorted(sense2d.keys())
         x = np.array([v.value for v in keys])
@@ -609,7 +588,7 @@ class PowerSpectrum(Sensitivity):
         filename: str | Path,
         thermal: bool = True,
         sample: bool = True,
-        prefix: str = None,
+        prefix: str | None = None,
         direc: str | Path = ".",
     ) -> Path:
         """Save sensitivity results to HDF5 file.
@@ -656,8 +635,8 @@ class PowerSpectrum(Sensitivity):
         """Create a plot of the sensitivity in 1D k-bins."""
         try:
             import matplotlib.pyplot as plt
-        except ImportError:  # pragma: no cover
-            raise ImportError("matplotlib is required to make plots...")
+        except ImportError as e:  # pragma: no cover
+            raise ImportError("matplotlib is required to make plots...") from e
 
         out = self._get_all_sensitivity_combos(thermal, sample)
         for key, value in out.items():
@@ -671,16 +650,12 @@ class PowerSpectrum(Sensitivity):
 
         return plt.gcf()
 
-    def _get_all_sensitivity_combos(
-        self, thermal: bool, sample: bool
-    ) -> dict[str, tp.Delta]:
+    def _get_all_sensitivity_combos(self, thermal: bool, sample: bool) -> dict[str, tp.Delta]:
         result = {}
         if thermal:
             result["thermal_noise"] = self.calculate_sensitivity_1d(sample=False)
         if sample:
-            result["sample_noise"] = self.calculate_sensitivity_1d(
-                thermal=False, sample=True
-            )
+            result["sample_noise"] = self.calculate_sensitivity_1d(thermal=False, sample=True)
 
         if thermal and sample:
             result["sample+thermal_noise"] = self.calculate_sensitivity_1d(

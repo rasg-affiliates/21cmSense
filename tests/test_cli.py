@@ -1,12 +1,11 @@
-import pytest
+"""Test the CLI module."""
 
-import glob
 import traceback
+from os import path
+
+import pytest
 from astropy.io.misc import yaml
 from click.testing import CliRunner
-from os import path
-from yaml import dump
-
 from py21cmsense import cli
 
 here = path.dirname(path.abspath(__file__))
@@ -60,9 +59,7 @@ def test_gridding_baselines(runner, observation_config, tmpdirec):
 
 
 def test_calc_sense(runner, sensitivity_config, tmpdirec):
-    output = runner.invoke(
-        cli.main, ["calc-sense", sensitivity_config, "--direc", str(tmpdirec)]
-    )
+    output = runner.invoke(cli.main, ["calc-sense", sensitivity_config, "--direc", str(tmpdirec)])
     if output.exception:
         traceback.print_exception(*output.exc_info)
 
