@@ -1,8 +1,8 @@
-import pytest
+"""Test the profiles module."""
 
 import astropy.units as un
 import numpy as np
-
+import pytest
 from py21cmsense.observatory import Observatory, get_builtin_profiles
 
 

@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-import attr
 import collections
+from collections import defaultdict
+from functools import cached_property
+from os import path
+from typing import Any, Callable
+
+import attr
 import numpy as np
 from astropy import units as un
 from astropy.cosmology import LambdaCDM, Planck15
 from astropy.io.misc import yaml
 from attr import validators as vld
-from collections import defaultdict
-from functools import cached_property, partial
 from hickleable import hickleable
-from os import path
-from typing import Any, Callable
 
 from . import _utils as ut
 from . import conversions as conv
@@ -120,9 +121,7 @@ class Observation:
 
     # The following defaults are based on Mozdzen et al. 2017: 2017MNRAS.464.4995M,
     # figure 8, with galaxy down.
-    spectral_index: float = attr.ib(
-        default=2.6, converter=float, validator=ut.between(1.5, 4)
-    )
+    spectral_index: float = attr.ib(default=2.6, converter=float, validator=ut.between(1.5, 4))
     tsky_amplitude: tp.Temperature = attr.ib(
         default=260000 * un.mK,
         validator=ut.nonnegative,
@@ -140,18 +139,14 @@ class Observation:
         elif isinstance(yaml_file, collections.abc.Mapping):
             data = yaml_file
         else:
-            raise ValueError(
-                "yaml_file must be a string filepath or a raw dict from such a file."
-            )
+            raise ValueError("yaml_file must be a string filepath or a raw dict from such a file.")
 
         if (
             isinstance(data["observatory"], str)
             and isinstance(yaml_file, str)
             and not path.isabs(data["observatory"])
         ):
-            data["observatory"] = path.join(
-                path.dirname(yaml_file), data["observatory"]
-            )
+            data["observatory"] = path.join(path.dirname(yaml_file), data["observatory"])
 
         observatory = obs.Observatory.from_yaml(data.pop("observatory"))
         return cls(observatory=observatory, **data)
@@ -311,9 +306,7 @@ class Observation:
     @cached_property
     def eta(self) -> un.Quantity[1 / un.MHz]:
         """The fourier dual of the frequencies of the observation."""
-        return np.fft.fftfreq(
-            self.n_channels, self.bandwidth.to("MHz") / self.n_channels
-        )
+        return np.fft.fftfreq(self.n_channels, self.bandwidth.to("MHz") / self.n_channels)
 
     @cached_property
     def kparallel(self) -> un.Quantity[un.littleh / un.Mpc]:
@@ -322,9 +315,7 @@ class Observation:
         Order of the values is the same as `fftfreq` (i.e. zero-first)
         """
         return (
-            conv.dk_deta(
-                self.redshift, self.cosmo, approximate=self.use_approximate_cosmo
-            )
+            conv.dk_deta(self.redshift, self.cosmo, approximate=self.use_approximate_cosmo)
             * self.eta
         )
 

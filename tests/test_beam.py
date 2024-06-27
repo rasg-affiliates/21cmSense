@@ -1,8 +1,8 @@
-import pytest
+"""Test the beam module."""
 
 import numpy as np
+import pytest
 from astropy import units
-
 from py21cmsense import GaussianBeam, beam
 
 

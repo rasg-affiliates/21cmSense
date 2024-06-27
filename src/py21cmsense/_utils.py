@@ -6,8 +6,6 @@ from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
 from pyuvdata import utils as uvutils
 
-from . import config
-
 
 def between(xmin, xmax):
     """Return an attrs validation function that checks a number is within bounds."""
@@ -19,12 +17,18 @@ def between(xmin, xmax):
 
 
 def positive(instance, att, x):
-    """An attrs validator that checks a value is positive."""
+    """Check that a value is positive.
+
+    This is an attrs validator.
+    """
     assert x > 0, "must be positive"
 
 
 def nonnegative(instance, att, x):
-    """An attrs validator that checks a value is non-negative."""
+    """Check that a value is non-negative.
+
+    This is an attrs validator.
+    """
     assert x >= 0, "must be non-negative"
 
 

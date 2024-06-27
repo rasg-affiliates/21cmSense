@@ -1,11 +1,12 @@
-import pytest
+"""Tests for the Observation class."""
 
 import copy
-import numpy as np
 import pickle
+
+import numpy as np
+import pytest
 from astropy import units
 from astropy.cosmology.units import littleh
-
 from py21cmsense import GaussianBeam, Observation, Observatory
 
 
@@ -68,10 +69,11 @@ def test_equality(observatory):
 
 
 def test_from_yaml(observatory):
+    rng = np.random.default_rng(1234)
     obs = Observation.from_yaml(
         {
             "observatory": {
-                "antpos": np.random.random((20, 3)) * units.m,
+                "antpos": rng.random((20, 3)) * units.m,
                 "beam": {
                     "class": "GaussianBeam",
                     "frequency": 150 * units.MHz,

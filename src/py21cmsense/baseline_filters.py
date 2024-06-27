@@ -7,11 +7,10 @@ from string names, useful for YAML files.
 """
 
 import abc
+
 import attr
 import numpy as np
-import warnings
 from astropy import units as un
-from pathlib import Path
 
 from . import units as tp
 
@@ -44,29 +43,22 @@ class BaselineFilter(abc.ABC):
         bool
             True if the baseline should be included.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
 
 @attr.define
 class BaselineRange(BaselineFilter):
     """Theory model from EOS2021 (https://arxiv.org/abs/2110.13919)."""
 
-    bl_min: tp.Length = attr.field(
-        default=0 * un.m, validator=tp.vld_physical_type("length")
-    )
-    bl_max: tp.Length = attr.field(
-        default=np.inf * un.m, validator=tp.vld_physical_type("length")
-    )
-    direction: str = attr.field(
-        default="mag", validator=attr.validators.in_(("ew", "ns", "mag"))
-    )
+    bl_min: tp.Length = attr.field(default=0 * un.m, validator=tp.vld_physical_type("length"))
+    bl_max: tp.Length = attr.field(default=np.inf * un.m, validator=tp.vld_physical_type("length"))
+    direction: str = attr.field(default="mag", validator=attr.validators.in_(("ew", "ns", "mag")))
 
     @bl_max.validator
     def _bl_max_vld(self, att, val):
         if val <= self.bl_min:
             raise ValueError(
-                "bl_max must be greater than bl_min, got "
-                f"bl_min={self.bl_min} and bl_max={val}"
+                "bl_max must be greater than bl_min, got " f"bl_min={self.bl_min} and bl_max={val}"
             )
 
     def __call__(self, bl: tp.Length) -> bool:

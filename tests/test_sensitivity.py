@@ -1,10 +1,11 @@
-import pytest
+"""Test the sensitivity module."""
+
+import warnings
 
 import numpy as np
-import warnings
+import pytest
 from astropy import units
 from astropy.cosmology.units import littleh
-
 from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum, theory
 from py21cmsense.sensitivity import Sensitivity
 
@@ -42,17 +43,14 @@ def test_sensitivity_2d(observation):
     sense_full = ps.calculate_sensitivity_2d()
     assert all(np.all(sense_thermal[key] <= sense_full[key]) for key in sense_thermal)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Either thermal or sample must be True"):
         ps.calculate_sensitivity_2d(thermal=False, sample=False)
 
 
 def test_sensitivity_2d_grid(observation, caplog):
     ps = PowerSpectrum(observation=observation)
     sense_ungridded = ps.calculate_sensitivity_2d(thermal=True, sample=True)
-    kperp = (
-        np.array([x.value for x in sense_ungridded.keys()])
-        * list(sense_ungridded.keys())[0].unit
-    )
+    kperp = np.array([x.value for x in sense_ungridded]) * next(iter(sense_ungridded.keys())).unit
     sense = ps.calculate_sensitivity_2d_grid(
         kperp_edges=np.linspace(kperp.min().value, kperp.max().value, 10) * kperp.unit,
         kpar_edges=ps.k1d,
@@ -62,9 +60,7 @@ def test_sensitivity_2d_grid(observation, caplog):
 
 def test_sensitivity_1d_binned(observation):
     ps = PowerSpectrum(observation=observation)
-    assert np.all(
-        ps.calculate_sensitivity_1d() == ps.calculate_sensitivity_1d_binned(ps.k1d)
-    )
+    assert np.all(ps.calculate_sensitivity_1d() == ps.calculate_sensitivity_1d_binned(ps.k1d))
 
 
 def test_plots(observation):
@@ -103,12 +99,13 @@ def test_load_yaml_bad():
     ):
         Sensitivity.from_yaml(1)
 
+    rng = np.random.default_rng(1234)
     with pytest.raises(ImportError, match="Could not import"):
         PowerSpectrum.from_yaml(
             {
                 "plugins": ["this.is.not.a.module"],
                 "observatory": {
-                    "antpos": np.random.random((20, 3)) * units.m,
+                    "antpos": rng.random((20, 3)) * units.m,
                     "beam": {
                         "class": "GaussianBeam",
                         "frequency": 150 * units.MHz,
@@ -149,14 +146,10 @@ def test_at_freq(observation):
     ps2 = ps.at_frequency(0.9 * observation.frequency)
 
     assert ps2.frequency == 0.9 * observation.frequency
-    with pytest.warns(
-        UserWarning, match="Extrapolating above the simulated theoretical"
-    ):
+    with pytest.warns(UserWarning, match="Extrapolating above the simulated theoretical"):
         assert ps.calculate_significance() != ps2.calculate_significance()
 
 
 def test_bad_theory(observation):
-    with pytest.raises(
-        ValueError, match="The theory_model must be an instance of TheoryModel"
-    ):
+    with pytest.raises(ValueError, match="The theory_model must be an instance of TheoryModel"):
         PowerSpectrum(observation=observation, theory_model=3)

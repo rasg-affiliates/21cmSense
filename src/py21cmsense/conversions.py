@@ -4,12 +4,13 @@ Common 21 cm conversions.
 Provides conversions between observing co-ordinates and cosmological co-ordinates.
 """
 
+from __future__ import annotations
+
 import numpy as np
 from astropy import constants as cnst
 from astropy import units as un
 from astropy.cosmology import FLRW, Planck15
 from astropy.cosmology.units import littleh
-from typing import Union
 
 from . import units as tp
 
@@ -17,7 +18,6 @@ from . import units as tp
 f21 = 1.42040575177 * un.GHz
 
 
-@un.quantity_input
 def f2z(fq: tp.Frequency) -> float:
     """
     Convert frequency to redshift for 21 cm line.
@@ -34,8 +34,7 @@ def f2z(fq: tp.Frequency) -> float:
     return float(f21 / fq - 1)
 
 
-@un.quantity_input
-def z2f(z: Union[float, np.array]) -> un.Quantity[un.GHz]:
+def z2f(z: float | np.array) -> un.Quantity[un.GHz]:
     """
     Convert redshift to z=0 frequency for 21 cm line.
 
@@ -52,7 +51,7 @@ def z2f(z: Union[float, np.array]) -> un.Quantity[un.GHz]:
 
 
 def dL_dth(
-    z: Union[float, np.array],
+    z: float | np.array,
     cosmo: FLRW = Planck15,
     approximate=False,
 ) -> un.Quantity[un.Mpc / un.rad / littleh]:
@@ -74,17 +73,13 @@ def dL_dth(
     From Furlanetto et al. (2006)
     """
     if approximate:
-        return (
-            (1.9 * (1.0 / un.arcmin) * ((1 + z) / 10.0) ** 0.2).to(1 / un.rad)
-            * un.Mpc
-            / littleh
-        )
+        return (1.9 * (1.0 / un.arcmin) * ((1 + z) / 10.0) ** 0.2).to(1 / un.rad) * un.Mpc / littleh
     else:
         return cosmo.h * cosmo.comoving_transverse_distance(z) / un.rad / littleh
 
 
 def dL_df(
-    z: Union[float, np.array],
+    z: float | np.array,
     cosmo: FLRW = Planck15,
     approximate=False,
 ) -> un.Quantity[un.Mpc / un.MHz / littleh]:
@@ -112,7 +107,7 @@ def dL_df(
 
 
 def dk_du(
-    z: Union[float, np.array],
+    z: float | np.array,
     cosmo: FLRW = Planck15,
     approximate=False,
 ) -> un.Quantity[littleh / un.Mpc]:
@@ -133,7 +128,7 @@ def dk_du(
 
 
 def dk_deta(
-    z: Union[float, np.array],
+    z: float | np.array,
     cosmo: FLRW = Planck15,
     approximate=False,
 ) -> un.Quantity[un.MHz * littleh / un.Mpc]:
@@ -149,7 +144,7 @@ def dk_deta(
 
 
 def X2Y(
-    z: Union[float, np.array],
+    z: float | np.array,
     cosmo: FLRW = Planck15,
     approximate=False,
 ) -> un.Quantity[un.Mpc**3 / littleh**3 / un.steradian / un.MHz]:
@@ -167,6 +162,4 @@ def X2Y(
     -------
     astropy.Quantity: the conversion factor. Units are Mpc^3/h^3 / (sr MHz).
     """
-    return dL_dth(z, cosmo, approximate=approximate) ** 2 * dL_df(
-        z, cosmo, approximate=approximate
-    )
+    return dL_dth(z, cosmo, approximate=approximate) ** 2 * dL_df(z, cosmo, approximate=approximate)

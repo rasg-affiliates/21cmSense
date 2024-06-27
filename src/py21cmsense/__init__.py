@@ -9,6 +9,17 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
+__all__ = [
+    "data",
+    "theory",
+    "yaml",
+    "hera",
+    "BaselineRange",
+    "GaussianBeam",
+    "Observation",
+    "Observatory",
+    "PowerSpectrum",
+]
 from . import data, theory, yaml
 from .antpos import hera
 from .baseline_filters import BaselineRange

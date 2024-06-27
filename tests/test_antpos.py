@@ -1,8 +1,8 @@
-import pytest
+"""Test the antenna positions."""
 
 import numpy as np
+import pytest
 from astropy import units as un
-
 from py21cmsense.antpos import hera
 
 
@@ -37,5 +37,5 @@ def test_hera_set_row_sep():
 
 
 def test_bad_hex_num():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="hex_num must be greater than 1"):
         hera(1)

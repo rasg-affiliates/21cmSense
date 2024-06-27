@@ -1,6 +1,8 @@
-import pytest
+"""Pytest configuration file."""
 
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture(scope="session")

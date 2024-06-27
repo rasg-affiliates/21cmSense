@@ -1,14 +1,13 @@
 """CLI routines for 21cmSense."""
 
-import click
 import logging
-import os
-import pickle
 import tempfile
-from astropy.io.misc import yaml
-from hickle import hickle
 from os import path
 from pathlib import Path
+
+import click
+from astropy.io.misc import yaml
+from hickle import hickle
 from rich.logging import RichHandler
 
 from . import observation
@@ -24,9 +23,7 @@ except ImportError:  # pragma: no cover
 main = click.Group()
 
 FORMAT = "%(message)s"
-logging.basicConfig(
-    level=logging.INFO, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-)
+logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
 
 logger = logging.getLogger("py21cmsense")
 
@@ -78,12 +75,8 @@ def grid_baselines(configfile, direc, outfile):
     help="directory to save output file",
     default=".",
 )
-@click.option(
-    "--fname", default=None, type=click.Path(), help="filename to save output file"
-)
-@click.option(
-    "--thermal/--no-thermal", default=True, help="whether to include thermal noise"
-)
+@click.option("--fname", default=None, type=click.Path(), help="filename to save output file")
+@click.option("--thermal/--no-thermal", default=True, help="whether to include thermal noise")
 @click.option(
     "--samplevar/--no-samplevar",
     default=True,
@@ -100,12 +93,8 @@ def grid_baselines(configfile, direc, outfile):
     default=True,
     help="whether to plot the 1D power spectrum uncertainty",
 )
-@click.option(
-    "--plot-title", default=None, type=str, help="title for the output 1D plot"
-)
-@click.option(
-    "--prefix", default="", type=str, help="string prefix for all output files"
-)
+@click.option("--plot-title", default=None, type=str, help="title for the output 1D plot")
+@click.option("--prefix", default="", type=str, help="string prefix for all output files")
 def calc_sense(
     configfile,
     array_file,
@@ -146,9 +135,7 @@ def calc_sense(
         f"Used {len(sensitivity.k1d)} bins between "
         f"{sensitivity.k1d.min()} and {sensitivity.k1d.max()}"
     )
-    sensitivity.write(
-        filename=fname, thermal=thermal, sample=samplevar, direc=direc, prefix=prefix
-    )
+    sensitivity.write(filename=fname, thermal=thermal, sample=samplevar, direc=direc, prefix=prefix)
 
     if write_significance:
         sig = sensitivity.calculate_significance(thermal=thermal, sample=samplevar)
@@ -158,7 +145,7 @@ def calc_sense(
         fig = sensitivity.plot_sense_1d(thermal=thermal, sample=samplevar)
         if plot_title:
             plt.title(plot_title)
-        f"{prefix}_" if prefix else ""
+        prefix = f"{prefix}_" if prefix else ""
         fig.savefig(
             f"{direc}/{prefix}{sensitivity.foreground_model}_"
             f"{sensitivity.observation.frequency:.3f}.png"

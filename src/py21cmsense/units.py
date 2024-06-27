@@ -2,20 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Any, Callable
+
 import attr
-import numpy as np
 from astropy import constants as cnst
 from astropy import units as un
 from astropy.cosmology.units import littleh, redshift
-from typing import Any, Callable, Type, Union
 
 un.add_enabled_units([littleh, redshift])
 
 
 class UnitError(ValueError):
     """An error pertaining to having incorrect units."""
-
-    pass
 
 
 Length = un.Quantity["length"]
@@ -60,9 +58,7 @@ def vld_unit(unit, equivalencies=()):
             raise UnitError(f"{att.name} must be an astropy Quantity!")
 
         if not val.unit.is_equivalent(unit, equivalencies):
-            raise un.UnitConversionError(
-                f"{att.name} not convertible to {unit}. Got {val.unit}"
-            )
+            raise un.UnitConversionError(f"{att.name} not convertible to {unit}. Got {val.unit}")
 
     return _check_unit
 

@@ -1,11 +1,13 @@
+"""Test the I/O module."""
+
 import hickle
 import numpy as np
 from astropy import units as un
-
 from py21cmsense import GaussianBeam, Observation, Observatory
 
+rng = np.random.default_rng(1234)
 beam = GaussianBeam(frequency=150 * un.MHz, dish_size=14 * un.m)
-obs = Observatory(beam=beam, antpos=np.random.random((25, 3)) * 30 * un.m)
+obs = Observatory(beam=beam, antpos=rng.random((25, 3)) * 30 * un.m)
 observation = Observation(observatory=obs)
 
 
