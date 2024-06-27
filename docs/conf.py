@@ -1,7 +1,7 @@
 """Configuration for docs."""
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from py21cmsense import __version__
 
@@ -35,7 +35,7 @@ numpydoc_show_class_members = False
 source_suffix = ".rst"
 master_doc = "index"
 project = "21cmSense"
-year = str(datetime.now(tz=datetime.tzinfo).year)
+year = str(datetime.now(tz=timezone.utc).year)
 author = "Jonathan Pober and Steven Murray"
 copyright = f"{year}, {author}"
 version = release = __version__
