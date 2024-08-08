@@ -119,11 +119,11 @@ def test_min_max_antpos(bm):
 
 def test_from_uvdata(bm):
     uv = pyuvdata.UVData()
-    uv.antenna_positions = np.array([[0, 0, 0], [0, 1, 0], [1, 0, 0], [40, 0, 40]]) * units.m
+    uv.telescope.antenna_positions = np.array([[0, 0, 0], [0, 1, 0], [1, 0, 0], [40, 0, 40]]) * units.m
     uv.telescope_location = [x.value for x in EarthLocation.from_geodetic(0, 0).to_geocentric()]
 
     a = Observatory.from_uvdata(uvdata=uv, beam=bm)
-    assert np.all(a.antpos == uv.antenna_positions)
+    assert np.all(a.antpos == uv.telescope.antenna_positions)
 
 
 def test_different_antpos_loaders(tmp_path: Path):
