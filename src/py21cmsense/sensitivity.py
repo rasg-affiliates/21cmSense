@@ -478,7 +478,7 @@ class PowerSpectrum(Sensitivity):
         """Bin 2D sensitivity down to 1D."""
         if k1d is None:
             k1d = self.k1d
-        sense1d_inv = np.zeros(len(self.k1d)) / un.mK**4
+        sense1d_inv = np.zeros(len(k1d)) / un.mK**4
 
         for k_perp in tqdm.tqdm(
             sense.keys(),
