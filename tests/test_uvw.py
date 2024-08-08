@@ -121,7 +121,7 @@ def test_calc_app_coords(lat, time_past_zenith):
     ra = zenith_coord.ra.to_value("rad")
     dec = zenith_coord.dec.to_value("rad")
     app_ra, app_dec = uvutils.phasing.calc_app_coords(
-        lon_coord = ra, lat_coord = dec, time_array=obstime.utc.jd, telescope_loc=telescope_location
+        lon_coord=ra, lat_coord=dec, time_array=obstime.utc.jd, telescope_loc=telescope_location
     )
 
     assert np.isclose(app_ra, ra, atol=0.02)  # give it 1 degree wiggle room.
