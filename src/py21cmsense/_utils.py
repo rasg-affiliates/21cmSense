@@ -86,8 +86,8 @@ def phase_past_zenith(
 
     if use_apparent:
         app_ra, app_dec = uvutils.phasing.calc_app_coords(
-            lon_coord = zenith_coord.ra.to_value("rad"),
-            lat_coord = zenith_coord.dec.to_value("rad"),
+            lon_coord=zenith_coord.ra.to_value("rad"),
+            lat_coord=zenith_coord.dec.to_value("rad"),
             time_array=obstimes.utc.jd,
             telescope_loc=telescope_location,
         )
