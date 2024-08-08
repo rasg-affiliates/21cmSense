@@ -476,9 +476,9 @@ class PowerSpectrum(Sensitivity):
         self, sense: dict[tp.Wavenumber, tp.Delta], k1d: tp.Wavenumber | None = None
     ) -> tp.Delta:
         """Bin 2D sensitivity down to 1D."""
-        sense1d_inv = np.zeros(len(self.k1d)) / un.mK**4
         if k1d is None:
             k1d = self.k1d
+        sense1d_inv = np.zeros(len(self.k1d)) / un.mK**4
 
         for k_perp in tqdm.tqdm(
             sense.keys(),
