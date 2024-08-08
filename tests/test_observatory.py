@@ -119,6 +119,10 @@ def test_min_max_antpos(bm):
 
 def test_from_uvdata(bm):
     uv = pyuvdata.UVData()
+    uv.telescope.antenna_positions = (
+        np.array([[0, 0, 0], [0, 1, 0], [1, 0, 0], [40, 0, 40]]) * units.m
+    )
+    uv.telescope_location = [x.value for x in EarthLocation.from_geodetic(0, 0).to_geocentric()]
     uv.telescope.antenna_positions = np.array([[0, 0, 0], [0, 1, 0], [1, 0, 0], [40, 0, 40]]) * units.m
     uv.telescope.telescope_location = [x.value for x in EarthLocation.from_geodetic(0, 0).to_geocentric()]
 
