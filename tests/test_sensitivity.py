@@ -63,7 +63,7 @@ def test_sensitivity_1d_binned(observation):
     assert np.all(ps.calculate_sensitivity_1d() == ps.calculate_sensitivity_1d_binned(ps.k1d))
     kbins = np.linspace(0.1, 0.5, 10) * littleh / units.Mpc
     sense1d_sample = ps.calculate_sensitivity_1d_binned(k=kbins)
-    assert sense1d_sample.shape == len(kbins)
+    assert len(sense1d_sample) == len(kbins)
 
 
 def test_plots(observation):
