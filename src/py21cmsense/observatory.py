@@ -148,7 +148,7 @@ class Observatory:
         return cls(
             antpos=uvdata.telescope.antenna_positions,
             beam=beam,
-            latitude=uvdata.telescope_location_lat_lon_alt[0],
+            latitude=uvdata.telescope.location[0],
             **kwargs,
         )
 
