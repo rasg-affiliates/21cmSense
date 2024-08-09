@@ -287,7 +287,7 @@ class Observatory:
     @cached_property
     def observation_duration(self) -> un.Quantity[un.day]:
         """The time it takes for the sky to drift through the FWHM."""
-        return un.day * self.beam.fwhm / (2 * np.pi * un.rad)
+        return un.day * self.beam.fwhm / (2 * np.pi * un.rad * np.cos(self.latitude))
 
     def get_redundant_baselines(
         self,
