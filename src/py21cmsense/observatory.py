@@ -146,7 +146,7 @@ class Observatory:
     def from_uvdata(cls, uvdata, beam: beam.PrimaryBeam, **kwargs) -> Observatory:
         """Instantiate an Observatory from a :class:`pyuvdata.UVData` object."""
         return cls(
-            antpos=uvdata.antenna_positions,
+            antpos=uvdata.telescope.antenna_positions,
             beam=beam,
             latitude=uvdata.telescope_location_lat_lon_alt[0],
             **kwargs,
