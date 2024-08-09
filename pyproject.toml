@@ -38,7 +38,7 @@ dependencies = [
   "pyyaml",
   "astropy>=5",
   "methodtools",
-  "pyuvdata",
+  "pyuvdata>=3.0.0",
   "cached_property",
   "rich",
   "attrs",
