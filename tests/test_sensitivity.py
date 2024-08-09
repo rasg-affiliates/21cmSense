@@ -61,6 +61,9 @@ def test_sensitivity_2d_grid(observation, caplog):
 def test_sensitivity_1d_binned(observation):
     ps = PowerSpectrum(observation=observation)
     assert np.all(ps.calculate_sensitivity_1d() == ps.calculate_sensitivity_1d_binned(ps.k1d))
+    kbins = np.linspace(0.1, 0.5, 10) * littleh / units.Mpc
+    sense1d_sample = ps.calculate_sensitivity_1d_binned(k=kbins)
+    assert len(sense1d_sample) == len(kbins)
 
 
 def test_plots(observation):

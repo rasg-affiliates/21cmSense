@@ -85,9 +85,9 @@ def phase_past_zenith(
         lsts = np.array([lsts])
 
     if use_apparent:
-        app_ra, app_dec = uvutils.calc_app_coords(
-            zenith_coord.ra.to_value("rad"),
-            zenith_coord.dec.to_value("rad"),
+        app_ra, app_dec = uvutils.phasing.calc_app_coords(
+            lon_coord=zenith_coord.ra.to_value("rad"),
+            lat_coord=zenith_coord.dec.to_value("rad"),
             time_array=obstimes.utc.jd,
             telescope_loc=telescope_location,
         )
@@ -103,7 +103,7 @@ def phase_past_zenith(
     _lsts = np.tile(lsts, len(bls_enu))
     uvws = np.repeat(bls_enu, len(lsts), axis=0)
 
-    out = uvutils.calc_uvw(
+    out = uvutils.phasing.calc_uvw(
         app_ra=app_ra,
         app_dec=app_dec,
         lst_array=_lsts,
