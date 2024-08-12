@@ -63,6 +63,11 @@ class Observatory:
         of the array). Assumed to be in units of meters if no units are supplied.
         Can be used to limit antennas in arrays like HERA and SKA that
         have a "core" and "outriggers". The minimum is inclusive, and maximum exclusive.
+    beam_crossing_time_incl_latitude
+        Whether the beam-crossing time is dependent on the latitude of the telescope.
+        By default it is, so that the beam-crossing time is
+        ``tday * FWHM / (2pi cos(lat))``. This affects both the thermal and sample
+        variance calculations.
     """
 
     _antpos: tp.Length = attr.ib(eq=attr.cmp_using(eq=np.array_equal))
@@ -78,6 +83,7 @@ class Observatory:
     min_antpos: tp.Length = attr.ib(
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
+    beam_crossing_time_incl_latitude: bool = attr.ib(default=True, converter=bool)
 
     @_antpos.validator
     def _antpos_validator(self, att, val):
@@ -287,7 +293,8 @@ class Observatory:
     @cached_property
     def observation_duration(self) -> un.Quantity[un.day]:
         """The time it takes for the sky to drift through the FWHM."""
-        return un.day * self.beam.fwhm / (2 * np.pi * un.rad)
+        latfac = np.cos(self.latitude) if self.beam_crossing_time_incl_latitude else 1
+        return un.day * self.beam.fwhm / (2 * np.pi * un.rad * latfac)
 
     def get_redundant_baselines(
         self,
