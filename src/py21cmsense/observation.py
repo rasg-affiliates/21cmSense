@@ -29,7 +29,7 @@ class Observation:
     A class defining an interferometric Observation.
 
     Note that to achieve the same behaviour as the original 21cmSense's ``--track``
-    option (i.e. track-scan instead of drift-scan) merely requires setting ``obs_duration``
+    option (i.e. track-scan instead of drift-scan) merely requires setting ``lst_bin_size``
     to the length of the tracked scan.
 
     Parameters
@@ -43,9 +43,9 @@ class Observation:
         If simulating a tracked scan, `hours_per_day` should be a multiple of the length
         of the track (i.e. for two three-hour tracks per day, `hours_per_day` should be 6).
     track
-        Tracked scan observation duration. This is an alias for ``obs_duration``, and
+        Tracked scan observation duration. This is an alias for ``lst_bin_size``, and
         is provided only for ease of use for those familiar with 21cmSense v1.
-    obs_duration : float or Quantity, optional
+    lst_bin_size : float or Quantity, optional
         The time assigned to a single LST bin, by default the time it takes for a source
         to travel through the beam's FWHM. If a float, assumed to be in minutes.
     integration_time : float or Quantity, optional
@@ -175,7 +175,7 @@ class Observation:
             raise ValueError("integration_time must be <= lst_bin_size")
 
     @lst_bin_size.default
-    def _obstime_default(self):
+    def _lst_bin_size_default(self):
         # time it takes the sky to drift through beam FWHM
         if self.track is not None:
             return self.track
@@ -195,7 +195,7 @@ class Observation:
     @cached_property
     def baseline_groups(
         self,
-    ) -> dict[tuple(float, float, float), list[tuple(int, int)]]:
+    ) -> dict[tuple[float, float, float], list[tuple[int, int]]]:
         """A dictionary of redundant baseline groups.
 
         Keys are tuples of floats (X,Y,LENGTH), and
@@ -272,8 +272,8 @@ class Observation:
         Number of LST bins in the complete observation.
 
         An LST bin is considered a chunk of time that may be averaged
-        coherently, so this is given by `hours_per_day/obs_duration`,
-        where `obs_duration` is the time it takes for a source to travel
+        coherently, so this is given by `hours_per_day/lst_bin_size`,
+        where `lst_bin_size` is the time it takes for a source to travel
         through the beam FWHM.
         """
         return (self.time_per_day / self.lst_bin_size).to("").value
