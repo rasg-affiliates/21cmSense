@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from astropy import units
 from astropy.cosmology.units import littleh
+
 from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum, theory
 from py21cmsense.sensitivity import Sensitivity
 

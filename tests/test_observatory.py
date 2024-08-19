@@ -8,6 +8,7 @@ import pytest
 import pyuvdata
 from astropy import units
 from astropy.coordinates import EarthLocation
+
 from py21cmsense import Observatory
 from py21cmsense.baseline_filters import BaselineRange
 from py21cmsense.beam import GaussianBeam

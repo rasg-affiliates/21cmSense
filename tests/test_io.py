@@ -3,6 +3,7 @@
 import hickle
 import numpy as np
 from astropy import units as un
+
 from py21cmsense import GaussianBeam, Observation, Observatory
 
 rng = np.random.default_rng(1234)

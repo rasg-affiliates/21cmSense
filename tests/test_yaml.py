@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from astropy import units as un
 from astropy.io.misc import yaml
+
 from py21cmsense.yaml import LoadError
 
 

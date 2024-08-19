@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 from astropy import units as un
+
 from py21cmsense.baseline_filters import BaselineRange
 
 # Test IDs for parametrization
