@@ -5,8 +5,9 @@ import pytest
 from astropy import units as un
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
-from py21cmsense._utils import phase_past_zenith
 from pyuvdata import utils as uvutils
+
+from py21cmsense._utils import phase_past_zenith
 
 
 @pytest.mark.parametrize("lat", [-1.0, -0.5, 0, 0.5, 1.0])

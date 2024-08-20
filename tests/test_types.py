@@ -3,6 +3,7 @@
 import attr
 import pytest
 from astropy import units as u
+
 from py21cmsense import units as tp
 
 

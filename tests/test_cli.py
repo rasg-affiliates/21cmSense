@@ -6,6 +6,7 @@ from os import path
 import pytest
 from astropy.io.misc import yaml
 from click.testing import CliRunner
+
 from py21cmsense import cli
 
 here = path.dirname(path.abspath(__file__))

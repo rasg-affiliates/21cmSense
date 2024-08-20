@@ -121,6 +121,9 @@ ignore = [
     "A",  # conf.py can shadow builtins
     "ERA",
 ]
+"docs/*.ipynb" = [
+  "T",  # print statements
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = 'numpy'

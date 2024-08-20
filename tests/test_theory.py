@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from py21cmsense.theory import EOS2021, EOS2016Bright, EOS2016Faint, Legacy21cmFAST
 
 
