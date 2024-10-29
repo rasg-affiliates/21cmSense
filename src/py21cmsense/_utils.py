@@ -1,7 +1,5 @@
 """Utility functions for 21cmSense."""
 
-from typing import Optional
-
 import numpy as np
 from astropy import units as un
 from astropy.coordinates import EarthLocation, SkyCoord
@@ -44,7 +42,7 @@ def phase_past_zenith(
     time_past_zenith: un.hour,
     bls_enu: np.ndarray,
     latitude: float,
-    phase_center_dec: Optional[un.rad] = None,  # noqa
+    phase_center_dec: un.rad = None,
     use_apparent: bool = True,
 ):
     """Compute UVWs phased to a point rotated from zenith by a certain amount of time.
