@@ -1,10 +1,14 @@
 """Utility functions for 21cmSense."""
 
+from __future__ import annotations
+
 import numpy as np
 from astropy import units as un
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
 from pyuvdata import utils as uvutils
+
+from . import units as tp
 
 
 def between(xmin, xmax):
@@ -39,7 +43,11 @@ def find_nearest(array, value):
 
 @un.quantity_input
 def phase_past_zenith(
-    time_past_zenith: un.day, bls_enu: np.ndarray, latitude, use_apparent: bool = True
+    time_past_zenith: tp.Time,
+    bls_enu: np.ndarray,
+    latitude: float,
+    phase_center_dec: tp.Angle | None = None,
+    use_apparent: bool = True,
 ):
     """Compute UVWs phased to a point rotated from zenith by a certain amount of time.
 
@@ -50,12 +58,19 @@ def phase_past_zenith(
     Parameters
     ----------
     time_past_zenith
-        The time passed since the point was at zenith. If float, assumed to be in units
-        of days.
-    uvws0 : array
-        The UVWs when phased to zenith.
+        The time passed since the point was at its closest to zenith. Must be a
+        quantity with time units.
+    bls_enu
+        An (Nbls, 3)-shaped array containing the ENU coordinates of the baseline
+        vectors (equivalent to the UVWs if phased to zenith).
     latitude
         The latitude of the center of the array, in radians.
+    phase_center_dec
+        If given, the declination of the phase center. If not given, it is set to the
+        latitude of the array (i.e. the phase center passes through zenith).
+    use_apparent
+        Whether to use the apparent coordinates of the phase center (i.e. after
+        accounting for nutation and precession etc.)
 
     Returns
     -------
@@ -68,15 +83,25 @@ def phase_past_zenith(
 
     # JD is arbitrary
     jd = 2454600
+    tm = Time(jd, format="jd")
 
     zenith_coord = SkyCoord(
         alt=90 * un.deg,
         az=0 * un.deg,
-        obstime=Time(jd, format="jd"),
+        obstime=tm,
         frame="altaz",
         location=telescope_location,
     )
     zenith_coord = zenith_coord.transform_to("icrs")
+
+    if phase_center_dec is not None:
+        zenith_coord = SkyCoord(
+            ra=zenith_coord.ra,
+            dec=phase_center_dec,
+            obstime=tm,
+            frame="icrs",
+            location=telescope_location,
+        )
 
     obstimes = zenith_coord.obstime + time_past_zenith
     lsts = obstimes.sidereal_time("apparent", longitude=0.0).rad
