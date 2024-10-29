@@ -1,14 +1,12 @@
 """Utility functions for 21cmSense."""
 
-from __future__ import annotations
+from typing import Optional
 
 import numpy as np
 from astropy import units as un
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
 from pyuvdata import utils as uvutils
-
-from . import units as tp
 
 
 def between(xmin, xmax):
@@ -43,10 +41,10 @@ def find_nearest(array, value):
 
 @un.quantity_input
 def phase_past_zenith(
-    time_past_zenith: tp.Time,
+    time_past_zenith: un.hour,
     bls_enu: np.ndarray,
     latitude: float,
-    phase_center_dec: tp.Angle | None = None,
+    phase_center_dec: Optional[un.rad] = None,  # noqa
     use_apparent: bool = True,
 ):
     """Compute UVWs phased to a point rotated from zenith by a certain amount of time.
