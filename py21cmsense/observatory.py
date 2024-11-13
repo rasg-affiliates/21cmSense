@@ -51,6 +51,8 @@ class Observatory:
         of the array). Assumed to be in units of meters if no units are supplied.
         Can be used to limit antennas in arrays like HERA and SKA that
         have a "core" and "outriggers". The minimum is inclusive, and maximum exclusive.
+    world : string
+        A string specifiying whether the telescope is on the Earth or the moon.
     """
 
     _antpos: tp.Length = attr.ib(eq=attr.cmp_using(eq=np.array_equal))
@@ -66,6 +68,7 @@ class Observatory:
     min_antpos: tp.Length = attr.ib(
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
+    world: str = attr.ib(default = 'earth') #Add validator stuff later
 
     @_antpos.validator
     def _antpos_validator(self, att, val):
@@ -194,7 +197,7 @@ class Observatory:
 
         bl_wavelengths = baselines.reshape((-1, 3)) * self.metres_to_wavelengths
 
-        out = ut.phase_past_zenith(time_offset, bl_wavelengths, self.latitude)
+        out = ut.phase_past_zenith(time_offset, bl_wavelengths, self.latitude, self.world)
 
         out = out.reshape(*orig_shape[:-1], np.size(time_offset), orig_shape[-1])
         if np.size(time_offset) == 1:
@@ -225,7 +228,10 @@ class Observatory:
     @cached_property
     def observation_duration(self) -> un.Quantity[un.day]:
         """The time it takes for the sky to drift through the FWHM."""
+        if self.world == "earth":
         return un.day * self.beam.fwhm / (2 * np.pi * un.rad)
+        else:
+            return 27.3 * un.day * self.beam.fwhm / (2 * np.pi * un.rad)
 
     def get_redundant_baselines(
         self,

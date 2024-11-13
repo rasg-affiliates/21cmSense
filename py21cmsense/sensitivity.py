@@ -139,7 +139,7 @@ class PowerSpectrum(Sensitivity):
 
     horizon_buffer: tp.Wavenumber = attr.ib(default=0.1 * littleh / un.Mpc)
     foreground_model: str = attr.ib(
-        default="moderate", validator=vld.in_(["moderate", "optimistic"])
+        default="moderate", validator=vld.in_(["moderate", "optimistic", "ultra_optimistic"])
     )
     theory_model: TheoryModel = attr.ib()
 
@@ -457,6 +457,8 @@ class PowerSpectrum(Sensitivity):
             return horizon + self.horizon_buffer
         elif self.foreground_model in ["optimistic"]:
             return horizon * np.sin(self.observation.observatory.beam.first_null / 2)
+        elif self.foreground_model in ["ultra_optimistic"]:
+            return horizon
 
     def _average_sense_to_1d(
         self, sense: dict[tp.Wavenumber, tp.Delta], k1d: tp.Wavenumber | None = None

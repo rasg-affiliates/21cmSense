@@ -3,6 +3,9 @@ import numpy as np
 from astropy import units as un
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
+from lunarsky import MoonLocation
+from lunarsky import SkyCoord as LunarSkyCoord
+from lunarsky import Time as LTime
 from pyuvdata import utils as uvutils
 
 from . import config
@@ -34,7 +37,7 @@ def find_nearest(array, value):
 
 @un.quantity_input
 def phase_past_zenith(
-    time_past_zenith: un.day, bls_enu: np.ndarray, latitude, use_apparent: bool = True
+    time_past_zenith: un.day, bls_enu: np.ndarray, latitude, world, use_apparent: bool = True
 ):
     """Compute UVWs phased to a point rotated from zenith by a certain amount of time.
 
@@ -51,6 +54,8 @@ def phase_past_zenith(
         The UVWs when phased to zenith.
     latitude
         The latitude of the center of the array, in radians.
+    world
+        Whether the telescope is on the Earth or Moon.
 
     Returns
     -------
@@ -59,20 +64,34 @@ def phase_past_zenith(
     """
     # Generate ra/dec of zenith at time in the phase_frame coordinate system
     # to use for phasing
-    telescope_location = EarthLocation.from_geodetic(lon=0, lat=latitude)
+    if world == 'earth':
+        telescope_location = EarthLocation.from_geodetic(lon=0, lat=latitude)
+    else:
+        telescope_location = MoonLocation.from_selenodetic(lon=0, lat=latitude)
 
     # JD is arbitrary
     jd = 2454600
 
-    zenith_coord = SkyCoord(
-        alt=90 * un.deg,
-        az=0 * un.deg,
-        obstime=Time(jd, format="jd"),
-        frame="altaz",
-        location=telescope_location,
-    )
-    zenith_coord = zenith_coord.transform_to("icrs")
+    if world == 'earth':
+        zenith_coord = SkyCoord(
+            alt=90 * un.deg,
+            az=0 * un.deg,
+            obstime=Time(jd, format="jd"),
+            frame="altaz",
+            location=telescope_location,
+        )
+    else:
+        zenith_coord = LunarSkyCoord(
+            alt=90 * un.deg,
+            az=0 * un.deg,
+            obstime=LTime(jd, format="jd"),
+            frame="lunartopo",
+            location=telescope_location,
+        )
 
+    zenith_coord = zenith_coord.transform_to("icrs")
+ 
+    zenith_coord.obstime.location = telescope_location
     obstimes = zenith_coord.obstime + time_past_zenith
     lsts = obstimes.sidereal_time("apparent", longitude=0.0).rad
 
