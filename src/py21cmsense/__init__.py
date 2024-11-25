@@ -10,15 +10,15 @@ finally:
     del version, PackageNotFoundError
 
 __all__ = [
-    "data",
-    "theory",
-    "yaml",
-    "hera",
     "BaselineRange",
     "GaussianBeam",
     "Observation",
     "Observatory",
     "PowerSpectrum",
+    "data",
+    "hera",
+    "theory",
+    "yaml",
 ]
 from . import data, theory, yaml
 from .antpos import hera
