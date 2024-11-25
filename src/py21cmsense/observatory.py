@@ -68,6 +68,8 @@ class Observatory:
         By default it is, so that the beam-crossing time is
         ``tday * FWHM / (2pi cos(lat))``. This affects both the thermal and sample
         variance calculations.
+    world: string
+        A string specifying whether the telescope is on the Earth or the moon.
     """
 
     _antpos: tp.Length = attr.ib(eq=attr.cmp_using(eq=np.array_equal))
@@ -84,6 +86,7 @@ class Observatory:
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
     beam_crossing_time_incl_latitude: bool = attr.ib(default=True, converter=bool)
+    world: str = attr.ib(default = 'earth') #add validator stuff later
 
     @_antpos.validator
     def _antpos_validator(self, att, val):
@@ -262,7 +265,7 @@ class Observatory:
 
         bl_wavelengths = baselines.reshape((-1, 3)) * self.metres_to_wavelengths
 
-        out = ut.phase_past_zenith(time_offset, bl_wavelengths, self.latitude)
+        out = ut.phase_past_zenith(time_offset, bl_wavelengths, self.latitude, self.world)
 
         out = out.reshape(*orig_shape[:-1], np.size(time_offset), orig_shape[-1])
         if np.size(time_offset) == 1:
@@ -294,7 +297,10 @@ class Observatory:
     def observation_duration(self) -> un.Quantity[un.day]:
         """The time it takes for the sky to drift through the FWHM."""
         latfac = np.cos(self.latitude) if self.beam_crossing_time_incl_latitude else 1
-        return un.day * self.beam.fwhm / (2 * np.pi * un.rad * latfac)
+        if self.world == "earth":
+            return un.day * self.beam.fwhm / (2 * np.pi * un.rad * latfac)
+        else:
+            return 27.3 * un.day * self.beam.fwhm/(2 * np.pi * un.rad * latfac)
 
     def get_redundant_baselines(
         self,
