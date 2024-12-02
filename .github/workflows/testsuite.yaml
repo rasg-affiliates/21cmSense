@@ -45,7 +45,7 @@ jobs:
         run: |
           python -m pytest --cov=py21cmsense --cov-config=.coveragerc --cov-report xml:./coverage.xml
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         if: success()
         with:
           file: ./coverage.xml #optional
