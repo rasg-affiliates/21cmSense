@@ -95,7 +95,7 @@ def phase_past_zenith(
 
     zenith_coord = zenith_coord.transform_to("icrs")
 
-    zenit_coord.obstime.location = telescope_location
+    zenith_coord.obstime.location = telescope_location
     obstimes = zenith_coord.obstime + time_past_zenith
     lsts = obstimes.sidereal_time("apparent", longitude=0.0).rad
 
