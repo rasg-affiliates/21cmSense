@@ -40,7 +40,7 @@ jobs:
           pip install .
           pip install papermill ipykernel
           conda list
-      
+
       - name: Install Poetry
         run: |
           pipx install poetry
