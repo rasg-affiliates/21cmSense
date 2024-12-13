@@ -19,3 +19,4 @@ dependencies:
   - matplotlib
   - pip:
     - methodtools
+    - ska-ost-array-config

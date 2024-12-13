@@ -43,6 +43,7 @@ dependencies = [
   "rich",
   "attrs",
   "hickleable>=0.1.1",
+  "ska-ost-array-config",
 ]
 
 [project.optional-dependencies]
