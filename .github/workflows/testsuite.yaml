@@ -43,7 +43,10 @@ jobs:
 
       - name: Install ska-ost-array
         run: |
-          pip install ska-ost-array-config --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple
+          git clone https://gitlab.com/ska-telescope/ost/ska-ost-array-config.git
+          cd ska-ost-array-config
+          poetry install
+          cd ..
 
       - name: Run Tests
         run: |
