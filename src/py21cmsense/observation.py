@@ -94,16 +94,16 @@ class Observation:
 
     time_per_day: tp.Time = attr.ib(
         6 * un.hour,
-        validator=(tp.vld_physical_type("time"), ut.between(0 * un.hour, 24 * un.hour)),
+        validator=(tp.vld_physical_type("time"), ut.between(0 * un.hour, 655.2 * un.hour)),
     )
     track: tp.Time | None = attr.ib(
         None,
         validator=attr.validators.optional(
-            [tp.vld_physical_type("time"), ut.between(0, 24 * un.hour)]
+            [tp.vld_physical_type("time"), ut.between(0, 655.2 * un.hour)]
         ),
     )
     lst_bin_size: tp.Time = attr.ib(
-        validator=(tp.vld_physical_type("time"), ut.between(0, 24 * un.hour)),
+        validator=(tp.vld_physical_type("time"), ut.between(0, 655.2 * un.hour)),
     )
     integration_time: tp.Time = attr.ib(
         60 * un.second, validator=(tp.vld_physical_type("time"), ut.positive)

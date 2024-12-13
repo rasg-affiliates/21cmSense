@@ -196,3 +196,64 @@ class Legacy21cmFAST(TheoryModel):
             )
 
         return self.spline(k) << un.mK**2
+
+class FarViewModel(TheoryModel):
+    """21cmFAST-based theory model explicitly for z=30, [Insert paper link here later]"""
+
+    use_littleh: bool = False
+
+    def __init__(self) -> None:
+        k_pth = (
+            Path(__file__).parent
+            / "data/farview/kmag_ultimate.npy"
+        )
+
+        delta_pth = (
+            Path(__file__).parent
+            / "data/farview/P_Tb_ultimate.npy"
+        )
+        #Should at some point reorganize the data so these steps aren't necessary
+        k_fixed = np.load(k_pth)
+        power = np.load(delta_pth)
+        k_fixed = k_fixed[~np.isnan(power)]
+        power = power[~np.isnan(power)]
+        delta = (k_fixed**3 * power) / (2*np.pi**2)
+
+        self.k = k_fixed
+        self.delta_squared_raw = delta
+
+        self.spline = InterpolatedUnivariateSpline(self.k, self.delta_squared_raw, k=1)
+
+    def delta_squared(self, z: float, k: np.ndarray) -> un.Quantity[un.mK**2]:
+        """Compute Delta^2(k, z) for the theory model.
+
+        Parameters
+        ----------
+        z
+            The redshift (should be a float).
+        k
+            The wavenumbers, either in units of 1/Mpc if use_littleh=False, or
+            h/Mpc if use_littleh=True.
+
+        Returns
+        -------
+        delta_squared
+            An array of delta_squared values in units of mK^2.
+        """
+        if np.any(k > self.k.max()):
+            warnings.warn(
+                f"Extrapolating above the simulated theoretical k: {k.max()} > {self.k.max()}",
+                stacklevel=2,
+            )
+        if np.any(k < self.k.min()):
+            warnings.warn(
+                f"Extrapolating below the simulated theoretical k: {k.min()} < {self.k.min()}",
+                stacklevel=2,
+            )
+        if not 29.5 < z < 30.5:
+            warnings.warn(
+                f"Theory power corresponds to z=30, not z={z:.2f}",
+                stacklevel=2,
+            )
+
+        return self.spline(k) << un.mK**2
