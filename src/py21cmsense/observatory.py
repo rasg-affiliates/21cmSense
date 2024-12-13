@@ -57,7 +57,7 @@ class Observatory:
         Note that longitude is not required, as we assume an isotropic sky.
     Trcv
         Receiver temperature, either a temperature Quantity, or a callable that
-        taakes a single frequency Quantity and returns a temperature Quantity.
+        takes a single frequency Quantity and returns a temperature Quantity.
     min_antpos, max_antpos
         The minimum/maximum radial distance to include antennas (from the origin
         of the array). Assumed to be in units of meters if no units are supplied.
@@ -221,6 +221,39 @@ class Observatory:
 
         obj = cls.from_yaml(fl, frequency=frequency)
         return obj.clone(**kwargs)
+
+    @classmethod
+    def from_ska(cls, subarray_type: str,  array_type = 'low', frequency: tp.Frequency | None = None, **kwargs) -> Observatory:
+        """Instantiate an SKA Observatory.
+
+        Parameters
+        ----------
+        array_type
+            The type of array to use. Options are "low" and "mid".
+        subarray_type
+            The type of subarray to use. Options are "AA4", "AA*", "AA1", "AA2", "AA0.5", and "custom"
+
+        Other Parameters
+        ----------------
+        All other parameters passed will be passed into the LowSubArray or MidSubAray class.
+        See the documentation of the ska-ost-array-config package for more information.
+        """
+        try:
+            from ska_ost_array_config.array_config import LowSubArray, MidSubArray
+        except ImportError:
+            raise ImportError("ska-ost-array-config package is required, see https://gitlab.com/ska-telescope/ost/ska-ost-array-config")
+        if array_type == 'low':
+            subarray = LowSubArray(subarray_type, **kwargs)
+        elif array_type == 'mid':
+            subarray = MidSubArray(subarray_type, **kwargs)
+        else:
+            raise ValueError("array_type must be 'low' or 'mid'.")
+        antpos = subarray.array_config.xyz.data * un.m
+        print(antpos.shape, antpos.min(), antpos.max())
+        _beam = beam.GaussianBeam(frequency=frequency if frequency is not None else 150.*un.MHz,
+                                 dish_size = 35.*un.m)
+        lat = subarray.array_config.location.lat.rad *un.rad
+        return cls(antpos=antpos, beam=_beam, latitude = lat, Trcv = 100. * un.K)
 
     @cached_property
     def baselines_metres(self) -> tp.Meters:
