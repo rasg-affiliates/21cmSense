@@ -41,6 +41,10 @@ jobs:
           pip install .[test]
           conda list
 
+      - name: Install ska-ost-array
+        run: |
+          pip install ska-ost-array-config --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple
+
       - name: Run Tests
         run: |
           python -m pytest --cov=py21cmsense --cov-config=.coveragerc --cov-report xml:./coverage.xml
