@@ -204,6 +204,7 @@ def test_from_yaml(bm):
     with pytest.raises(ValueError, match="yaml_file must be a string filepath"):
         Observatory.from_yaml(3)
 
+
 def test_from_ska():
     Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.*units.MHz)
     Observatory.from_ska(subarray_type="AA*", array_type="mid", frequency=300.*units.MHz)

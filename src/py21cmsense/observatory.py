@@ -223,7 +223,9 @@ class Observatory:
         return obj.clone(**kwargs)
 
     @classmethod
-    def from_ska(cls, subarray_type: str,  array_type = 'low', frequency: tp.Frequency | None = None, **kwargs) -> Observatory:
+    def from_ska(
+        cls, subarray_type: str, array_type="low", frequency: tp.Frequency | None = None, **kwargs
+    ) -> Observatory:
         """Instantiate an SKA Observatory.
 
         Parameters
@@ -242,19 +244,22 @@ class Observatory:
         try:
             from ska_ost_array_config.array_config import LowSubArray, MidSubArray
         except ImportError:
-            raise ImportError("ska-ost-array-config package is required," + 
-                              "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config")
-        if array_type == 'low':
+            raise ImportError(
+                "ska-ost-array-config package is required, "+
+                "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config"
+            )
+        if array_type == "low":
             subarray = LowSubArray(subarray_type, **kwargs)
-        elif array_type == 'mid':
+        elif array_type == "mid":
             subarray = MidSubArray(subarray_type, **kwargs)
         else:
             raise ValueError("array_type must be 'low' or 'mid'.")
         antpos = subarray.array_config.xyz.data * un.m
-        _beam = beam.GaussianBeam(frequency=frequency if frequency is not None else 150.*un.MHz,
-                                 dish_size = 35.*un.m)
-        lat = subarray.array_config.location.lat.rad *un.rad
-        return cls(antpos=antpos, beam=_beam, latitude = lat, Trcv = 100. * un.K)
+        _beam = beam.GaussianBeam(
+            frequency=frequency if frequency is not None else 150.0 * un.MHz, dish_size=35.0 * un.m
+        )
+        lat = subarray.array_config.location.lat.rad * un.rad
+        return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=100.0 * un.K)
 
     @cached_property
     def baselines_metres(self) -> tp.Meters:
