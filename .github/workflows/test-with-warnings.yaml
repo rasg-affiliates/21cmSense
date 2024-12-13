@@ -40,10 +40,10 @@ jobs:
         run: |
           pip install .[test]
           conda list
-          - name: Install Poetry
-          run: |
-            pipx install poetry
-            poetry --version
+      - name: Install Poetry
+        run: |
+          pipx install poetry
+          poetry --version
       - name: Install ska-ost-array
         run: |
           git clone https://gitlab.com/ska-telescope/ost/ska-ost-array-config.git
