@@ -245,8 +245,8 @@ class Observatory:
             from ska_ost_array_config.array_config import LowSubArray, MidSubArray
         except ImportError:
             raise ImportError(
-                "ska-ost-array-config package is required, "+
-                "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config"
+                "ska-ost-array-config package is required, "
+                + "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config"
             )
         if array_type == "low":
             subarray = LowSubArray(subarray_type, **kwargs)
