@@ -206,9 +206,10 @@ def test_from_yaml(bm):
 
 
 def test_from_ska():
-    Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.*units.MHz)
-    Observatory.from_ska(subarray_type="AA*", array_type="mid", frequency=300.*units.MHz)
-    Observatory.from_ska(subarray_type="AA4", array_type="low", frequency=300.*units.MHz)
+    Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
+    Observatory.from_ska(subarray_type="AA*", array_type="mid", frequency=300.0 * units.MHz)
+    Observatory.from_ska(subarray_type="AA4", array_type="low", frequency=300.0 * units.MHz)
+
 
 def test_get_redundant_baselines(bm):
     a = Observatory(antpos=np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]) * units.m, beam=bm)
