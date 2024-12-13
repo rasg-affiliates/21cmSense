@@ -231,7 +231,8 @@ class Observatory:
         array_type
             The type of array to use. Options are "low" and "mid".
         subarray_type
-            The type of subarray to use. Options are "AA4", "AA*", "AA1", "AA2", "AA0.5", and "custom"
+            The type of subarray to use. Options are "AA4", "AA*", "AA1", "AA2", "AA0.5",
+             and "custom"
 
         Other Parameters
         ----------------
@@ -241,7 +242,8 @@ class Observatory:
         try:
             from ska_ost_array_config.array_config import LowSubArray, MidSubArray
         except ImportError:
-            raise ImportError("ska-ost-array-config package is required, see https://gitlab.com/ska-telescope/ost/ska-ost-array-config")
+            raise ImportError("ska-ost-array-config package is required," + 
+                              "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config")
         if array_type == 'low':
             subarray = LowSubArray(subarray_type, **kwargs)
         elif array_type == 'mid':
@@ -249,7 +251,6 @@ class Observatory:
         else:
             raise ValueError("array_type must be 'low' or 'mid'.")
         antpos = subarray.array_config.xyz.data * un.m
-        print(antpos.shape, antpos.min(), antpos.max())
         _beam = beam.GaussianBeam(frequency=frequency if frequency is not None else 150.*un.MHz,
                                  dish_size = 35.*un.m)
         lat = subarray.array_config.location.lat.rad *un.rad
