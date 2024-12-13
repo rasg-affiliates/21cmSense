@@ -24,4 +24,5 @@ dependencies:
   - setuptools_scm
   - pip:
     - furo
+    - lunarsky>=0.2.5
     - sphinx_design
