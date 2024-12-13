@@ -86,7 +86,8 @@ class Observatory:
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
     beam_crossing_time_incl_latitude: bool = attr.ib(default=True, converter=bool)
-    world: str = attr.ib(default = 'earth') #add validator stuff later
+    world: str = attr.ib(default = "earth", validator=vld.in_(["earth", "moon"])
+    )
 
     @_antpos.validator
     def _antpos_validator(self, att, val):

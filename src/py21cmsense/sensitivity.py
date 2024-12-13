@@ -472,7 +472,7 @@ class PowerSpectrum(Sensitivity):
         elif self.foreground_model in ["optimistic"]:
             return horizon * np.sin(self.observation.observatory.beam.first_null / 2)
         elif self.foreground_model in ["ultra_optimistic"]:
-            return horizon
+            return 0
 
     def _average_sense_to_1d(
         self, sense: dict[tp.Wavenumber, tp.Delta], k1d: tp.Wavenumber | None = None
