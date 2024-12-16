@@ -216,13 +216,13 @@ def test_from_ska():
     low_aa4 = LowSubArray(subarray_type="AA4")
     assert obs.antpos.shape == low_aa4.array_config.xyz.data.shape
     obs = Observatory.from_ska(
-            subarray_type="custom",
-            array_type="low",
-            Trcv=100.0 * units.K,
-            frequency=150.0 * units.MHz,
-            custom_stations="C*,E1-*",
-            exclude_stations="C1,C2",
-        )
+        subarray_type="custom",
+        array_type="low",
+        Trcv=100.0 * units.K,
+        frequency=150.0 * units.MHz,
+        custom_stations="C*,E1-*",
+        exclude_stations="C1,C2",
+    )
     low_custom = LowSubArray(
         subarray_type="custom", 
         custom_stations="C*,E1-*", exclude_stations="C1,C2"
