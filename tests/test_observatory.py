@@ -206,7 +206,8 @@ def test_from_yaml(bm):
 
 
 def test_from_ska():
-    from ska_ost_array_config.array_config import LowSubArray, MidSubArray
+    from ska_ost_array_config.array_config import LowSubArray
+
     obs = Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
     low_aastar = LowSubArray(subarray_type="AA*")
     assert obs.antpos.shape[0] == low_aastar.array_config.xyz.data.shape
@@ -214,14 +215,19 @@ def test_from_ska():
     obs = Observatory.from_ska(subarray_type="AA4", array_type="low", frequency=300.0 * units.MHz)
     low_aa4 = LowSubArray(subarray_type="AA4")
     assert obs.antpos.shape[0] == low_aa4.array_config.xyz.data.shape
-    obs = Observatory.from_ska(subarray_type = 'custom', array_type="low", Trcv = 100.0 * un.K, frequency = 150.0 * un.MHz, custom_stations="C*,E1-*", exclude_stations="C1,C2")
+    obs = Observatory.from_ska(
+        subarray_type="custom",
+        array_type="low",
+        Trcv=100.0 * un.K,
+        frequency=150.0 * un.MHz,
+        custom_stations="C*,E1-*",
+        exclude_stations="C1,C2",
+    )
     low_custom = LowSubArray(
-    subarray_type="custom", custom_stations="C*,E1-*"
-   )  # selects all core stations and 6 stations in the E1 cluster
+        subarray_type="custom", custom_stations="C*,E1-*"
+    )  # selects all core stations and 6 stations in the E1 cluster
     assert obs.antpos.shape[0] == low_custom.array_config.xyz.data.shape
 
-    
-   
 
 def test_get_redundant_baselines(bm):
     a = Observatory(antpos=np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]) * units.m, beam=bm)
