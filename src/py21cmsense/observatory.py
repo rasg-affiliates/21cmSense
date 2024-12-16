@@ -225,8 +225,12 @@ class Observatory:
 
     @classmethod
     def from_ska(
-        cls, subarray_type: str, array_type: str ="low", Trcv: tp.Temperature | Callable = 100 * un.K,
-        frequency: tp.Frequency | None = 150.0 * un.MHz, **kwargs
+        cls,
+        subarray_type: str,
+        array_type: str = "low",
+        Trcv: tp.Temperature | Callable = 100 * un.K,
+        frequency: tp.Frequency | None = 150.0 * un.MHz,
+        **kwargs,
     ) -> Observatory:
         """Instantiate an SKA Observatory.
 
@@ -265,9 +269,7 @@ class Observatory:
         else:
             raise ValueError("array_type must be 'low' or 'mid'.")
         antpos = subarray.array_config.xyz.data * un.m
-        _beam = beam.GaussianBeam(
-            frequency=frequency, dish_size=35.0 * un.m
-        )
+        _beam = beam.GaussianBeam(frequency=frequency, dish_size=35.0 * un.m)
         lat = subarray.array_config.location.lat.rad * un.rad
         return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=Trcv)
 
