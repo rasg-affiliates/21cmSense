@@ -228,7 +228,7 @@ class Observatory:
         cls,
         subarray_type: str,
         array_type: str = "low",
-        Trcv: tp.Temperature | Callable = 100 * un.K, # noqa N803
+        Trcv: tp.Temperature | Callable = 100 * un.K,  # noqa N803
         frequency: tp.Frequency | None = 150.0 * un.MHz,
         **kwargs,
     ) -> Observatory:
