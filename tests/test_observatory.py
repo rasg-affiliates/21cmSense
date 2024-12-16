@@ -224,8 +224,8 @@ def test_from_ska():
             exclude_stations="C1,C2",
         )
     low_custom = LowSubArray(
-    subarray_type="custom", custom_stations="C*,E1-*", exclude_stations="C1,C2"
-   )  # selects all core stations and 6 stations in the E1 cluster and exclude core stations C1 and C2
+        subarray_type="custom", custom_stations="C*,E1-*", exclude_stations="C1,C2"
+    )  # selects all core stations and 6 stations in the E1 cluster and exclude core stations C1 and C2
     assert obs.antpos.shape == low_custom.array_config.xyz.data.shape
 
 
