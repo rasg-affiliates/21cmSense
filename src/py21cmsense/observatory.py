@@ -204,7 +204,8 @@ class Observatory:
         ----------
         profile
             A string label identifying the observatory. Available built-in observatories
-            can be obtained with :func:`get_builtin_profiles`.
+            can be obtained with :func:`get_builtin_profiles`. For more up-to-date SKA profiles,
+            check the :func:`from_ska` method.
         frequency
             The frequency at which to specify the observatory.
 
@@ -224,22 +225,30 @@ class Observatory:
 
     @classmethod
     def from_ska(
-        cls, subarray_type: str, array_type="low", frequency: tp.Frequency | None = None, **kwargs
+        cls, subarray_type: str, array_type="low", Trcv = tp.Temperature | Callable = attr.ib(100 * un.K),
+        frequency: tp.Frequency | None = 150.0 * un.MHz, **kwargs
     ) -> Observatory:
         """Instantiate an SKA Observatory.
 
         Parameters
         ----------
-        array_type
-            The type of array to use. Options are "low" and "mid".
         subarray_type
             The type of subarray to use. Options are "AA4", "AA*", "AA1", "AA2", "AA0.5",
              and "custom"
+        array_type, optional
+            The type of array to use. Options are "low" and "mid".
+            Default is "low".
+        Trcv, optional
+            Receiver temperature, either a temperature Quantity, or a callable that
+            takes a single frequency Quantity and returns a temperature Quantity.
+            Default is 100 K.
+        frequency, optional
+            The frequency at which to specify the observatory. Default is 150 MHz.
 
         Other Parameters
         ----------------
-        All other parameters passed will be passed into the LowSubArray or MidSubAray class.
-        See the documentation of the ska-ost-array-config package for more information.
+        All other parameters passed will be passed into the LowSubArray or MidSubArray class.
+        See the documentation of the ska-ost-array-config package for more information on these classes.
         """
         try:
             from ska_ost_array_config.array_config import LowSubArray, MidSubArray
@@ -256,10 +265,10 @@ class Observatory:
             raise ValueError("array_type must be 'low' or 'mid'.")
         antpos = subarray.array_config.xyz.data * un.m
         _beam = beam.GaussianBeam(
-            frequency=frequency if frequency is not None else 150.0 * un.MHz, dish_size=35.0 * un.m
+            frequency=frequency, dish_size=35.0 * un.m
         )
         lat = subarray.array_config.location.lat.rad * un.rad
-        return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=100.0 * un.K)
+        return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=Trcv)
 
     @cached_property
     def baselines_metres(self) -> tp.Meters:
