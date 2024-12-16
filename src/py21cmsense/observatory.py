@@ -225,7 +225,7 @@ class Observatory:
 
     @classmethod
     def from_ska(
-        cls, subarray_type: str, array_type="low", Trcv = tp.Temperature | Callable = attr.ib(100 * un.K),
+        cls, subarray_type: str, array_type: str ="low", Trcv: tp.Temperature | Callable = attr.ib(100 * un.K),
         frequency: tp.Frequency | None = 150.0 * un.MHz, **kwargs
     ) -> Observatory:
         """Instantiate an SKA Observatory.
