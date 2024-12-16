@@ -228,7 +228,7 @@ class Observatory:
         cls,
         subarray_type: str,
         array_type: str = "low",
-        Trcv: tp.Temperature | Callable = 100 * un.K,
+        Trcv: tp.Temperature | Callable = 100 * un.K, # noqa N803
         frequency: tp.Frequency | None = 150.0 * un.MHz,
         **kwargs,
     ) -> Observatory:
@@ -252,7 +252,7 @@ class Observatory:
         Other Parameters
         ----------------
         All other parameters passed will be passed into the LowSubArray or MidSubArray class.
-        See the documentation of the ska-ost-array-config package for more information on these classes.
+        See the documentation of the ska-ost-array-config package for more information.
         """
         try:
             from ska_ost_array_config.array_config import LowSubArray, MidSubArray
