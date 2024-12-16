@@ -218,8 +218,8 @@ def test_from_ska():
     obs = Observatory.from_ska(
             subarray_type="custom",
             array_type="low",
-            Trcv=100.0 * un.K,
-            frequency=150.0 * un.MHz,
+            Trcv=100.0 * units.K,
+            frequency=150.0 * units.MHz,
             custom_stations="C*,E1-*",
             exclude_stations="C1,C2",
         )
