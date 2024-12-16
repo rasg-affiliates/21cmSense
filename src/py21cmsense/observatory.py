@@ -225,7 +225,7 @@ class Observatory:
 
     @classmethod
     def from_ska(
-        cls, subarray_type: str, array_type: str ="low", Trcv: tp.Temperature | Callable = attr.ib(100 * un.K),
+        cls, subarray_type: str, array_type: str ="low", Trcv: tp.Temperature | Callable = 100 * un.K,
         frequency: tp.Frequency | None = 150.0 * un.MHz, **kwargs
     ) -> Observatory:
         """Instantiate an SKA Observatory.
@@ -257,6 +257,7 @@ class Observatory:
                 "ska-ost-array-config package is required, "
                 + "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config"
             ) from exception
+
         if array_type == "low":
             subarray = LowSubArray(subarray_type, **kwargs)
         elif array_type == "mid":

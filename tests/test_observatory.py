@@ -209,16 +209,16 @@ def test_from_ska():
     from ska_ost_array_config.array_config import LowSubArray, MidSubArray
     obs = Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
     low_aastar = LowSubArray(subarray_type="AA*")
-    assert obs.antpos.shape[0] == low_aastar.array_config.xyz.data.shape
+    assert obs.antpos.shape == low_aastar.array_config.xyz.data.shape
     Observatory.from_ska(subarray_type="AA*", array_type="mid", frequency=300.0 * units.MHz)
     obs = Observatory.from_ska(subarray_type="AA4", array_type="low", frequency=300.0 * units.MHz)
     low_aa4 = LowSubArray(subarray_type="AA4")
-    assert obs.antpos.shape[0] == low_aa4.array_config.xyz.data.shape
-    obs = Observatory.from_ska(subarray_type = 'custom', array_type="low", Trcv = 100.0 * un.K, frequency = 150.0 * un.MHz, custom_stations="C*,E1-*", exclude_stations="C1,C2")
+    assert obs.antpos.shape == low_aa4.array_config.xyz.data.shape
+    obs = Observatory.from_ska(subarray_type = 'custom', array_type="low", Trcv = 200.0 * units.K, frequency = 150.0 * units.MHz, custom_stations="C*,E1-*", exclude_stations="C1,C2")
     low_custom = LowSubArray(
-    subarray_type="custom", custom_stations="C*,E1-*"
-   )  # selects all core stations and 6 stations in the E1 cluster
-    assert obs.antpos.shape[0] == low_custom.array_config.xyz.data.shape
+    subarray_type="custom", custom_stations="C*,E1-*", exclude_stations="C1,C2"
+   )  # selects all core stations and 6 stations in the E1 cluster and exclude core stations C1 and C2
+    assert obs.antpos.shape == low_custom.array_config.xyz.data.shape
 
     
    
