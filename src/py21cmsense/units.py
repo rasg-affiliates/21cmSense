@@ -24,6 +24,7 @@ Temperature = un.Quantity["temperature"]
 TempSquared = un.Quantity[un.get_physical_type("temperature") ** 2]
 Wavenumber = un.Quantity[littleh / un.Mpc]
 Delta = un.Quantity[un.mK**2]
+Angle = un.Quantity["angle"]
 
 time_as_distance = [
     (
