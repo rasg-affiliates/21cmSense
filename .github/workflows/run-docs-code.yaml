@@ -41,6 +41,17 @@ jobs:
           pip install papermill ipykernel
           conda list
 
+      - name: Install Poetry
+        run: |
+          pipx install poetry
+          poetry --version
+      - name: Install ska-ost-array
+        run: |
+          git clone https://gitlab.com/ska-telescope/ost/ska-ost-array-config.git
+          cd ska-ost-array-config
+          poetry install
+          cd ..
+
       - name: Install ipykernel
         run: python -m ipykernel install --user --name sense --display-name "sense"
 
