@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3.0.4
+        uses: conda-incubator/setup-miniconda@v3.1.0
         with:
           auto-update-conda: true
           channels: conda-forge,defaults
@@ -45,7 +45,7 @@ jobs:
         run: |
           python -m pytest --cov=py21cmsense --cov-config=.coveragerc --cov-report xml:./coverage.xml
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         if: success()
         with:
           file: ./coverage.xml #optional
