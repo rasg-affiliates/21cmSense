@@ -512,7 +512,7 @@ class Observatory:
         --------
         grid_baselines_coherent :
             Coherent sum over baseline groups of the output of this method.
-        grid_basleine_incoherent :
+        grid_baseline_incoherent :
             Incoherent sum over baseline groups of the output of this method.
         """
         if baselines is not None:

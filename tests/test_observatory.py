@@ -206,7 +206,10 @@ def test_from_yaml(bm):
 
 
 def test_from_ska():
-    from ska_ost_array_config.array_config import LowSubArray
+    from ska_ost_array_config.array_config import LowSubArray, UVW
+    from ska_ost_array_config.simulation_utils import simulate_observation
+    from astropy.time import Time
+    from astropy.coordinates import SkyCoord
 
     obs = Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
     low_aastar = LowSubArray(subarray_type="AA*")
@@ -227,6 +230,31 @@ def test_from_ska():
         subarray_type="custom", custom_stations="C*,E1-*", exclude_stations="C1,C2"
     )  # selects all core stations, 6 stations in the E1 cluster, excludes core stations C1 and C2
     assert obs.antpos.shape == low_custom.array_config.xyz.data.shape
+
+    # Simulate visibilities and retreive the UVW values
+    # ref_time = Time.now()
+    # zenith = SkyCoord(
+    #     alt=90 * units.deg,
+    #     az=0 * units.deg,
+    #     frame="altaz",
+    #     obstime=ref_time,
+    #     location=low_custom.array_config.location,
+    # ).icrs
+    # vis = simulate_observation(
+    #     array_config=low_custom.array_config,
+    #     phase_centre=zenith,
+    #     start_time=ref_time,
+    #     ref_freq=50e6,  # Dummy value. We are after uvw values in [m]
+    #     chan_width=1e3,  # Dummy value. We are after uvw values in [m]
+    #     n_chan=1,
+    # )
+    # uvw = UVW.UVW(vis, ignore_autocorr=False)
+    # uvw_m = uvw.uvdist_m
+    # print(uvw_m.shape, uvw_m.min(), uvw_m.max()) # max is 1239.7
+    # uvws = obs.grid_baselines(coherent=True).flatten()
+    # print(uvws.shape, uvws.min(), uvws.max()) # max is 1605.0
+    # assert np.allclose(uvws, uvw_m)
+
 
 
 def test_get_redundant_baselines(bm):
