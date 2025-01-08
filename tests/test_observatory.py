@@ -206,10 +206,7 @@ def test_from_yaml(bm):
 
 
 def test_from_ska():
-    from ska_ost_array_config.array_config import LowSubArray, UVW
-    from ska_ost_array_config.simulation_utils import simulate_observation
-    from astropy.time import Time
-    from astropy.coordinates import SkyCoord
+    from ska_ost_array_config.array_config import LowSubArray
 
     obs = Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
     low_aastar = LowSubArray(subarray_type="AA*")
@@ -254,7 +251,6 @@ def test_from_ska():
     # uvws = obs.grid_baselines(coherent=True).flatten()
     # print(uvws.shape, uvws.min(), uvws.max()) # max is 1605.0
     # assert np.allclose(uvws, uvw_m)
-
 
 
 def test_get_redundant_baselines(bm):
