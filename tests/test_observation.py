@@ -19,7 +19,9 @@ def bm():
 @pytest.fixture(scope="module")
 def observatory(bm):
     return Observatory(
-        antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0]]) * units.m,
+        antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0], [0, 14, 0], [23, -45, 0]])
+        * units.m,
+        latitude=-32 * units.deg,
         beam=bm,
     )
 
@@ -111,3 +113,41 @@ def test_trcv_func(observatory: Observatory):
     )
     assert obs.Trcv.unit == units.K
     assert obs.Trcv == (observatory.beam.frequency / units.MHz) * 0.01 * units.K
+
+
+def test_non_zenith_pointing(bm):
+    """Test that not pointing at zenith gives different results."""
+    observatory = Observatory(
+        antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0], [0, 14, 0], [23, -45, 0]])
+        * units.m,
+        latitude=-32 * units.deg,
+        beam=bm,
+    )
+    at_zenith = Observation(observatory=observatory)
+
+    almost_zenith = Observation(
+        observatory=observatory, phase_center_dec=observatory.latitude * 0.99
+    )
+    np.testing.assert_allclose(at_zenith.uv_coverage, almost_zenith.uv_coverage)
+
+    not_zenith = Observation(
+        observatory=observatory,
+        phase_center_dec=observatory.latitude + 45 * units.deg,
+    )
+    assert not np.allclose(not_zenith.uv_coverage, at_zenith.uv_coverage)
+
+
+def test_non_zenith_pointing_only_ew(bm):
+    """Test that not pointing at zenith gives the SAME results if all baselines are EW."""
+    observatory = Observatory(
+        antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0]]) * units.m,
+        latitude=-32 * units.deg,
+        beam=bm,
+    )
+    at_zenith = Observation(observatory=observatory)
+
+    not_zenith = Observation(
+        observatory=observatory,
+        phase_center_dec=observatory.latitude + 45 * units.deg,
+    )
+    np.testing.assert_allclose(not_zenith.uv_coverage, at_zenith.uv_coverage)
