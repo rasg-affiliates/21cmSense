@@ -247,7 +247,7 @@ def test_from_ska():
     )
     uvw = UVW.UVW(vis, ignore_autocorr=False)
     uvw_m = uvw.uvdist_m
-    assert np.allclose(obs.longest_baseline/obs.metres_to_wavelengths, uvw_m.max()*units.m)
+    assert np.allclose(obs.longest_baseline / obs.metres_to_wavelengths, uvw_m.max() * units.m)
 
 
 def test_get_redundant_baselines(bm):
