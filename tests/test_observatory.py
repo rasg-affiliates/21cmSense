@@ -232,28 +232,25 @@ def test_from_ska():
     assert obs.antpos.shape == low_custom.array_config.xyz.data.shape
 
     # Simulate visibilities and retreive the UVW values
-    # ref_time = Time.now()
-    # zenith = SkyCoord(
-    #     alt=90 * units.deg,
-    #     az=0 * units.deg,
-    #     frame="altaz",
-    #     obstime=ref_time,
-    #     location=low_custom.array_config.location,
-    # ).icrs
-    # vis = simulate_observation(
-    #     array_config=low_custom.array_config,
-    #     phase_centre=zenith,
-    #     start_time=ref_time,
-    #     ref_freq=50e6,  # Dummy value. We are after uvw values in [m]
-    #     chan_width=1e3,  # Dummy value. We are after uvw values in [m]
-    #     n_chan=1,
-    # )
-    # uvw = UVW.UVW(vis, ignore_autocorr=False)
-    # uvw_m = uvw.uvdist_m
-    # print(uvw_m.shape, uvw_m.min(), uvw_m.max()) # max is 1239.7
-    # uvws = obs.grid_baselines(coherent=True).flatten()
-    # print(uvws.shape, uvws.min(), uvws.max()) # max is 1605.0
-    # assert np.allclose(uvws, uvw_m)
+    ref_time = Time.now()
+    zenith = SkyCoord(
+        alt=90 * units.deg,
+        az=0 * units.deg,
+        frame="altaz",
+        obstime=ref_time,
+        location=low_custom.array_config.location,
+    ).icrs
+    vis = simulate_observation(
+        array_config=low_custom.array_config,
+        phase_centre=zenith,
+        start_time=ref_time,
+        ref_freq=50e6,  # Dummy value. We are after uvw values in [m]
+        chan_width=1e3,  # Dummy value. We are after uvw values in [m]
+        n_chan=1,
+    )
+    uvw = UVW.UVW(vis, ignore_autocorr=False)
+    uvw_m = uvw.uvdist_m
+    assert np.allclose(obs.longest_baseline/obs.metres_to_wavelengths, uvw_m.max()*units.m)
 
 
 
