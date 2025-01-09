@@ -39,7 +39,11 @@ def find_nearest(array, value):
 
 @un.quantity_input
 def phase_past_zenith(
-    time_past_zenith: un.day, bls_enu: np.ndarray, latitude, use_apparent: bool = True
+    time_past_zenith: un.hour,
+    bls_enu: np.ndarray,
+    latitude: float,
+    phase_center_dec: un.rad = None,
+    use_apparent: bool = True,
 ):
     """Compute UVWs phased to a point rotated from zenith by a certain amount of time.
 
@@ -50,12 +54,19 @@ def phase_past_zenith(
     Parameters
     ----------
     time_past_zenith
-        The time passed since the point was at zenith. If float, assumed to be in units
-        of days.
-    uvws0 : array
-        The UVWs when phased to zenith.
+        The time passed since the point was at its closest to zenith. Must be a
+        quantity with time units.
+    bls_enu
+        An (Nbls, 3)-shaped array containing the ENU coordinates of the baseline
+        vectors (equivalent to the UVWs if phased to zenith).
     latitude
         The latitude of the center of the array, in radians.
+    phase_center_dec
+        If given, the declination of the phase center. If not given, it is set to the
+        latitude of the array (i.e. the phase center passes through zenith).
+    use_apparent
+        Whether to use the apparent coordinates of the phase center (i.e. after
+        accounting for nutation and precession etc.)
 
     Returns
     -------
@@ -68,17 +79,27 @@ def phase_past_zenith(
 
     # JD is arbitrary
     jd = 2454600
+    tm = Time(jd, format="jd")
 
-    zenith_coord = SkyCoord(
+    phase_center_coord = SkyCoord(
         alt=90 * un.deg,
         az=0 * un.deg,
-        obstime=Time(jd, format="jd"),
+        obstime=tm,
         frame="altaz",
         location=telescope_location,
     )
-    zenith_coord = zenith_coord.transform_to("icrs")
+    phase_center_coord = phase_center_coord.transform_to("icrs")
 
-    obstimes = zenith_coord.obstime + time_past_zenith
+    if phase_center_dec is not None:
+        phase_center_coord = SkyCoord(
+            ra=phase_center_coord.ra,
+            dec=phase_center_dec,
+            obstime=tm,
+            frame="icrs",
+            location=telescope_location,
+        )
+
+    obstimes = phase_center_coord.obstime + time_past_zenith
     lsts = obstimes.sidereal_time("apparent", longitude=0.0).rad
 
     if not hasattr(lsts, "__len__"):
@@ -86,8 +107,8 @@ def phase_past_zenith(
 
     if use_apparent:
         app_ra, app_dec = uvutils.phasing.calc_app_coords(
-            lon_coord=zenith_coord.ra.to_value("rad"),
-            lat_coord=zenith_coord.dec.to_value("rad"),
+            lon_coord=phase_center_coord.ra.to_value("rad"),
+            lat_coord=phase_center_coord.dec.to_value("rad"),
             time_array=obstimes.utc.jd,
             telescope_loc=telescope_location,
         )
@@ -96,8 +117,8 @@ def phase_past_zenith(
         app_dec = np.tile(app_dec, len(bls_enu))
 
     else:
-        app_ra = zenith_coord.ra.to_value("rad") * np.ones(len(bls_enu) * len(lsts))
-        app_dec = zenith_coord.dec.to_value("rad") * np.ones(len(bls_enu) * len(lsts))
+        app_ra = phase_center_coord.ra.to_value("rad") * np.ones(len(bls_enu) * len(lsts))
+        app_dec = phase_center_coord.dec.to_value("rad") * np.ones(len(bls_enu) * len(lsts))
 
     # Now make everything nbls * ntimes big.
     _lsts = np.tile(lsts, len(bls_enu))
