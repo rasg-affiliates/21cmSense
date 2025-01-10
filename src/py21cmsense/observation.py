@@ -88,6 +88,11 @@ class Observation:
         that use astropy are preferred.
     cosmo : LambdaCDM
         An astropy cosmology object to use.
+    phase_center_dec
+        The declination of the phase center (typically used for a tracked scan
+        observation). By default, this is set to the latitude of the observatory
+        (i.e. the phase-center passes through zenith, like a typical drift-scan
+        observation).
     """
 
     observatory: obs.Observatory = attr.ib(validator=vld.instance_of(obs.Observatory))
@@ -129,6 +134,7 @@ class Observation:
     tsky_ref_freq: tp.Frequency = attr.ib(default=150 * un.MHz, validator=ut.positive)
     use_approximate_cosmo: bool = attr.ib(default=False, converter=bool)
     cosmo: LambdaCDM = attr.ib(default=Planck15, converter=Planck15.from_format)
+    phase_center_dec = attr.ib(validator=(tp.vld_physical_type("angle")))
 
     @classmethod
     def from_yaml(cls, yaml_file):
@@ -181,6 +187,10 @@ class Observation:
             return self.track
         else:
             return self.observatory.observation_duration
+
+    @phase_center_dec.default
+    def _phase_center_dec_default(self):
+        return self.observatory.latitude
 
     @cached_property
     def beam_crossing_time(self):
@@ -264,6 +274,7 @@ class Observation:
             integration_time=self.integration_time,
             observation_duration=self.lst_bin_size,
             ndecimals=self.redundancy_tol,
+            phase_center_dec=self.phase_center_dec,
         )
 
     @cached_property

@@ -284,7 +284,10 @@ class Observatory:
         return (self.antpos[np.newaxis, :, :] - self.antpos[:, np.newaxis, :]).to(un.m)
 
     def projected_baselines(
-        self, baselines: tp.Length | None = None, time_offset: tp.Time = 0 * un.hour
+        self,
+        baselines: tp.Length | None = None,
+        time_offset: tp.Time = 0 * un.hour,
+        phase_center_dec: tp.Angle | None = None,
     ) -> np.ndarray:
         """Compute the *projected* baseline lengths (in wavelengths).
 
@@ -300,6 +303,9 @@ class Observatory:
         time_offset
             The amount of time elapsed since the phase center was at zenith.
             Assumed to be in days unless otherwise defined. May be negative.
+        phase_center_dec
+            The declination of the phase center of the observation. By default, the
+            same as the latitude of the array.
 
         Returns
         -------
@@ -313,7 +319,12 @@ class Observatory:
 
         bl_wavelengths = baselines.reshape((-1, 3)) * self.metres_to_wavelengths
 
-        out = ut.phase_past_zenith(time_offset, bl_wavelengths, self.latitude)
+        out = ut.phase_past_zenith(
+            time_past_zenith=time_offset,
+            bls_enu=bl_wavelengths,
+            latitude=self.latitude,
+            phase_center_dec=phase_center_dec,
+        )
 
         out = out.reshape(*orig_shape[:-1], np.size(time_offset), orig_shape[-1])
         if np.size(time_offset) == 1:
@@ -472,6 +483,7 @@ class Observatory:
         baseline_filters: Callable | tuple[Callable] = (),
         observation_duration: tp.Time | None = None,
         ndecimals: int = 1,
+        phase_center_dec: tp.Angle | None = None,
     ) -> np.ndarray:
         """
         Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
@@ -538,9 +550,9 @@ class Observatory:
 
         time_offsets = self.time_offsets_from_obs_int_time(integration_time, observation_duration)
 
-        uvws = self.projected_baselines(baselines, time_offsets).reshape(
-            baselines.shape[0], time_offsets.size, 3
-        )
+        uvws = self.projected_baselines(
+            baselines, time_offsets, phase_center_dec=phase_center_dec
+        ).reshape(baselines.shape[0], time_offsets.size, 3)
 
         # grid each baseline type into uv plane
         dim = len(self.ugrid(bl_max))
