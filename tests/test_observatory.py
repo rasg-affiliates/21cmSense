@@ -7,7 +7,8 @@ import numpy as np
 import pytest
 import pyuvdata
 from astropy import units
-from astropy.coordinates import EarthLocation
+from astropy.coordinates import EarthLocation, SkyCoord
+from astropy.time import Time
 
 from py21cmsense import Observatory
 from py21cmsense.baseline_filters import BaselineRange
@@ -203,6 +204,60 @@ def test_from_yaml(bm):
 
     with pytest.raises(ValueError, match="yaml_file must be a string filepath"):
         Observatory.from_yaml(3)
+
+
+def test_from_ska():
+    pytest.importorskip("ska_ost_array_config")
+
+    from ska_ost_array_config import UVW
+    from ska_ost_array_config.array_config import LowSubArray
+    from ska_ost_array_config.simulation_utils import simulate_observation
+
+    obs = Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
+    low_aastar = LowSubArray(subarray_type="AA*")
+    assert obs.antpos.shape == low_aastar.array_config.xyz.data.shape
+    Observatory.from_ska(subarray_type="AA*", array_type="mid", frequency=300.0 * units.MHz)
+    obs = Observatory.from_ska(subarray_type="AA4", array_type="low", frequency=300.0 * units.MHz)
+    low_aa4 = LowSubArray(subarray_type="AA4")
+    assert obs.antpos.shape == low_aa4.array_config.xyz.data.shape
+    obs = Observatory.from_ska(
+        subarray_type="custom",
+        array_type="low",
+        Trcv=100.0 * units.K,
+        frequency=150.0 * units.MHz,
+        custom_stations="C*,E1-*",
+        exclude_stations="C1,C2",
+    )
+    low_custom = LowSubArray(
+        subarray_type="custom", custom_stations="C*,E1-*", exclude_stations="C1,C2"
+    )  # selects all core stations, 6 stations in the E1 cluster, excludes core stations C1 and C2
+    assert obs.antpos.shape == low_custom.array_config.xyz.data.shape
+
+    # Simulate visibilities and retreive the UVW values
+    ref_time = Time.now()
+    zenith = SkyCoord(
+        alt=90 * units.deg,
+        az=0 * units.deg,
+        frame="altaz",
+        obstime=ref_time,
+        location=low_custom.array_config.location,
+    ).icrs
+    vis = simulate_observation(
+        array_config=low_custom.array_config,
+        phase_centre=zenith,
+        start_time=ref_time,
+        ref_freq=50e6,  # Dummy value. We are after uvw values in [m]
+        chan_width=1e3,  # Dummy value. We are after uvw values in [m]
+        n_chan=1,
+    )
+    uvw = UVW.UVW(vis, ignore_autocorr=False)
+    uvw_m = uvw.uvdist_m
+    assert np.allclose(obs.longest_baseline / obs.metres_to_wavelengths, uvw_m.max() * units.m)
+
+    with pytest.raises(ValueError, match="array_type must be"):
+        Observatory.from_ska(
+            subarray_type="AA*", array_type="non-existent", frequency=300.0 * units.MHz
+        )
 
 
 def test_get_redundant_baselines(bm):
