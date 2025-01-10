@@ -254,6 +254,11 @@ def test_from_ska():
     uvw_m = uvw.uvdist_m
     assert np.allclose(obs.longest_baseline / obs.metres_to_wavelengths, uvw_m.max() * units.m)
 
+    with pytest.raises(ValueError, match="array_type must be"):
+        Observatory.from_ska(
+            subarray_type="AA*", array_type="non-existent", frequency=300.0 * units.MHz
+        )
+
 
 def test_get_redundant_baselines(bm):
     a = Observatory(antpos=np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]) * units.m, beam=bm)

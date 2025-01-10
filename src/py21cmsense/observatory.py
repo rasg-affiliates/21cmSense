@@ -256,7 +256,7 @@ class Observatory:
         """
         try:
             from ska_ost_array_config.array_config import LowSubArray, MidSubArray
-        except ImportError as exception:
+        except ImportError as exception:  # pragma: no cover
             raise ImportError(
                 "ska-ost-array-config package is required, "
                 + "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config"
