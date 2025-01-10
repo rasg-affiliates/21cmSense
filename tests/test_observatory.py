@@ -207,6 +207,8 @@ def test_from_yaml(bm):
 
 
 def test_from_ska():
+    pytest.importorskip("ska_ost_array_config")
+
     from ska_ost_array_config import UVW
     from ska_ost_array_config.array_config import LowSubArray
     from ska_ost_array_config.simulation_utils import simulate_observation
