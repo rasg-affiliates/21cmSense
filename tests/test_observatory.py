@@ -7,7 +7,8 @@ import numpy as np
 import pytest
 import pyuvdata
 from astropy import units
-from astropy.coordinates import EarthLocation
+from astropy.coordinates import EarthLocation, SkyCoord
+from astropy.time import Time
 
 from py21cmsense import Observatory
 from py21cmsense.baseline_filters import BaselineRange
@@ -206,7 +207,9 @@ def test_from_yaml(bm):
 
 
 def test_from_ska():
+    from ska_ost_array_config import UVW
     from ska_ost_array_config.array_config import LowSubArray
+    from ska_ost_array_config.simulation_utils import simulate_observation
 
     obs = Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
     low_aastar = LowSubArray(subarray_type="AA*")
