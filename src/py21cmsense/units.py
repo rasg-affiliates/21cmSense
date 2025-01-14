@@ -44,8 +44,7 @@ def vld_physical_type(unit: str) -> Callable[[Any, attr.Attribute, Any], None]:
             raise UnitError(f"{att.name} must be an astropy Quantity!")
         if val.unit.physical_type != unit:
             raise un.UnitConversionError(
-                f"{att.name} must have physical type of '{unit}'. "
-                f"Got '{val.unit.physical_type}'"
+                f"{att.name} must have physical type of '{unit}'. Got '{val.unit.physical_type}'"
             )
 
     return _check_type

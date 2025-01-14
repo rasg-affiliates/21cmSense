@@ -58,7 +58,7 @@ class BaselineRange(BaselineFilter):
     def _bl_max_vld(self, att, val):
         if val <= self.bl_min:
             raise ValueError(
-                "bl_max must be greater than bl_min, got " f"bl_min={self.bl_min} and bl_max={val}"
+                f"bl_max must be greater than bl_min, got bl_min={self.bl_min} and bl_max={val}"
             )
 
     def __call__(self, bl: tp.Length) -> bool:
