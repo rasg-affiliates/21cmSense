@@ -82,6 +82,9 @@ def test_sensitivity_optimistic(observation):
     ps = PowerSpectrum(observation=observation, foreground_model="optimistic")
     assert ps.horizon_limit(10.0) > ps.horizon_limit(5.0)
 
+def test_sensitivity_foreground_free(observation):
+    ps = PowerSpectrum(observation=observation, foreground_model="foreground_free")
+    assert ps.horizon_limit(10.0) == 0
 
 def test_infs_in_trms(observation):
     # default dumb layout should have lots of infs..
