@@ -41,7 +41,7 @@ def find_nearest(array, value):
 
 @un.quantity_input
 def phase_past_zenith(
-    time_past_zenith: un.day, bls_enu: np.ndarray, latitude, world, use_apparent: bool = True
+        time_past_zenith: un.day, bls_enu: np.ndarray, latitude, world: str = "earth", use_apparent: bool = True
 ):
     """Compute UVWs phased to a point rotated from zenith by a certain amount of time.
 
@@ -59,7 +59,7 @@ def phase_past_zenith(
     latitude
         The latitude of the center of the array, in radians.
     world
-        Wether the telescope is on the Earth or Moon.
+        Whether the telescope is on the Earth or Moon.
 
     Returns
     -------

@@ -93,17 +93,16 @@ class Observation:
     observatory: obs.Observatory = attr.ib(validator=vld.instance_of(obs.Observatory))
 
     time_per_day: tp.Time = attr.ib(
-        6 * un.hour,
-        validator=(tp.vld_physical_type("time"), ut.between(0 * un.hour, 655.2 * un.hour)),
+        validator=(tp.vld_physical_type("time")),
     )
     track: tp.Time | None = attr.ib(
         None,
         validator=attr.validators.optional(
-            [tp.vld_physical_type("time"), ut.between(0, 655.2 * un.hour)]
+            [tp.vld_physical_type("time")]
         ),
     )
     lst_bin_size: tp.Time = attr.ib(
-        validator=(tp.vld_physical_type("time"), ut.between(0, 655.2 * un.hour)),
+        validator=(tp.vld_physical_type("time")),
     )
     integration_time: tp.Time = attr.ib(
         60 * un.second, validator=(tp.vld_physical_type("time"), ut.positive)
@@ -164,8 +163,30 @@ class Observation:
         d["cosmo"] = Planck15.from_format(d["cosmo"])
         self.__dict__.update(d)
 
+    @time_per_day.validator
+    def _time_per_day_vld(self, att, val):
+        day_length = 24*un.hour if self.observatory.world == 'earth' else 655.2*un.hour
+
+        if not 0*un.hour <= val <= day_length:
+            raise ValueError(f"time_per_day should be between 0 and {day_length}")
+
+    @track.validator
+    def _track_vld(self, att, val):
+        if val != None:
+            day_length = 24*un.hour if self.observatory.world == 'earth' else 655.2*un.hour
+
+            if not 0*un.hour <= val <= day_length:
+                raise ValueError(f"track should be between 0 and {day_length}")
+
+
     @lst_bin_size.validator
     def _lst_bin_size_vld(self, att, val):
+        day_length = 24*un.hour if self.observatory.world == 'earth' else 655.2*un.hour
+
+        if not 0*un.hour <= val <= day_length:
+            raise ValueError(f"lst_bin_size should be between 0 and {day_length}")
+
+
         if val > self.time_per_day:
             raise ValueError("lst_bin_size must be <= time_per_day")
 
@@ -173,6 +194,13 @@ class Observation:
     def _integration_time_vld(self, att, val):
         if val > self.lst_bin_size:
             raise ValueError("integration_time must be <= lst_bin_size")
+
+    @time_per_day.default
+    def _time_per_day_default(self):
+        if self.observatory.world == 'earth':
+            return 6 * un.hour
+        else:
+            return 163.8 * un.hour
 
     @lst_bin_size.default
     def _lst_bin_size_default(self):

@@ -15,12 +15,16 @@ from py21cmsense.sensitivity import Sensitivity
 def bm():
     return GaussianBeam(150.0 * units.MHz, dish_size=14 * units.m)
 
+@pytest.fixture(scope="module", params=["earth","moon"])
+def wd(request):
+    return request.param
 
 @pytest.fixture(scope="module")
-def observatory(bm):
+def observatory(bm, wd):
     return Observatory(
         antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0]]) * units.m,
         beam=bm,
+        world=wd
     )
 
 
