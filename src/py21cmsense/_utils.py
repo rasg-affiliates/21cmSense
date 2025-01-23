@@ -90,7 +90,7 @@ def phase_past_zenith(
     jd = 2454600
 
     if world == "earth":
-        tm = Time(jd, format="jd")
+        tm = Time(jd, format="jd", location=telescope_location)
 
         phase_center_coord = SkyCoord(
             alt=90 * un.deg,
@@ -100,7 +100,8 @@ def phase_past_zenith(
             location=telescope_location,
         )
     else:
-        tm = LTime(jd, format="jd")
+        tm = LTime(jd, format="jd", location=telescope_location)
+
         phase_center_coord = LunarSkyCoord(
             alt=90 * un.deg,
             az=0 * un.deg,
@@ -119,8 +120,6 @@ def phase_past_zenith(
             frame=phase_center_coord.frame,
             location=telescope_location,
         )
-
-    phase_center_coord.obstime.location = telescope_location
 
     obstimes = phase_center_coord.obstime + time_past_zenith
     lsts = obstimes.sidereal_time("apparent", longitude=0.0).rad

@@ -199,7 +199,7 @@ class Legacy21cmFAST(TheoryModel):
 
 
 class FarViewModel(TheoryModel):
-    """21cmFAST-based theory model explicitly for z=30, [Insert paper link here later]"""
+    """21cmFAST-based theory model explicitly for z=30."""
 
     use_littleh: bool = False
 

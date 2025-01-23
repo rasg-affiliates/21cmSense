@@ -176,7 +176,7 @@ class Observation:
 
     @track.validator
     def _track_vld(self, att, val):
-        if val != None:
+        if val is not None:
             day_length = 24 * un.hour if self.observatory.world == "earth" else 655.2 * un.hour
 
             if not 0 * un.hour <= val <= day_length:
