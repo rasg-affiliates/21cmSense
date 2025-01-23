@@ -102,9 +102,7 @@ class Observation:
     )
     track: tp.Time | None = attr.ib(
         None,
-        validator=attr.validators.optional(
-            [tp.vld_physical_type("time")]
-        ),
+        validator=attr.validators.optional([tp.vld_physical_type("time")]),
     )
     lst_bin_size: tp.Time = attr.ib(
         validator=(tp.vld_physical_type("time")),
@@ -171,27 +169,25 @@ class Observation:
 
     @time_per_day.validator
     def _time_per_day_vld(self, att, val):
-        day_length = 24*un.hour if self.observatory.world == 'earth' else 655.2*un.hour
+        day_length = 24 * un.hour if self.observatory.world == "earth" else 655.2 * un.hour
 
-        if not 0*un.hour <= val <= day_length:
+        if not 0 * un.hour <= val <= day_length:
             raise ValueError(f"time_per_day should be between 0 and {day_length}")
 
     @track.validator
     def _track_vld(self, att, val):
         if val != None:
-            day_length = 24*un.hour if self.observatory.world == 'earth' else 655.2*un.hour
+            day_length = 24 * un.hour if self.observatory.world == "earth" else 655.2 * un.hour
 
-            if not 0*un.hour <= val <= day_length:
+            if not 0 * un.hour <= val <= day_length:
                 raise ValueError(f"track should be between 0 and {day_length}")
-
 
     @lst_bin_size.validator
     def _lst_bin_size_vld(self, att, val):
-        day_length = 24*un.hour if self.observatory.world == 'earth' else 655.2*un.hour
+        day_length = 24 * un.hour if self.observatory.world == "earth" else 655.2 * un.hour
 
-        if not 0*un.hour <= val <= day_length:
+        if not 0 * un.hour <= val <= day_length:
             raise ValueError(f"lst_bin_size should be between 0 and {day_length}")
-
 
         if val > self.time_per_day:
             raise ValueError("lst_bin_size must be <= time_per_day")
@@ -203,7 +199,7 @@ class Observation:
 
     @time_per_day.default
     def _time_per_day_default(self):
-        if self.observatory.world == 'earth':
+        if self.observatory.world == "earth":
             return 6 * un.hour
         else:
             return 163.8 * un.hour

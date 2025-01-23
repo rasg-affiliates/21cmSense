@@ -4,10 +4,11 @@ import numpy as np
 from astropy import units as un
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
-from pyuvdata import utils as uvutils
 from lunarsky import MoonLocation
 from lunarsky import SkyCoord as LunarSkyCoord
 from lunarsky import Time as LTime
+from pyuvdata import utils as uvutils
+
 
 def between(xmin, xmax):
     """Return an attrs validation function that checks a number is within bounds."""
@@ -87,7 +88,7 @@ def phase_past_zenith(
 
     # JD is arbitrary
     jd = 2454600
-    
+
     if world == "earth":
         tm = Time(jd, format="jd")
 
@@ -99,14 +100,14 @@ def phase_past_zenith(
             location=telescope_location,
         )
     else:
-        tm = LTime(jd, format='jd')
+        tm = LTime(jd, format="jd")
         phase_center_coord = LunarSkyCoord(
-                alt=90 * un.deg,
-                az=0 * un.deg,
-                obstime=tm,
-                frame="lunartopo",
-                location=telescope_location,
-            )
+            alt=90 * un.deg,
+            az=0 * un.deg,
+            obstime=tm,
+            frame="lunartopo",
+            location=telescope_location,
+        )
 
     phase_center_coord = phase_center_coord.transform_to("icrs")
 
@@ -120,7 +121,6 @@ def phase_past_zenith(
         )
 
     phase_center_coord.obstime.location = telescope_location
-    
 
     obstimes = phase_center_coord.obstime + time_past_zenith
     lsts = obstimes.sidereal_time("apparent", longitude=0.0).rad

@@ -86,8 +86,7 @@ class Observatory:
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
     beam_crossing_time_incl_latitude: bool = attr.ib(default=True, converter=bool)
-    world: str = attr.ib(default = "earth", validator=vld.in_(["earth", "moon"])
-    )
+    world: str = attr.ib(default="earth", validator=vld.in_(["earth", "moon"]))
 
     @_antpos.validator
     def _antpos_validator(self, att, val):
@@ -364,7 +363,7 @@ class Observatory:
         if self.world == "earth":
             return un.day * self.beam.fwhm / (2 * np.pi * un.rad * latfac)
         else:
-            return 27.3 * un.day * self.beam.fwhm/(2 * np.pi * un.rad * latfac)
+            return 27.3 * un.day * self.beam.fwhm / (2 * np.pi * un.rad * latfac)
 
     def get_redundant_baselines(
         self,

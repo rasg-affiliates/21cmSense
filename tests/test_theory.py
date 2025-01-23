@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from py21cmsense.theory import EOS2021, EOS2016Bright, EOS2016Faint, Legacy21cmFAST, FarViewModel
+from py21cmsense.theory import EOS2021, EOS2016Bright, EOS2016Faint, FarViewModel, Legacy21cmFAST
 
 
 def test_eos_extrapolation():
@@ -38,6 +38,7 @@ def test_eos_2016():
     bright = EOS2016Bright()
 
     assert faint.delta_squared(9.1, 1.0) != bright.delta_squared(9.1, 1.0)
+
 
 def test_FarView():
     theory = FarViewModel()

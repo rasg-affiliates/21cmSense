@@ -15,18 +15,20 @@ from py21cmsense import GaussianBeam, Observation, Observatory
 def bm():
     return GaussianBeam(150.0 * units.MHz, dish_size=14 * units.m)
 
-@pytest.fixture(scope="module", params=["earth","moon"])
+
+@pytest.fixture(scope="module", params=["earth", "moon"])
 def wd(request):
     return request.param
 
+
 @pytest.fixture(scope="module")
-def observatory(bm,wd):
+def observatory(bm, wd):
     return Observatory(
         antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0], [0, 14, 0], [23, -45, 0]])
         * units.m,
         latitude=-32 * units.deg,
         beam=bm,
-        world=wd
+        world=wd,
     )
 
 
@@ -94,23 +96,25 @@ def test_from_yaml(observatory):
     with pytest.raises(ValueError, match="yaml_file must be a string filepath"):
         Observation.from_yaml(3)
 
+
 def test_huge_time_per_day_size(observatory: Observatory, wd):
-    tpd = 25 * units.hour if wd=="earth" else 682.5 * units.hour 
+    tpd = 25 * units.hour if wd == "earth" else 682.5 * units.hour
     with pytest.raises(ValueError, match="time_per_day should be between 0 and"):
         Observation(observatory=observatory, time_per_day=tpd)
 
+
 def test_huge_track_size(observatory: Observatory, wd):
-    tck = 25 * units.hour if wd=="earth" else 682.5 * units.hour 
+    tck = 25 * units.hour if wd == "earth" else 682.5 * units.hour
     with pytest.raises(ValueError, match="track should be between 0 and"):
         Observation(observatory=observatory, track=tck)
 
 
 def test_huge_lst_bin_size(observatory: Observatory, wd):
-    lst = 23 * units.hour if wd=="earth" else 627.9 * units.hour 
+    lst = 23 * units.hour if wd == "earth" else 627.9 * units.hour
     with pytest.raises(ValueError, match="lst_bin_size must be <= time_per_day"):
         Observation(observatory=observatory, lst_bin_size=lst)
 
-    lst2 = 25 * units.hour if wd=="earth" else 682.5 * units.hour 
+    lst2 = 25 * units.hour if wd == "earth" else 682.5 * units.hour
     with pytest.raises(ValueError, match="lst_bin_size should be between 0 and"):
         Observation(observatory=observatory, lst_bin_size=lst2)
 

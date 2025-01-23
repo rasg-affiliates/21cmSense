@@ -197,27 +197,22 @@ class Legacy21cmFAST(TheoryModel):
 
         return self.spline(k) << un.mK**2
 
+
 class FarViewModel(TheoryModel):
     """21cmFAST-based theory model explicitly for z=30, [Insert paper link here later]"""
 
     use_littleh: bool = False
 
     def __init__(self) -> None:
-        k_pth = (
-            Path(__file__).parent
-            / "data/farview/kmag_ultimate.npy"
-        )
+        k_pth = Path(__file__).parent / "data/farview/kmag_ultimate.npy"
 
-        delta_pth = (
-            Path(__file__).parent
-            / "data/farview/P_Tb_ultimate.npy"
-        )
-        #Should at some point reorganize the data so these steps aren't necessary
+        delta_pth = Path(__file__).parent / "data/farview/P_Tb_ultimate.npy"
+        # Should at some point reorganize the data so these steps aren't necessary
         k_fixed = np.load(k_pth)
         power = np.load(delta_pth)
         k_fixed = k_fixed[~np.isnan(power)]
         power = power[~np.isnan(power)]
-        delta = (k_fixed**3 * power) / (2*np.pi**2)
+        delta = (k_fixed**3 * power) / (2 * np.pi**2)
 
         self.k = k_fixed
         self.delta_squared_raw = delta
