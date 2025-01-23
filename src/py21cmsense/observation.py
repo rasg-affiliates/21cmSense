@@ -38,8 +38,9 @@ class Observation:
         An object defining attributes of the observatory itself (its location etc.)
     hours_per_day : float or Quantity, optional
         The number of good observing hours per day.  This corresponds to the size of a
-        low-foreground region in right ascension for a drift scanning instrument. The
-        total observing time is `n_days*hours_per_day`.  Default is 6.
+        low-foreground region in right ascension for a drift scanning instrument on the Earth.
+        The total observing time is `n_days*hours_per_day` where a day is 24 hours on the
+        Earth and 655.2 hours on the moon.  Default is 6 (163.8 on moon).
         If simulating a tracked scan, `hours_per_day` should be a multiple of the length
         of the track (i.e. for two three-hour tracks per day, `hours_per_day` should be 6).
     track
@@ -59,9 +60,10 @@ class Observation:
         The bandwidth used for the observation, assumed to be in MHz. Note this is not the total
         instrument bandwidth, but the redshift range that can be considered co-eval.
     n_days : int, optional
-        The number of days observed (for the same set of LSTs). The default is 180, which is the
-        maximum a particular R.A. can be observed in one year if one only observes at night.
-        The total observing time is `n_days*hours_per_day`.
+        The number of days observed (for the same set of LSTs). The default is 180 (6 on moon),
+        which is the maximum a particular R.A. can be observed in one year if one only observes
+        at night. The total observing time is `n_days*hours_per_day` where a day is 24 hours on
+        the Earth and 655.2 hours on the moon.
     baseline_filters
         A function that takes a single value: a length-3 array of baseline co-ordinates,
         and returns a bool indicating whether to include the baseline. Built-in filters
@@ -114,7 +116,7 @@ class Observation:
     bandwidth: tp.Frequency = attr.ib(
         8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
     )
-    n_days: int = attr.ib(default=180, converter=int, validator=ut.positive)
+    n_days: int = attr.ib(converter=int, validator=ut.positive)
     baseline_filters: tuple[Callable[[tp.Length], bool]] = attr.ib(
         default=(), converter=tp._tuplify
     )
@@ -211,6 +213,13 @@ class Observation:
             return self.track
         else:
             return self.observatory.observation_duration
+
+    @n_days.default
+    def _n_days_default(self):
+        if self.observatory.world == "earth":
+            return 180
+        else:
+            return 6
 
     @phase_center_dec.default
     def _phase_center_dec_default(self):
