@@ -24,6 +24,7 @@ Temperature = un.Quantity["temperature"]
 TempSquared = un.Quantity[un.get_physical_type("temperature") ** 2]
 Wavenumber = un.Quantity[littleh / un.Mpc]
 Delta = un.Quantity[un.mK**2]
+Angle = un.Quantity["angle"]
 
 time_as_distance = [
     (
@@ -43,8 +44,7 @@ def vld_physical_type(unit: str) -> Callable[[Any, attr.Attribute, Any], None]:
             raise UnitError(f"{att.name} must be an astropy Quantity!")
         if val.unit.physical_type != unit:
             raise un.UnitConversionError(
-                f"{att.name} must have physical type of '{unit}'. "
-                f"Got '{val.unit.physical_type}'"
+                f"{att.name} must have physical type of '{unit}'. Got '{val.unit.physical_type}'"
             )
 
     return _check_type

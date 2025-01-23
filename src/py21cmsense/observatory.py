@@ -57,7 +57,7 @@ class Observatory:
         Note that longitude is not required, as we assume an isotropic sky.
     Trcv
         Receiver temperature, either a temperature Quantity, or a callable that
-        taakes a single frequency Quantity and returns a temperature Quantity.
+        takes a single frequency Quantity and returns a temperature Quantity.
     min_antpos, max_antpos
         The minimum/maximum radial distance to include antennas (from the origin
         of the array). Assumed to be in units of meters if no units are supplied.
@@ -208,7 +208,8 @@ class Observatory:
         ----------
         profile
             A string label identifying the observatory. Available built-in observatories
-            can be obtained with :func:`get_builtin_profiles`.
+            can be obtained with :func:`get_builtin_profiles`. For more up-to-date SKA profiles,
+            check the :func:`from_ska` method.
         frequency
             The frequency at which to specify the observatory.
 
@@ -226,6 +227,56 @@ class Observatory:
         obj = cls.from_yaml(fl, frequency=frequency)
         return obj.clone(**kwargs)
 
+    @classmethod
+    def from_ska(
+        cls,
+        subarray_type: str,
+        array_type: str = "low",
+        Trcv: tp.Temperature | Callable = 100 * un.K,  # noqa N803
+        frequency: tp.Frequency | None = 150.0 * un.MHz,
+        **kwargs,
+    ) -> Observatory:
+        """Instantiate an SKA Observatory.
+
+        Parameters
+        ----------
+        subarray_type
+            The type of subarray to use. Options are "AA4", "AA*", "AA1", "AA2", "AA0.5",
+             and "custom"
+        array_type, optional
+            The type of array to use. Options are "low" and "mid".
+            Default is "low".
+        Trcv, optional
+            Receiver temperature, either a temperature Quantity, or a callable that
+            takes a single frequency Quantity and returns a temperature Quantity.
+            Default is 100 K.
+        frequency, optional
+            The frequency at which to specify the observatory. Default is 150 MHz.
+
+        Other Parameters
+        ----------------
+        All other parameters passed will be passed into the LowSubArray or MidSubArray class.
+        See the documentation of the ska-ost-array-config package for more information.
+        """
+        try:
+            from ska_ost_array_config.array_config import LowSubArray, MidSubArray
+        except ImportError as exception:  # pragma: no cover
+            raise ImportError(
+                "ska-ost-array-config package is required, "
+                + "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config"
+            ) from exception
+
+        if array_type == "low":
+            subarray = LowSubArray(subarray_type, **kwargs)
+        elif array_type == "mid":
+            subarray = MidSubArray(subarray_type, **kwargs)
+        else:
+            raise ValueError("array_type must be 'low' or 'mid'.")
+        antpos = subarray.array_config.xyz.data * un.m
+        _beam = beam.GaussianBeam(frequency=frequency, dish_size=35.0 * un.m)
+        lat = subarray.array_config.location.lat.rad * un.rad
+        return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=Trcv)
+
     @cached_property
     def baselines_metres(self) -> tp.Meters:
         """Raw baseline distances in metres for every pair of antennas.
@@ -237,7 +288,10 @@ class Observatory:
         return (self.antpos[np.newaxis, :, :] - self.antpos[:, np.newaxis, :]).to(un.m)
 
     def projected_baselines(
-        self, baselines: tp.Length | None = None, time_offset: tp.Time = 0 * un.hour
+        self,
+        baselines: tp.Length | None = None,
+        time_offset: tp.Time = 0 * un.hour,
+        phase_center_dec: tp.Angle | None = None,
     ) -> np.ndarray:
         """Compute the *projected* baseline lengths (in wavelengths).
 
@@ -253,6 +307,9 @@ class Observatory:
         time_offset
             The amount of time elapsed since the phase center was at zenith.
             Assumed to be in days unless otherwise defined. May be negative.
+        phase_center_dec
+            The declination of the phase center of the observation. By default, the
+            same as the latitude of the array.
 
         Returns
         -------
@@ -266,7 +323,13 @@ class Observatory:
 
         bl_wavelengths = baselines.reshape((-1, 3)) * self.metres_to_wavelengths
 
-        out = ut.phase_past_zenith(time_offset, bl_wavelengths, self.latitude, self.world)
+        out = ut.phase_past_zenith(
+            time_past_zenith=time_offset,
+            bls_enu=bl_wavelengths,
+            latitude=self.latitude,
+            world=self.world,
+            phase_center_dec=phase_center_dec,
+        )
 
         out = out.reshape(*orig_shape[:-1], np.size(time_offset), orig_shape[-1])
         if np.size(time_offset) == 1:
@@ -428,6 +491,7 @@ class Observatory:
         baseline_filters: Callable | tuple[Callable] = (),
         observation_duration: tp.Time | None = None,
         ndecimals: int = 1,
+        phase_center_dec: tp.Angle | None = None,
     ) -> np.ndarray:
         """
         Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
@@ -468,7 +532,7 @@ class Observatory:
         --------
         grid_baselines_coherent :
             Coherent sum over baseline groups of the output of this method.
-        grid_basleine_incoherent :
+        grid_baseline_incoherent :
             Incoherent sum over baseline groups of the output of this method.
         """
         if baselines is not None:
@@ -494,9 +558,9 @@ class Observatory:
 
         time_offsets = self.time_offsets_from_obs_int_time(integration_time, observation_duration)
 
-        uvws = self.projected_baselines(baselines, time_offsets).reshape(
-            baselines.shape[0], time_offsets.size, 3
-        )
+        uvws = self.projected_baselines(
+            baselines, time_offsets, phase_center_dec=phase_center_dec
+        ).reshape(baselines.shape[0], time_offsets.size, 3)
 
         # grid each baseline type into uv plane
         dim = len(self.ugrid(bl_max))
