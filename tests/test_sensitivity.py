@@ -16,11 +16,17 @@ def bm():
     return GaussianBeam(150.0 * units.MHz, dish_size=14 * units.m)
 
 
+@pytest.fixture(scope="module", params=["earth", "moon"])
+def wd(request):
+    return request.param
+
+
 @pytest.fixture(scope="module")
-def observatory(bm):
+def observatory(bm, wd):
     return Observatory(
         antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0]]) * units.m,
         beam=bm,
+        world=wd,
     )
 
 
@@ -77,6 +83,11 @@ def test_plots(observation):
 def test_sensitivity_optimistic(observation):
     ps = PowerSpectrum(observation=observation, foreground_model="optimistic")
     assert ps.horizon_limit(10.0) > ps.horizon_limit(5.0)
+
+
+def test_sensitivity_foreground_free(observation):
+    ps = PowerSpectrum(observation=observation, foreground_model="foreground_free")
+    assert ps.horizon_limit(10.0) == 0
 
 
 def test_infs_in_trms(observation):

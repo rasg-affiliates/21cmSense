@@ -4,6 +4,9 @@ import numpy as np
 from astropy import units as un
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
+from lunarsky import MoonLocation
+from lunarsky import SkyCoord as LunarSkyCoord
+from lunarsky import Time as LTime
 from pyuvdata import utils as uvutils
 
 
@@ -42,6 +45,7 @@ def phase_past_zenith(
     time_past_zenith: un.hour,
     bls_enu: np.ndarray,
     latitude: float,
+    world: str = "earth",
     phase_center_dec: un.rad = None,
     use_apparent: bool = True,
 ):
@@ -61,6 +65,8 @@ def phase_past_zenith(
         vectors (equivalent to the UVWs if phased to zenith).
     latitude
         The latitude of the center of the array, in radians.
+    world
+        Whether the telescope is on the Earth or Moon.
     phase_center_dec
         If given, the declination of the phase center. If not given, it is set to the
         latitude of the array (i.e. the phase center passes through zenith).
@@ -75,27 +81,43 @@ def phase_past_zenith(
     """
     # Generate ra/dec of zenith at time in the phase_frame coordinate system
     # to use for phasing
-    telescope_location = EarthLocation.from_geodetic(lon=0, lat=latitude)
+    if world == "earth":
+        telescope_location = EarthLocation.from_geodetic(lon=0, lat=latitude)
+    else:
+        telescope_location = MoonLocation.from_selenodetic(lon=0, lat=latitude)
 
     # JD is arbitrary
     jd = 2454600
-    tm = Time(jd, format="jd")
 
-    phase_center_coord = SkyCoord(
-        alt=90 * un.deg,
-        az=0 * un.deg,
-        obstime=tm,
-        frame="altaz",
-        location=telescope_location,
-    )
+    if world == "earth":
+        tm = Time(jd, format="jd", location=telescope_location)
+
+        phase_center_coord = SkyCoord(
+            alt=90 * un.deg,
+            az=0 * un.deg,
+            obstime=tm,
+            frame="altaz",
+            location=telescope_location,
+        )
+    else:
+        tm = LTime(jd, format="jd", location=telescope_location)
+
+        phase_center_coord = LunarSkyCoord(
+            alt=90 * un.deg,
+            az=0 * un.deg,
+            obstime=tm,
+            frame="lunartopo",
+            location=telescope_location,
+        )
+
     phase_center_coord = phase_center_coord.transform_to("icrs")
 
     if phase_center_dec is not None:
-        phase_center_coord = SkyCoord(
+        phase_center_coord = phase_center_coord.__class__(
             ra=phase_center_coord.ra,
             dec=phase_center_dec,
             obstime=tm,
-            frame="icrs",
+            frame=phase_center_coord.frame,
             location=telescope_location,
         )
 

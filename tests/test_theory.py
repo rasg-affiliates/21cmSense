@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from py21cmsense.theory import EOS2021, EOS2016Bright, EOS2016Faint, Legacy21cmFAST
+from py21cmsense.theory import EOS2021, EOS2016Bright, EOS2016Faint, FarViewModel, Legacy21cmFAST
 
 
 def test_eos_extrapolation():
@@ -38,3 +38,17 @@ def test_eos_2016():
     bright = EOS2016Bright()
 
     assert faint.delta_squared(9.1, 1.0) != bright.delta_squared(9.1, 1.0)
+
+
+def test_FarView():
+    theory = FarViewModel()
+    assert theory.delta_squared(29.6, 1.0) == theory.delta_squared(30.4, 1.0)
+
+    with pytest.warns(UserWarning, match="Theory power corresponds to z=30, not z"):
+        theory.delta_squared(1.0, 1.0)
+
+    with pytest.warns(UserWarning, match="Extrapolating above the simulated theoretical k"):
+        theory.delta_squared(30, np.array([0.1, 1e6]))
+
+    with pytest.warns(UserWarning, match="Extrapolating below the simulated theoretical k"):
+        theory.delta_squared(30, np.array([0.0001, 0.1]))

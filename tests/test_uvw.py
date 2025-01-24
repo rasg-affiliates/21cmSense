@@ -24,6 +24,7 @@ def test_phase_at_zenith(lat, use_apparent):
         time_past_zenith=0.0 * un.day,
         bls_enu=bls_enu,
         latitude=lat * un.rad,
+        world="earth",
         use_apparent=use_apparent,
     )
 
@@ -45,6 +46,7 @@ def test_phase_past_zenith(use_apparent):
             time_past_zenith=0.2 * un.day,
             bls_enu=bls_enu,
             latitude=0 * un.rad,
+            world="earth",
             use_apparent=use_apparent,
         )
     )
@@ -67,7 +69,9 @@ def test_phase_past_zenith_shape():
     times = np.array([0, 0.1, 0, 0.1]) * un.day
 
     # Almost rotated to the horizon.
-    uvws = phase_past_zenith(time_past_zenith=times, bls_enu=bls_enu, latitude=0 * un.rad)
+    uvws = phase_past_zenith(
+        time_past_zenith=times, bls_enu=bls_enu, latitude=0 * un.rad, world="earth"
+    )
 
     assert uvws.shape == (5, 4, 3)
     assert np.allclose(uvws[0], uvws[2])  # Same baselines
@@ -87,11 +91,14 @@ def test_use_apparent(lat):
     times = np.linspace(-1, 1, 3) * un.hour
 
     # Almost rotated to the horizon.
-    uvws = phase_past_zenith(time_past_zenith=times, bls_enu=bls_enu, latitude=lat * un.rad)
+    uvws = phase_past_zenith(
+        time_past_zenith=times, bls_enu=bls_enu, latitude=lat * un.rad, world="earth"
+    )
     uvws0 = phase_past_zenith(
         time_past_zenith=times,
         bls_enu=bls_enu,
         latitude=lat * un.rad,
+        world="earth",
         use_apparent=True,
     )
 

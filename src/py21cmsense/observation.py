@@ -38,8 +38,9 @@ class Observation:
         An object defining attributes of the observatory itself (its location etc.)
     hours_per_day : float or Quantity, optional
         The number of good observing hours per day.  This corresponds to the size of a
-        low-foreground region in right ascension for a drift scanning instrument. The
-        total observing time is `n_days*hours_per_day`.  Default is 6.
+        low-foreground region in right ascension for a drift scanning instrument on the Earth.
+        The total observing time is `n_days*hours_per_day` where a day is 24 hours on the
+        Earth and 655.2 hours on the moon.  Default is 6 (163.8 on moon).
         If simulating a tracked scan, `hours_per_day` should be a multiple of the length
         of the track (i.e. for two three-hour tracks per day, `hours_per_day` should be 6).
     track
@@ -59,9 +60,10 @@ class Observation:
         The bandwidth used for the observation, assumed to be in MHz. Note this is not the total
         instrument bandwidth, but the redshift range that can be considered co-eval.
     n_days : int, optional
-        The number of days observed (for the same set of LSTs). The default is 180, which is the
-        maximum a particular R.A. can be observed in one year if one only observes at night.
-        The total observing time is `n_days*hours_per_day`.
+        The number of days observed (for the same set of LSTs). The default is 180 (6 on moon),
+        which is the maximum a particular R.A. can be observed in one year if one only observes
+        at night. The total observing time is `n_days*hours_per_day` where a day is 24 hours on
+        the Earth and 655.2 hours on the moon.
     baseline_filters
         A function that takes a single value: a length-3 array of baseline co-ordinates,
         and returns a bool indicating whether to include the baseline. Built-in filters
@@ -98,17 +100,14 @@ class Observation:
     observatory: obs.Observatory = attr.ib(validator=vld.instance_of(obs.Observatory))
 
     time_per_day: tp.Time = attr.ib(
-        6 * un.hour,
-        validator=(tp.vld_physical_type("time"), ut.between(0 * un.hour, 24 * un.hour)),
+        validator=(tp.vld_physical_type("time")),
     )
     track: tp.Time | None = attr.ib(
         None,
-        validator=attr.validators.optional(
-            [tp.vld_physical_type("time"), ut.between(0, 24 * un.hour)]
-        ),
+        validator=attr.validators.optional([tp.vld_physical_type("time")]),
     )
     lst_bin_size: tp.Time = attr.ib(
-        validator=(tp.vld_physical_type("time"), ut.between(0, 24 * un.hour)),
+        validator=(tp.vld_physical_type("time")),
     )
     integration_time: tp.Time = attr.ib(
         60 * un.second, validator=(tp.vld_physical_type("time"), ut.positive)
@@ -117,7 +116,7 @@ class Observation:
     bandwidth: tp.Frequency = attr.ib(
         8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
     )
-    n_days: int = attr.ib(default=180, converter=int, validator=ut.positive)
+    n_days: int = attr.ib(converter=int, validator=ut.positive)
     baseline_filters: tuple[Callable[[tp.Length], bool]] = attr.ib(
         default=(), converter=tp._tuplify
     )
@@ -170,8 +169,28 @@ class Observation:
         d["cosmo"] = Planck15.from_format(d["cosmo"])
         self.__dict__.update(d)
 
+    @time_per_day.validator
+    def _time_per_day_vld(self, att, val):
+        day_length = 24 * un.hour if self.observatory.world == "earth" else 655.2 * un.hour
+
+        if not 0 * un.hour <= val <= day_length:
+            raise ValueError(f"time_per_day should be between 0 and {day_length}")
+
+    @track.validator
+    def _track_vld(self, att, val):
+        if val is not None:
+            day_length = 24 * un.hour if self.observatory.world == "earth" else 655.2 * un.hour
+
+            if not 0 * un.hour <= val <= day_length:
+                raise ValueError(f"track should be between 0 and {day_length}")
+
     @lst_bin_size.validator
     def _lst_bin_size_vld(self, att, val):
+        day_length = 24 * un.hour if self.observatory.world == "earth" else 655.2 * un.hour
+
+        if not 0 * un.hour <= val <= day_length:
+            raise ValueError(f"lst_bin_size should be between 0 and {day_length}")
+
         if val > self.time_per_day:
             raise ValueError("lst_bin_size must be <= time_per_day")
 
@@ -180,6 +199,13 @@ class Observation:
         if val > self.lst_bin_size:
             raise ValueError("integration_time must be <= lst_bin_size")
 
+    @time_per_day.default
+    def _time_per_day_default(self):
+        if self.observatory.world == "earth":
+            return 6 * un.hour
+        else:
+            return 163.8 * un.hour
+
     @lst_bin_size.default
     def _lst_bin_size_default(self):
         # time it takes the sky to drift through beam FWHM
@@ -187,6 +213,13 @@ class Observation:
             return self.track
         else:
             return self.observatory.observation_duration
+
+    @n_days.default
+    def _n_days_default(self):
+        if self.observatory.world == "earth":
+            return 180
+        else:
+            return 6
 
     @phase_center_dec.default
     def _phase_center_dec_default(self):
