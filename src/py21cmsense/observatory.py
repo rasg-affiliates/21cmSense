@@ -551,7 +551,7 @@ class Observatory:
             weights = self.baseline_weights_from_groups(baseline_groups)
 
         bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
-        print(len(baselines), len(weights), bl_max)
+
         if weights is None:
             raise ValueError("If baselines are provided, weights must also be provided.")
 
