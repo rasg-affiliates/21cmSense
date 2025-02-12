@@ -272,7 +272,9 @@ class Observatory:
         else:
             raise ValueError("array_type must be 'low' or 'mid'.")
         antpos = subarray.array_config.xyz.data * un.m
-        _beam = beam.GaussianBeam(frequency=frequency, dish_size=np.array(subarray.array_config.diameter)[0] * un.m)
+        _beam = beam.GaussianBeam(
+            frequency=frequency, dish_size=np.array(subarray.array_config.diameter)[0] * un.m
+        )
         lat = subarray.array_config.location.lat.rad * un.rad
         return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=Trcv)
 
