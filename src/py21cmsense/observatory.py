@@ -272,7 +272,7 @@ class Observatory:
         else:
             raise ValueError("array_type must be 'low' or 'mid'.")
         antpos = subarray.array_config.xyz.data * un.m
-        _beam = beam.GaussianBeam(frequency=frequency, dish_size=35.0 * un.m)
+        _beam = beam.GaussianBeam(frequency=frequency, dish_size=np.array(subarray.array_config.diameter)[0] * un.m)
         lat = subarray.array_config.location.lat.rad * un.rad
         return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=Trcv)
 
@@ -551,7 +551,7 @@ class Observatory:
             weights = self.baseline_weights_from_groups(baseline_groups)
 
         bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
-
+        print(len(baselines), len(weights), bl_max)
         if weights is None:
             raise ValueError("If baselines are provided, weights must also be provided.")
 
