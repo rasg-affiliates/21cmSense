@@ -388,7 +388,7 @@ class PowerSpectrum(Sensitivity):
             if sample:
                 total_std = sample_std = 1 / np.sqrt(
                     self._nsamples_2d["sample"][k_perp][mask]
-                    * (self.observation.time_per_day / self.observation.beam_crossing_time).to("")
+                    * (self.observation.time_per_day / self.observation.lst_bin_size).to("")
                 )
             if thermal and sample:
                 total_std = thermal_std + sample_std
