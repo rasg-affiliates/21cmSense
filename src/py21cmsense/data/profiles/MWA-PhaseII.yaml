@@ -1,5 +1,5 @@
 antpos: !astropy.units.Quantity
-  value: !txt "{{ DATA_PATH }}/antpos/mwa_phase2_compact_antpos.txt"
+  value: !txt '{{ DATA_PATH }}/antpos/mwa_phase2_compact_antpos.txt'
   unit: !astropy.units.Unit {unit: m}
 beam:
   class: GaussianBeam

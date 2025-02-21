@@ -1,5 +1,5 @@
 antpos: !astropy.units.Quantity
-  value: !txt "{{ DATA_PATH }}/antpos/layout_enu_ska_core.txt"
+  value: !txt '{{ DATA_PATH }}/antpos/layout_enu_ska_core.txt'
   unit: !astropy.units.Unit {unit: m}
 beam:
   class: GaussianBeam

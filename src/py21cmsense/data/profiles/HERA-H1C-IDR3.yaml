@@ -1,5 +1,5 @@
 antpos: !astropy.units.Quantity
-  value: !txt "{{ DATA_PATH }}/antpos/hera-h1c-idr3.txt"
+  value: !txt '{{ DATA_PATH }}/antpos/hera-h1c-idr3.txt'
   unit: !astropy.units.Unit {unit: m}
 beam:
   class: GaussianBeam
