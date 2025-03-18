@@ -104,3 +104,4 @@ pip-wheel-metadata/
 *MHz.h5
 docs/reference/_autosummary
 *.egg-info/
+.qodo
