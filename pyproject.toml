@@ -30,7 +30,7 @@ dynamic = ['version']
 
 # Add here dependencies of your project (semicolon/line-separated), e.g.
 dependencies = [
-  "numpy<2.0",  # Restriction can be lifted once pyuvdata is good with numpy 2
+  "numpy",
   "scipy",
   "future",
   "click",
