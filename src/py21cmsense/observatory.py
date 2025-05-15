@@ -229,22 +229,18 @@ class Observatory:
     @classmethod
     def from_ska(
         cls,
-        subarray_type: str,
-        array_type: str = "low",
+        subarray_template: str,
         Trcv: tp.Temperature | Callable = 100 * un.K,  # noqa N803
         frequency: tp.Frequency | None = 150.0 * un.MHz,
         **kwargs,
     ) -> Observatory:
-        """Instantiate an SKA Observatory.
+        """Instantiate an SKA-Low or SKA-Mid subarray.
 
         Parameters
         ----------
-        subarray_type
-            The type of subarray to use. Options are "AA4", "AA*", "AA1", "AA2", "AA0.5",
-             and "custom"
-        array_type, optional
-            The type of array to use. Options are "low" and "mid".
-            Default is "low".
+        subarray_template
+            The SKA subarray / substation template to use.
+            See https://www.skao.int/en/science-users/ska-tools/543/ska-subarray-templates-library
         Trcv, optional
             Receiver temperature, either a temperature Quantity, or a callable that
             takes a single frequency Quantity and returns a temperature Quantity.
@@ -254,23 +250,19 @@ class Observatory:
 
         Other Parameters
         ----------------
-        All other parameters passed will be passed into the LowSubArray or MidSubArray class.
-        See the documentation of the ska-ost-array-config package for more information.
+        All other parameters passed will be passed into get_subarray_template() from
+        the ska-ost-array-config package; see the ska-ost-array-config documentation.
         """
         try:
-            from ska_ost_array_config.array_config import LowSubArray, MidSubArray
+            from ska_ost_array_config import get_subarray_template
         except ImportError as exception:  # pragma: no cover
             raise ImportError(
                 "ska-ost-array-config package is required, "
                 + "see https://gitlab.com/ska-telescope/ost/ska-ost-array-config"
             ) from exception
 
-        if array_type == "low":
-            subarray = LowSubArray(subarray_type, **kwargs)
-        elif array_type == "mid":
-            subarray = MidSubArray(subarray_type, **kwargs)
-        else:
-            raise ValueError("array_type must be 'low' or 'mid'.")
+        subarray = get_subarray_template(subarray_template, **kwargs)
+
         antpos = subarray.array_config.xyz.data * un.m
         _beam = beam.GaussianBeam(
             frequency=frequency, dish_size=np.array(subarray.array_config.diameter)[0] * un.m
