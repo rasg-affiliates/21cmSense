@@ -209,28 +209,23 @@ def test_from_yaml(bm):
 def test_from_ska():
     pytest.importorskip("ska_ost_array_config")
 
-    from ska_ost_array_config import UVW
-    from ska_ost_array_config.array_config import LowSubArray
+    from ska_ost_array_config import UVW, get_subarray_template
     from ska_ost_array_config.simulation_utils import simulate_observation
 
-    obs = Observatory.from_ska(subarray_type="AA*", array_type="low", frequency=300.0 * units.MHz)
-    low_aastar = LowSubArray(subarray_type="AA*")
+    obs = Observatory.from_ska("LOW_FULL_AASTAR", frequency=300.0 * units.MHz)
+    low_aastar = get_subarray_template("LOW_FULL_AASTAR")
     assert obs.antpos.shape == low_aastar.array_config.xyz.data.shape
-    Observatory.from_ska(subarray_type="AA*", array_type="mid", frequency=300.0 * units.MHz)
-    obs = Observatory.from_ska(subarray_type="AA4", array_type="low", frequency=300.0 * units.MHz)
-    low_aa4 = LowSubArray(subarray_type="AA4")
+    Observatory.from_ska(subarray_template="MID_FULL_AASTAR", frequency=300.0 * units.MHz)
+    obs = Observatory.from_ska(subarray_template="LOW_FULL_AA4", frequency=300.0 * units.MHz)
+    low_aa4 = get_subarray_template("LOW_FULL_AA4")
     assert obs.antpos.shape == low_aa4.array_config.xyz.data.shape
     obs = Observatory.from_ska(
-        subarray_type="custom",
-        array_type="low",
+        subarray_template="LOW_INNER_R350M_AASTAR",
         Trcv=100.0 * units.K,
         frequency=150.0 * units.MHz,
-        custom_stations="C*,E1-*",
         exclude_stations="C1,C2",
     )
-    low_custom = LowSubArray(
-        subarray_type="custom", custom_stations="C*,E1-*", exclude_stations="C1,C2"
-    )  # selects all core stations, 6 stations in the E1 cluster, excludes core stations C1 and C2
+    low_custom = get_subarray_template("LOW_INNER_R350M_AASTAR", exclude_stations="C1,C2")
     assert obs.antpos.shape == low_custom.array_config.xyz.data.shape
 
     # Simulate visibilities and retreive the UVW values
@@ -253,11 +248,6 @@ def test_from_ska():
     uvw = UVW.UVW(vis, ignore_autocorr=False)
     uvw_m = uvw.uvdist_m
     assert np.allclose(obs.longest_baseline / obs.metres_to_wavelengths, uvw_m.max() * units.m)
-
-    with pytest.raises(ValueError, match="array_type must be"):
-        Observatory.from_ska(
-            subarray_type="AA*", array_type="non-existent", frequency=300.0 * units.MHz
-        )
 
 
 def test_get_redundant_baselines(bm):
