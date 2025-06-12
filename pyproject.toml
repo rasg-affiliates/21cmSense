@@ -30,7 +30,7 @@ dynamic = ['version']
 
 # Add here dependencies of your project (semicolon/line-separated), e.g.
 dependencies = [
-  "numpy",
+  "numpy>2",
   "scipy",
   "future",
   "click",
