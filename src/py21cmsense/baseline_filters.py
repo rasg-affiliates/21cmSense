@@ -8,7 +8,7 @@ from string names, useful for YAML files.
 
 import abc
 
-import attr
+import attrs
 import numpy as np
 from astropy import units as un
 
@@ -46,13 +46,13 @@ class BaselineFilter(abc.ABC):
         # pragma: no cover
 
 
-@attr.define
+@attrs.define
 class BaselineRange(BaselineFilter):
     """Theory model from EOS2021 (https://arxiv.org/abs/2110.13919)."""
 
-    bl_min: tp.Length = attr.field(default=0 * un.m, validator=tp.vld_physical_type("length"))
-    bl_max: tp.Length = attr.field(default=np.inf * un.m, validator=tp.vld_physical_type("length"))
-    direction: str = attr.field(default="mag", validator=attr.validators.in_(("ew", "ns", "mag")))
+    bl_min: tp.Length = attrs.field(default=0 * un.m, validator=tp.vld_physical_type("length"))
+    bl_max: tp.Length = attrs.field(default=np.inf * un.m, validator=tp.vld_physical_type("length"))
+    direction: str = attrs.field(default="mag", validator=attrs.validators.in_(("ew", "ns", "mag")))
 
     @bl_max.validator
     def _bl_max_vld(self, att, val):
