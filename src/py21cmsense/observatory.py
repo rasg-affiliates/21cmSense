@@ -21,6 +21,7 @@ from astropy import constants as cnst
 from astropy import units as un
 from astropy.io.misc import yaml
 from attr import validators as vld
+from fast_histogram import histogram2d
 from hickleable import hickleable
 
 from . import _utils as ut
@@ -559,18 +560,36 @@ class Observatory:
         dim = len(self.ugrid(bl_max))
         edges = self.ugrid_edges(bl_max)
 
-        uvsum = np.zeros((dim, dim))
-        for uvw, nbls in tqdm.tqdm(
-            zip(uvws, weights),
-            desc="gridding baselines",
-            unit="baselines",
-            disable=not config.PROGRESS,
-            total=len(weights),
-        ):
-            hist = np.histogram2d(uvw[:, 0], uvw[:, 1], bins=edges)[0] * nbls
+        if coherent:
+            weights = np.repeat(weights, len(time_offsets))
+            uvsum = histogram2d(
+                uvws[:, :, 0].flatten(),
+                uvws[:, :, 1].flatten(),
+                range=[[edges[0], edges[-1]], [edges[0], edges[-1]]],
+                bins=(len(edges) - 1, len(edges) - 1),
+                weights=weights,
+            )
+        else:
+            uvsum = np.zeros((dim, dim))
+            for uvw, nbls in tqdm.tqdm(
+                zip(uvws, weights),
+                desc="gridding baselines",
+                unit="baselines",
+                disable=not config.PROGRESS,
+                total=len(weights),
+            ):
+                hist = (
+                    histogram2d(
+                        uvw[:, 0],
+                        uvw[:, 1],
+                        range=[[edges[0], edges[-1]], [edges[0], edges[-1]]],
+                        bins=(len(edges) - 1, len(edges) - 1),
+                    )
+                    * nbls
+                )
 
-            uvsum += hist if coherent else hist**2
-        if not coherent:
+                uvsum += hist**2
+
             uvsum = np.sqrt(uvsum)
 
         return uvsum

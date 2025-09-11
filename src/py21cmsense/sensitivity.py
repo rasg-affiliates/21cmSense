@@ -643,13 +643,13 @@ class PowerSpectrum(Sensitivity):
         out = self._get_all_sensitivity_combos(thermal, sample)
         for key, value in out.items():
             plt.plot(self.k1d, value, label=key)
+
             plt.xscale("log")
             plt.yscale("log")
             plt.xlabel("k [h/Mpc]")
             plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2]$")
             plt.legend()
             plt.title(f"z={conv.f2z(self.observation.frequency):.2f}")
-
         return plt.gcf()
 
     def _get_all_sensitivity_combos(self, thermal: bool, sample: bool) -> dict[str, tp.Delta]:

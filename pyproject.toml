@@ -44,6 +44,7 @@ dependencies = [
   "attrs",
   "hickleable>=0.1.1",
   "lunarsky>=0.2.5",
+  "fast-histogram",
 ]
 
 [project.optional-dependencies]
