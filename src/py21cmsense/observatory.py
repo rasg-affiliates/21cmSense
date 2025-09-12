@@ -10,9 +10,9 @@ from __future__ import annotations
 import collections
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from functools import cached_property
 from pathlib import Path
-from typing import Callable
 
 import attr
 import numpy as np
@@ -21,7 +21,6 @@ from astropy import constants as cnst
 from astropy import units as un
 from astropy.io.misc import yaml
 from attr import validators as vld
-from fast_histogram import histogram2d
 from hickleable import hickleable
 
 from . import _utils as ut
@@ -286,8 +285,9 @@ class Observatory:
         baselines: tp.Length | None = None,
         time_offset: tp.Time = 0 * un.hour,
         phase_center_dec: tp.Angle | None = None,
+        in_wavelengths: bool = True,
     ) -> np.ndarray:
-        """Compute the *projected* baseline lengths (in wavelengths).
+        """Compute *projected* baseline vectors.
 
         Phased to a point that has rotated off zenith by some time_offset.
 
@@ -313,23 +313,18 @@ class Observatory:
         if baselines is None:
             baselines = self.baselines_metres
 
-        orig_shape = baselines.shape
-
-        bl_wavelengths = baselines.reshape((-1, 3)) * self.metres_to_wavelengths
-
-        out = ut.phase_past_zenith(
-            time_past_zenith=time_offset,
-            bls_enu=bl_wavelengths,
-            latitude=self.latitude,
-            world=self.world,
+        bls = ut.project_baselines(
+            baselines=baselines,
+            telescope_latitude=self.latitude,
+            time_offsets=time_offset,
             phase_center_dec=phase_center_dec,
+            world=self.world,
         )
 
-        out = out.reshape(*orig_shape[:-1], np.size(time_offset), orig_shape[-1])
-        if np.size(time_offset) == 1:
-            out = out.squeeze(-2)
-
-        return out
+        if in_wavelengths:
+            return bls * self.metres_to_wavelengths
+        else:
+            return bls
 
     @cached_property
     def metres_to_wavelengths(self) -> un.Quantity[1 / un.m]:
@@ -364,6 +359,7 @@ class Observatory:
         self,
         baseline_filters: Callable | tuple[Callable] = (),
         ndecimals: int = 1,
+        add_conjugates: bool = True,
     ) -> dict[tuple[float, float, float], list[tuple[int, int]]]:
         """
         Determine all baseline groups.
@@ -414,7 +410,10 @@ class Observatory:
 
                 # add the uv point and its inverse to the redundant baseline dict.
                 uvbins[(u, v, bl_len)].append((i, j))
-                uvbins[(-u, -v, bl_len)].append((j, i))
+
+        if add_conjugates:
+            for (u, v, bl_len), antpairs in list(uvbins.items()):
+                uvbins[(-u, -v, bl_len)] = [(j, i) for (i, j) in antpairs]
 
         return uvbins
 
@@ -529,15 +528,6 @@ class Observatory:
         grid_baseline_incoherent :
             Incoherent sum over baseline groups of the output of this method.
         """
-        if baselines is not None:
-            assert un.get_physical_type(baselines) == "length"
-            assert baselines.ndim in (2, 3)
-
-        assert un.get_physical_type(integration_time) == "time"
-
-        if observation_duration is not None:
-            assert un.get_physical_type(observation_duration) == "time"
-
         if baselines is None:
             baseline_groups = self.get_redundant_baselines(
                 baseline_filters=baseline_filters, ndecimals=ndecimals
@@ -545,54 +535,30 @@ class Observatory:
             baselines = self.baseline_coords_from_groups(baseline_groups)
             weights = self.baseline_weights_from_groups(baseline_groups)
 
-        bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
+        assert un.get_physical_type(baselines) == "length"
+        assert baselines.ndim in (2, 3)
+        assert un.get_physical_type(integration_time) == "time"
+        if observation_duration is not None:
+            assert un.get_physical_type(observation_duration) == "time"
 
         if weights is None:
             raise ValueError("If baselines are provided, weights must also be provided.")
 
         time_offsets = self.time_offsets_from_obs_int_time(integration_time, observation_duration)
 
-        uvws = self.projected_baselines(
-            baselines, time_offsets, phase_center_dec=phase_center_dec
-        ).reshape(baselines.shape[0], time_offsets.size, 3)
+        bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
 
-        # grid each baseline type into uv plane
-        dim = len(self.ugrid(bl_max))
-        edges = self.ugrid_edges(bl_max)
-
-        if coherent:
-            weights = np.repeat(weights, len(time_offsets))
-            uvsum = histogram2d(
-                uvws[:, :, 0].flatten(),
-                uvws[:, :, 1].flatten(),
-                range=[[edges[0], edges[-1]], [edges[0], edges[-1]]],
-                bins=(len(edges) - 1, len(edges) - 1),
-                weights=weights,
-            )
-        else:
-            uvsum = np.zeros((dim, dim))
-            for uvw, nbls in tqdm.tqdm(
-                zip(uvws, weights),
-                desc="gridding baselines",
-                unit="baselines",
-                disable=not config.PROGRESS,
-                total=len(weights),
-            ):
-                hist = (
-                    histogram2d(
-                        uvw[:, 0],
-                        uvw[:, 1],
-                        range=[[edges[0], edges[-1]], [edges[0], edges[-1]]],
-                        bins=(len(edges) - 1, len(edges) - 1),
-                    )
-                    * nbls
-                )
-
-                uvsum += hist**2
-
-            uvsum = np.sqrt(uvsum)
-
-        return uvsum
+        return ut.grid_baselines(
+            coherent=coherent,
+            baselines=baselines,
+            weights=weights,
+            time_offsets=time_offsets,
+            frequencies=[self.beam.frequency],
+            ugrid_edges=self.ugrid_edges(bl_max),
+            phase_center_dec=phase_center_dec,
+            telescope_latitude=self.latitude,
+            world=self.world,
+        )[0]
 
     def longest_used_baseline(self, bl_max: tp.Length = np.inf * un.m) -> float:
         """Determine the maximum baseline length kept in the array, in wavelengths."""
