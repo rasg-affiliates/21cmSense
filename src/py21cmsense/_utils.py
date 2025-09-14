@@ -282,13 +282,18 @@ def grid_baselines(
     )[:, :, :2].reshape(baselines.shape[0], time_offsets.size, 2)
 
     # grid each baseline type into uv plane
-    dim = len(ugrid_edges) - 1
-    rng = (ugrid_edges[0], ugrid_edges[-1])
+    dim = ugrid_edges.shape[1] - 1
 
     uvsum = np.zeros((len(frequencies), dim, dim))
 
     for i, freq in enumerate(frequencies):
         uvws = (proj_bls * (freq / speed_of_light)).to_value(un.dimensionless_unscaled)
+
+        # Allow the possibility of frequency-dependent ugrid.
+        if ugrid_edges.ndim == 1:
+            rng = (ugrid_edges[0], ugrid_edges[-1])
+        else:
+            rng = (ugrid_edges[i, 0], ugrid_edges[i, -1])
 
         if coherent:
             uvsum[i] = histogram2d(
