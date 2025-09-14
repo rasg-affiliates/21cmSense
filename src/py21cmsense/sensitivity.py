@@ -12,11 +12,10 @@ from __future__ import annotations
 
 import importlib
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cached_property
 from os import path
 from pathlib import Path
-from typing import Callable
 
 import attr
 import h5py
@@ -284,7 +283,7 @@ class PowerSpectrum(Sensitivity):
         # loop over uv_coverage to calculate k_pr
         nonzero = np.where(self.uv_coverage > 0)
         for iu, iv in tqdm.tqdm(
-            zip(nonzero[1], nonzero[0]),
+            zip(nonzero[1], nonzero[0], strict=False),
             desc="calculating 2D sensitivity",
             unit="uv-bins",
             disable=not config.PROGRESS,

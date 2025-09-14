@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import collections
 from collections import defaultdict
+from collections.abc import Callable
 from functools import cached_property
 from os import path
-from typing import Any, Callable
+from typing import Any
 
 import attr
 import numpy as np
