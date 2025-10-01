@@ -17,7 +17,7 @@ def test_vld_physical_type():
 
     with pytest.raises(
         u.UnitConversionError,
-        match="a must have physical type of 'frequency'. Got 'time'",
+        match=r"a must have physical type of 'frequency'. Got 'time'",
     ):
         K(1 * u.s)
 
@@ -32,7 +32,7 @@ def test_vld_unit():
     with pytest.raises(tp.UnitError, match="a must be an astropy Quantity!"):
         K(1)
 
-    with pytest.raises(u.UnitConversionError, match="a not convertible to GHz. Got s"):
+    with pytest.raises(u.UnitConversionError, match=r"a not convertible to GHz. Got s"):
         K(1 * u.s)
 
     assert K(1 * u.MHz).a.unit.physical_type == "frequency"
