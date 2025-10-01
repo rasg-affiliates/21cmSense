@@ -230,6 +230,9 @@ def grid_baselines(
 
     Parameters
     ----------
+    coherent
+        If True, coherently sum baselines within each uv cell before squaring.
+        If False, square visibilities before summing within each uv cell.
     baselines : array_like, optional
         The baseline co-ordinates to project, assumed to be in metres.
         If not provided, calculates effective baselines by finding redundancies on
@@ -282,7 +285,7 @@ def grid_baselines(
     )[:, :, :2].reshape(baselines.shape[0], time_offsets.size, 2)
 
     # grid each baseline type into uv plane
-    dim = ugrid_edges.shape[1] - 1
+    dim = ugrid_edges.shape[-1] - 1
 
     uvsum = np.zeros((len(frequencies), dim, dim))
 
