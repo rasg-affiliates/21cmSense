@@ -226,6 +226,7 @@ def grid_baselines(
     phase_center_dec: tp.Angle | None = None,
     telescope_latitude: tp.Angle = 0 * un.deg,
     world: str = "earth",
+    max_chunk_mem_gb: float = 1.0,
 ) -> np.ndarray:
     """
     Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
@@ -236,16 +237,12 @@ def grid_baselines(
         If True, coherently sum baselines within each uv cell before squaring.
         If False, square visibilities before summing within each uv cell.
     baselines : array_like, optional
-        The baseline co-ordinates to project, assumed to be in metres.
-        If not provided, calculates effective baselines by finding redundancies on
-        all baselines in the observatory. Shape of the array can be (N,N,3) or (N, 3).
-        The co-ordinates are expected to be in ENU. If `baselines` is provided,
-        `weights` must also be provided.
+        The baseline co-ordinates to project, in length units (e.g. m). Shape of
+        the array is (N, 3). The co-ordinates are expected to be in ENU.
     weights: array_like, optional
         An array of the same length as `baselines`, giving the number of independent
-        baselines at each co-ordinate. If not provided, calculates effective
-        baselines by finding redundancies on all baselines in the observatory.
-        If `baselines` is provided, `weights` must also be provided.
+        baselines at each co-ordinate provided in `baselines`. Can be useful in highly
+        redundant layouts.
     time_offsets : array_like
         The time offsets from zenith to project baselines to. Should be astropy Time
         quantities with time units.
@@ -264,6 +261,9 @@ def grid_baselines(
         defined.
     world : str, optional
         Whether the telescope is on the Earth or Moon.
+    max_chunk_mem_gb : float, optional
+        The maximum memory to use when gridding baselines, in gigabytes. This is used to
+        chunk the gridding if there are a large number of baselines or time offsets.
 
     Returns
     -------
@@ -279,58 +279,79 @@ def grid_baselines(
     grid_baseline_incoherent :
         Incoherent sum over baseline groups of the output of this method.
     """
+    if not (baselines.ndim == 2 and baselines.shape[1] == 3):
+        raise ValueError("baselines must have shape (Nbls, 3)")
+
+    nbls = baselines.shape[0]
+    nt = len(time_offsets)
+
     if weights is None:
-        weights = np.ones(len(baselines))
+        weights = np.ones(nbls)
 
-    if coherent:
-        weights = np.repeat(weights, len(time_offsets))
+    # Obtain the number of time chunks required, given the max memory
+    # setting
+    memory_req = 8 * nbls * nt * 3 / 1024**3  # gb
+    nchunks = int(np.ceil(memory_req / max_chunk_mem_gb))
+    chunksize = int(np.ceil(nt / nchunks))
 
-    proj_bls = project_baselines(
-        baselines,
-        time_offsets=time_offsets,
-        phase_center_dec=phase_center_dec,
-        telescope_latitude=telescope_latitude,
-        world=world,
-        squeeze=False,
-    )[:, :, :2].reshape(baselines.shape[0], time_offsets.size, 2)
     # grid each baseline type into uv plane
     dim = ugrid_edges.shape[-1] - 1
-
     uvsum = np.zeros((len(frequencies), dim, dim))
 
-    for i, freq in enumerate(frequencies):
-        uvws = (proj_bls * (freq / speed_of_light)).to_value(un.dimensionless_unscaled)
-        # Allow the possibility of frequency-dependent ugrid.
-        if ugrid_edges.ndim == 1:
-            rng = (ugrid_edges[0], ugrid_edges[-1])
-        else:
-            rng = (ugrid_edges[i, 0], ugrid_edges[i, -1])
-        if coherent:
-            uvsum[i] = histogram2d(
-                uvws[:, :, 0].flatten(),
-                uvws[:, :, 1].flatten(),
-                range=[rng, rng],
-                bins=(dim, dim),
-                weights=weights,
-            )
-        else:
-            for uvw, nbls in tqdm.tqdm(
-                zip(uvws, weights, strict=False),
-                desc="gridding baselines",
-                unit="baselines",
-                disable=not config.PROGRESS,
-                total=len(weights),
-            ):
-                uvsum[i] += (
-                    histogram2d(
-                        uvw[:, 0],
-                        uvw[:, 1],
-                        range=[rng, rng],
-                        bins=(dim, dim),
-                    )
-                    * nbls
-                ) ** 2
+    chunk_start = 0
+    chunk_end = chunksize
 
-            uvsum = np.sqrt(uvsum)
+    for _ in range(nchunks):
+        chunk_end = min(chunk_end, nt)
+        chunksize = chunk_end - chunk_start
+
+        proj_bls = project_baselines(
+            baselines,
+            time_offsets=time_offsets[chunk_start:chunk_end],
+            phase_center_dec=phase_center_dec,
+            telescope_latitude=telescope_latitude,
+            world=world,
+            squeeze=False,
+        )[:, :, :2].reshape(nbls, chunksize, 2)
+
+        if coherent:
+            wght = np.repeat(weights, chunksize)
+
+        for i, freq in enumerate(frequencies):
+            uvws = (proj_bls * (freq / speed_of_light)).to_value(un.dimensionless_unscaled)
+            # Allow the possibility of frequency-dependent ugrid.
+            if ugrid_edges.ndim == 1:
+                rng = (ugrid_edges[0], ugrid_edges[-1])
+            else:
+                rng = (ugrid_edges[i, 0], ugrid_edges[i, -1])
+            if coherent:
+                uvsum[i] += histogram2d(
+                    uvws[:, :, 0].flatten(),
+                    uvws[:, :, 1].flatten(),
+                    range=[rng, rng],
+                    bins=(dim, dim),
+                    weights=wght,
+                )
+            else:
+                for uvw, nbls in tqdm.tqdm(
+                    zip(uvws, weights, strict=False),
+                    desc="gridding baselines",
+                    unit="baselines",
+                    disable=not config.PROGRESS,
+                    total=len(weights),
+                ):
+                    uvsum[i] += (
+                        histogram2d(
+                            uvw[:, 0],
+                            uvw[:, 1],
+                            range=[rng, rng],
+                            bins=(dim, dim),
+                        )
+                        * nbls
+                    ) ** 2
+
+                uvsum = np.sqrt(uvsum)
+        chunk_start += chunksize
+        chunk_end += chunksize
 
     return uvsum

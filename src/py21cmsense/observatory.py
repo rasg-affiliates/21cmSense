@@ -485,6 +485,7 @@ class Observatory:
         observation_duration: tp.Time | None = None,
         ndecimals: int = 1,
         phase_center_dec: tp.Angle | None = None,
+        max_chunk_mem_gb: float = 1.0,
     ) -> np.ndarray:
         """
         Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
@@ -558,6 +559,7 @@ class Observatory:
             phase_center_dec=phase_center_dec,
             telescope_latitude=self.latitude,
             world=self.world,
+            max_chunk_mem_gb=max_chunk_mem_gb,
         )[0]
 
     def longest_used_baseline(self, bl_max: tp.Length = np.inf * un.m) -> float:

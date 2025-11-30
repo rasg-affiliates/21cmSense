@@ -108,3 +108,50 @@ class TestGridBaselines:
         np.testing.assert_allclose(
             uvsum[1], np.array([[4, 0], [0, 0]])
         )  # each baseline goes to a single cell
+
+    def test_multi_chunk(self):
+        """Test that multiple chunks are handled correctly."""
+        bls = np.array([[0.5, 0.5, 0], [1.5, 0.5, 0], [0.5, 1.5, 0], [1.5, 1.5, 0]]) * un.m
+        wvlength = np.array([1]) * un.m
+        freq = const.c / wvlength
+
+        time_offsets = np.linspace(-2, 2, 25) * un.hour
+
+        ugrid_edges = np.array([0, 1.0, 2.0])  # 2 cells along u
+
+        req_mem = 8 * 4 * len(time_offsets) * 3 / 1024**3
+
+        uvsum_chunk1 = ut.grid_baselines(
+            coherent=True,
+            baselines=bls,
+            frequencies=freq,
+            time_offsets=time_offsets,
+            ugrid_edges=ugrid_edges,
+            max_chunk_mem_gb=req_mem * 2,
+        )
+
+        uvsum_chunk2 = ut.grid_baselines(
+            coherent=True,
+            baselines=bls,
+            frequencies=freq,
+            time_offsets=time_offsets,
+            ugrid_edges=ugrid_edges,
+            max_chunk_mem_gb=req_mem / 4,
+        )
+
+        np.testing.assert_allclose(uvsum_chunk1, uvsum_chunk2)
+
+    def test_bad_bls_shape(self):
+        """Test that a bad baselines shape raises an error."""
+        bls = np.array([[[0.5, 0.5], [1.5, 0.5], [0.5, 1.5], [1.5, 1.5]]]) * un.m
+        wvlength = np.array([1]) * un.m
+        freq = const.c / wvlength
+        ugrid_edges = np.array([0, 1.0, 2.0])  # 2 cells along u
+        with pytest.raises(ValueError, match="baselines must have shape"):
+            ut.grid_baselines(
+                coherent=True,
+                baselines=bls,
+                frequencies=freq,
+                time_offsets=np.array([0]) * un.s,
+                ugrid_edges=ugrid_edges,
+            )
