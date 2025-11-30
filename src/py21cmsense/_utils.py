@@ -171,6 +171,7 @@ def project_baselines(
     time_offsets: tp.Time = 0 * un.hour,
     phase_center_dec: tp.Angle | None = None,
     world: str = "earth",
+    squeeze: bool = True,
 ) -> np.ndarray:
     """Compute *projected* baseline vectors in metres.
 
@@ -208,16 +209,17 @@ def project_baselines(
     )
 
     out = out.reshape(*orig_shape[:-1], np.size(time_offsets), orig_shape[-1])
-    if np.size(time_offsets) == 1:
+    if squeeze and np.size(time_offsets) == 1:
         out = out.squeeze(-2)
 
     return out
 
 
 def grid_baselines(
+    *,
     coherent: bool,
     baselines: tp.Length,
-    weights: np.ndarray,
+    weights: np.ndarray | None = None,
     time_offsets: tp.Time,
     frequencies: tp.Frequency,
     ugrid_edges: np.ndarray,
@@ -244,17 +246,24 @@ def grid_baselines(
         baselines at each co-ordinate. If not provided, calculates effective
         baselines by finding redundancies on all baselines in the observatory.
         If `baselines` is provided, `weights` must also be provided.
-    integration_time : float or Quantity, optional
-        The amount of time integrated into a snapshot visibility, assumed
-        to be in seconds.
-    baseline_filters
-        A function that takes a single value: a length-3 array of baseline co-ordinates,
-        and returns a bool indicating whether to include the baseline. Built-in filters
-        are provided in the :mod:`~baseline_filters` module.
-    observation_duration : float or Quantity, optional
-        Amount of time in a single (coherent) LST bin, assumed to be in minutes.
-    ndecimals : int, optional
-        Number of decimals to which baselines must match to be considered redundant.
+    time_offsets : array_like
+        The time offsets from zenith to project baselines to. Should be astropy Time
+        quantities with time units.
+    frequencies : array_like
+        The frequencies at which to grid the baselines. Should be astropy Quantity
+        with frequency units.
+    ugrid_edges : array_like
+        The edges of the uv grid to use when gridding. If 1D, assumes the same grid for
+        all frequencies. If 2D, should have shape (Nfrequencies, Nuv+1), where Nuv is
+        the number of uv cells along one axis.
+    phase_center_dec : Angle, optional
+        The declination of the phase center of the observation. By default, the
+        same as the latitude of the array.
+    telescope_latitude : Angle, optional
+        The latitude of the telescope. Assumed to be in degrees unless otherwise
+        defined.
+    world : str, optional
+        Whether the telescope is on the Earth or Moon.
 
     Returns
     -------
@@ -282,8 +291,8 @@ def grid_baselines(
         phase_center_dec=phase_center_dec,
         telescope_latitude=telescope_latitude,
         world=world,
+        squeeze=False,
     )[:, :, :2].reshape(baselines.shape[0], time_offsets.size, 2)
-
     # grid each baseline type into uv plane
     dim = ugrid_edges.shape[-1] - 1
 
@@ -291,13 +300,11 @@ def grid_baselines(
 
     for i, freq in enumerate(frequencies):
         uvws = (proj_bls * (freq / speed_of_light)).to_value(un.dimensionless_unscaled)
-
         # Allow the possibility of frequency-dependent ugrid.
         if ugrid_edges.ndim == 1:
             rng = (ugrid_edges[0], ugrid_edges[-1])
         else:
             rng = (ugrid_edges[i, 0], ugrid_edges[i, -1])
-
         if coherent:
             uvsum[i] = histogram2d(
                 uvws[:, :, 0].flatten(),
