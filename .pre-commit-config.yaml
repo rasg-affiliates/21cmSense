@@ -24,10 +24,10 @@ repos:
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
-  rev: v0.13.2
+  rev: v0.14.6
   hooks:
     # Run the linter.
-    - id: ruff
+    - id: ruff-check
       args: [--fix]
 
     # Run the formatter.
