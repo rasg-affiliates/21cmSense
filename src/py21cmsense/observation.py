@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import collections
 from collections import defaultdict
+from collections.abc import Callable
 from functools import cached_property
 from os import path
-from typing import Any, Callable
+from typing import Any
 
 import attr
 import numpy as np
@@ -134,6 +135,7 @@ class Observation:
     use_approximate_cosmo: bool = attr.ib(default=False, converter=bool)
     cosmo: LambdaCDM = attr.ib(default=Planck15, converter=Planck15.from_format)
     phase_center_dec = attr.ib(validator=(tp.vld_physical_type("angle")))
+    max_chunk_mem_gb: float = attr.ib(default=1.0, converter=float, validator=ut.positive)
 
     @classmethod
     def from_yaml(cls, yaml_file):
@@ -294,7 +296,6 @@ class Observation:
 
     @cached_property
     def uv_coverage(self) -> np.ndarray:
-        # sourcery skip: assign-if-exp, swap-if-expression
         """A 2D array specifying the effective number of baselines in a grid of UV.
 
         Defined after earth rotation synthesis for a particular LST bin.
@@ -308,6 +309,7 @@ class Observation:
             observation_duration=self.lst_bin_size,
             ndecimals=self.redundancy_tol,
             phase_center_dec=self.phase_center_dec,
+            max_chunk_mem_gb=self.max_chunk_mem_gb,
         )
 
     @cached_property
