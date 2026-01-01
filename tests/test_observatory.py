@@ -298,3 +298,28 @@ Trcv: !astropy.units.Quantity
 def test_setting_freq_in_profile():
     obs = Observatory.from_profile("MWA-PhaseII", frequency=75 * units.MHz)
     assert obs.frequency == 75 * units.MHz
+
+
+def test_projected_baselines_metres(bm):
+    rng = np.random.default_rng(1234)
+    obs = Observatory(antpos=rng.normal(loc=0, scale=50, size=(20, 3)) * units.m, beam=bm)
+    bl_groups = obs.get_redundant_baselines()
+    bl_coords = obs.baseline_coords_from_groups(bl_groups)
+
+    time_offsets = obs.time_offsets_from_obs_int_time(obs.observation_duration / 10)
+
+    proj_bls = obs.projected_baselines(
+        baselines=bl_coords, time_offset=time_offsets, in_wavelengths=False
+    )
+    assert proj_bls.unit == units.m
+    assert proj_bls.shape == (len(bl_coords), len(time_offsets), 3)
+
+
+def test_grid_baselines_no_weights(bm):
+    rng = np.random.default_rng(1234)
+    obs = Observatory(antpos=rng.normal(loc=0, scale=50, size=(20, 3)) * units.m, beam=bm)
+    bl_groups = obs.get_redundant_baselines()
+    bl_coords = obs.baseline_coords_from_groups(bl_groups)
+
+    with pytest.raises(ValueError, match="If baselines are provided"):
+        obs.grid_baselines(coherent=True, baselines=bl_coords, weights=None)
