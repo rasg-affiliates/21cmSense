@@ -9,7 +9,7 @@ from functools import cached_property
 from os import path
 from typing import Any
 
-import attr
+import attrs
 import numpy as np
 from astropy import units as un
 from astropy.cosmology import LambdaCDM, Planck15
@@ -24,7 +24,7 @@ from . import units as tp
 
 
 @hickleable(evaluate_cached_properties=True)
-@attr.s(kw_only=True)
+@attrs.define(kw_only=True, slots=False)
 class Observation:
     """
     A class defining an interferometric Observation.
@@ -98,44 +98,43 @@ class Observation:
         observation).
     """
 
-    observatory: obs.Observatory = attr.ib(validator=vld.instance_of(obs.Observatory))
+    observatory: obs.Observatory = attrs.field(validator=vld.instance_of(obs.Observatory))
 
-    time_per_day: tp.Time = attr.ib(
+    time_per_day: tp.Time = attrs.field(
         validator=(tp.vld_physical_type("time")),
     )
-    track: tp.Time | None = attr.ib(
-        None,
-        validator=attr.validators.optional([tp.vld_physical_type("time")]),
+    track: tp.Time | None = attrs.field(
+        default=None,
+        validator=attrs.validators.optional([tp.vld_physical_type("time")]),
     )
-    lst_bin_size: tp.Time = attr.ib(
+    lst_bin_size: tp.Time = attrs.field(
         validator=(tp.vld_physical_type("time")),
     )
-    integration_time: tp.Time = attr.ib(
-        60 * un.second, validator=(tp.vld_physical_type("time"), ut.positive)
+    integration_time: tp.Time = attrs.field(
+        default=60 * un.second, validator=(tp.vld_physical_type("time"), ut.positive)
     )
-    n_channels: int = attr.ib(82, converter=int, validator=ut.positive)
-    bandwidth: tp.Frequency = attr.ib(
-        8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
+    n_channels: int = attrs.field(default=82, converter=int, validator=ut.positive)
+    bandwidth: tp.Frequency = attrs.field(
+        default=8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
     )
-    n_days: int = attr.ib(converter=int, validator=ut.positive)
-    baseline_filters: tuple[Callable[[tp.Length], bool]] = attr.ib(
+    n_days: int = attrs.field(converter=int, validator=ut.positive)
+    baseline_filters: tuple[Callable[[tp.Length], bool]] = attrs.field(
         default=(), converter=tp._tuplify
     )
-    redundancy_tol: int = attr.ib(default=1, converter=int, validator=ut.nonnegative)
-    coherent: bool = attr.ib(default=True, converter=bool)
-
+    redundancy_tol: int = attrs.field(default=1, converter=int, validator=ut.nonnegative)
+    coherent: bool = attrs.field(default=True, converter=bool)
     # The following defaults are based on Mozdzen et al. 2017: 2017MNRAS.464.4995M,
     # figure 8, with galaxy down.
-    spectral_index: float = attr.ib(default=2.6, converter=float, validator=ut.between(1.5, 4))
-    tsky_amplitude: tp.Temperature = attr.ib(
+    spectral_index: float = attrs.field(default=2.6, converter=float, validator=ut.between(1.5, 4))
+    tsky_amplitude: tp.Temperature = attrs.field(
         default=260000 * un.mK,
         validator=ut.nonnegative,
     )
-    tsky_ref_freq: tp.Frequency = attr.ib(default=150 * un.MHz, validator=ut.positive)
-    use_approximate_cosmo: bool = attr.ib(default=False, converter=bool)
-    cosmo: LambdaCDM = attr.ib(default=Planck15, converter=Planck15.from_format)
-    phase_center_dec = attr.ib(validator=(tp.vld_physical_type("angle")))
-    max_chunk_mem_gb: float = attr.ib(default=1.0, converter=float, validator=ut.positive)
+    tsky_ref_freq: tp.Frequency = attrs.field(default=150 * un.MHz, validator=ut.positive)
+    use_approximate_cosmo: bool = attrs.field(default=False, converter=bool)
+    cosmo: LambdaCDM = attrs.field(default=Planck15, converter=Planck15.from_format)
+    phase_center_dec = attrs.field(validator=(tp.vld_physical_type("angle")))
+    max_chunk_mem_gb: float = attrs.field(default=1.0, converter=float, validator=ut.positive)
 
     @classmethod
     def from_yaml(cls, yaml_file):
@@ -160,7 +159,7 @@ class Observation:
 
     def __gethstate__(self) -> dict[str, Any]:
         """Get the hickle state."""
-        d = attr.asdict(self, recurse=False)
+        d = attrs.asdict(self, recurse=False)
         d["cosmo"] = d["cosmo"].to_format("mapping")
         del d["cosmo"]["cosmology"]  # The class.
         return d
@@ -405,4 +404,4 @@ class Observation:
 
     def clone(self, **kwargs) -> Observation:
         """Create a clone of this instance, with arbitrary changes to parameters."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)

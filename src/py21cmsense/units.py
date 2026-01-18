@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-import attr
+import attrs
 from astropy import constants as cnst
 from astropy import units as un
 from astropy.cosmology.units import littleh, redshift
@@ -37,10 +37,10 @@ time_as_distance = [
 ]
 
 
-def vld_physical_type(unit: str) -> Callable[[Any, attr.Attribute, Any], None]:
+def vld_physical_type(unit: str) -> Callable[[Any, attrs.Attribute, Any], None]:
     """Attr validator to check physical type."""
 
-    def _check_type(self: Any, att: attr.Attribute, val: Any):
+    def _check_type(self: Any, att: attrs.Attribute, val: Any):
         if not isinstance(val, un.Quantity):
             raise UnitError(f"{att.name} must be an astropy Quantity!")
         if val.unit.physical_type != unit:

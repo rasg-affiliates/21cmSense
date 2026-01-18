@@ -14,7 +14,7 @@ from collections.abc import Callable
 from functools import cached_property
 from pathlib import Path
 
-import attr
+import attrs
 import numpy as np
 import tqdm
 from astropy import constants as cnst
@@ -39,7 +39,7 @@ def get_builtin_profiles() -> list[str]:
 
 
 @hickleable(evaluate_cached_properties=True)
-@attr.s(kw_only=True, order=False)
+@attrs.define(kw_only=True, order=False)
 class Observatory:
     """
     A class defining an interferometric Observatory and its properties.
@@ -72,21 +72,21 @@ class Observatory:
         A string specifying whether the telescope is on the Earth or the moon.
     """
 
-    _antpos: tp.Length = attr.ib(eq=attr.cmp_using(eq=np.array_equal))
-    beam: beam.PrimaryBeam = attr.ib(validator=vld.instance_of(beam.PrimaryBeam))
-    latitude: un.rad = attr.ib(
-        0 * un.rad,
+    _antpos: tp.Length = attrs.field(eq=attrs.cmp_using(eq=np.array_equal))
+    beam: beam.PrimaryBeam = attrs.field(validator=vld.instance_of(beam.PrimaryBeam))
+    latitude: un.rad = attrs.field(
+        default=0 * un.rad,
         validator=ut.between(-np.pi * un.rad / 2, np.pi * un.rad / 2),
     )
-    Trcv: tp.Temperature | Callable = attr.ib(100 * un.K)
-    max_antpos: tp.Length = attr.ib(
+    Trcv: tp.Temperature | Callable = attrs.field(default=100 * un.K)
+    max_antpos: tp.Length = attrs.field(
         default=np.inf * un.m, validator=(tp.vld_physical_type("length"), ut.positive)
     )
-    min_antpos: tp.Length = attr.ib(
+    min_antpos: tp.Length = attrs.field(
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
-    beam_crossing_time_incl_latitude: bool = attr.ib(default=True, converter=bool)
-    world: str = attr.ib(default="earth", validator=vld.in_(["earth", "moon"]))
+    beam_crossing_time_incl_latitude: bool = attrs.field(default=True, converter=bool)
+    world: str = attrs.field(default="earth", validator=vld.in_(["earth", "moon"]))
 
     @_antpos.validator
     def _antpos_validator(self, att, val):
@@ -149,7 +149,7 @@ class Observatory:
 
     def clone(self, **kwargs) -> Observatory:
         """Return a clone of this instance, but change kwargs."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
     @classmethod
     def from_uvdata(cls, uvdata, beam: beam.PrimaryBeam, **kwargs) -> Observatory:

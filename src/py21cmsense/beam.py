@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 
-import attr
+import attrs
 from astropy import constants as cnst
 from astropy import units as un
 from hickleable import hickleable
@@ -14,7 +14,7 @@ from . import units as tp
 
 
 @hickleable(evaluate_cached_properties=True)
-@attr.s
+@attrs.define(frozen=True)
 class PrimaryBeam(metaclass=ABCMeta):
     """A Base class defining a Primary Beam and the methods it requires to define.
 
@@ -26,17 +26,17 @@ class PrimaryBeam(metaclass=ABCMeta):
     it is not very important to implement beam sub-classes.
     """
 
-    frequency: tp.Frequency = attr.ib(
+    frequency: tp.Frequency = attrs.field(
         validator=(tp.vld_physical_type("frequency"), ut.positive),
     )
 
     def new(self, **kwargs) -> PrimaryBeam:
         """Return a clone of this instance, but change kwargs."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
     def at(self, frequency: tp.Frequency) -> PrimaryBeam:
         """Get a copy of the object at a new frequency."""
-        return attr.evolve(self, frequency=frequency)
+        return attrs.evolve(self, frequency=frequency)
 
     @property
     @abstractmethod
@@ -77,7 +77,7 @@ class PrimaryBeam(metaclass=ABCMeta):
         raise NotImplementedError()
 
 
-@attr.s(frozen=True)
+@attrs.define(frozen=True)
 class GaussianBeam(PrimaryBeam):
     """
     A simple Gaussian Primary beam.
@@ -92,7 +92,7 @@ class GaussianBeam(PrimaryBeam):
         otherwise defined. This generates the beam size.
     """
 
-    dish_size: tp.Length = attr.ib(validator=(tp.vld_physical_type("length"), ut.positive))
+    dish_size: tp.Length = attrs.field(validator=(tp.vld_physical_type("length"), ut.positive))
 
     @property
     def wavelength(self) -> un.Quantity[un.m]:
@@ -148,4 +148,4 @@ class GaussianBeam(PrimaryBeam):
 
     def clone(self, **kwargs):
         """Create a new beam with updated parameters."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
