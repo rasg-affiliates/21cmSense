@@ -10,11 +10,11 @@ from __future__ import annotations
 import collections
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from functools import cached_property
 from pathlib import Path
-from typing import Callable
 
-import attr
+import attrs
 import numpy as np
 import tqdm
 from astropy import constants as cnst
@@ -39,7 +39,7 @@ def get_builtin_profiles() -> list[str]:
 
 
 @hickleable(evaluate_cached_properties=True)
-@attr.s(kw_only=True, order=False)
+@attrs.define(kw_only=True, order=False)
 class Observatory:
     """
     A class defining an interferometric Observatory and its properties.
@@ -72,21 +72,21 @@ class Observatory:
         A string specifying whether the telescope is on the Earth or the moon.
     """
 
-    _antpos: tp.Length = attr.ib(eq=attr.cmp_using(eq=np.array_equal))
-    beam: beam.PrimaryBeam = attr.ib(validator=vld.instance_of(beam.PrimaryBeam))
-    latitude: un.rad = attr.ib(
-        0 * un.rad,
+    _antpos: tp.Length = attrs.field(eq=attrs.cmp_using(eq=np.array_equal))
+    beam: beam.PrimaryBeam = attrs.field(validator=vld.instance_of(beam.PrimaryBeam))
+    latitude: un.rad = attrs.field(
+        default=0 * un.rad,
         validator=ut.between(-np.pi * un.rad / 2, np.pi * un.rad / 2),
     )
-    Trcv: tp.Temperature | Callable = attr.ib(100 * un.K)
-    max_antpos: tp.Length = attr.ib(
+    Trcv: tp.Temperature | Callable = attrs.field(default=100 * un.K)
+    max_antpos: tp.Length = attrs.field(
         default=np.inf * un.m, validator=(tp.vld_physical_type("length"), ut.positive)
     )
-    min_antpos: tp.Length = attr.ib(
+    min_antpos: tp.Length = attrs.field(
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
-    beam_crossing_time_incl_latitude: bool = attr.ib(default=True, converter=bool)
-    world: str = attr.ib(default="earth", validator=vld.in_(["earth", "moon"]))
+    beam_crossing_time_incl_latitude: bool = attrs.field(default=True, converter=bool)
+    world: str = attrs.field(default="earth", validator=vld.in_(["earth", "moon"]))
 
     @_antpos.validator
     def _antpos_validator(self, att, val):
@@ -149,7 +149,7 @@ class Observatory:
 
     def clone(self, **kwargs) -> Observatory:
         """Return a clone of this instance, but change kwargs."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
     @classmethod
     def from_uvdata(cls, uvdata, beam: beam.PrimaryBeam, **kwargs) -> Observatory:
@@ -285,8 +285,9 @@ class Observatory:
         baselines: tp.Length | None = None,
         time_offset: tp.Time = 0 * un.hour,
         phase_center_dec: tp.Angle | None = None,
+        in_wavelengths: bool = True,
     ) -> np.ndarray:
-        """Compute the *projected* baseline lengths (in wavelengths).
+        """Compute *projected* baseline vectors.
 
         Phased to a point that has rotated off zenith by some time_offset.
 
@@ -312,23 +313,18 @@ class Observatory:
         if baselines is None:
             baselines = self.baselines_metres
 
-        orig_shape = baselines.shape
-
-        bl_wavelengths = baselines.reshape((-1, 3)) * self.metres_to_wavelengths
-
-        out = ut.phase_past_zenith(
-            time_past_zenith=time_offset,
-            bls_enu=bl_wavelengths,
-            latitude=self.latitude,
-            world=self.world,
+        bls = ut.project_baselines(
+            baselines=baselines,
+            telescope_latitude=self.latitude,
+            time_offsets=time_offset,
             phase_center_dec=phase_center_dec,
+            world=self.world,
         )
 
-        out = out.reshape(*orig_shape[:-1], np.size(time_offset), orig_shape[-1])
-        if np.size(time_offset) == 1:
-            out = out.squeeze(-2)
-
-        return out
+        if in_wavelengths:
+            return bls * self.metres_to_wavelengths
+        else:
+            return bls
 
     @cached_property
     def metres_to_wavelengths(self) -> un.Quantity[1 / un.m]:
@@ -363,6 +359,7 @@ class Observatory:
         self,
         baseline_filters: Callable | tuple[Callable] = (),
         ndecimals: int = 1,
+        add_conjugates: bool = True,
     ) -> dict[tuple[float, float, float], list[tuple[int, int]]]:
         """
         Determine all baseline groups.
@@ -413,7 +410,10 @@ class Observatory:
 
                 # add the uv point and its inverse to the redundant baseline dict.
                 uvbins[(u, v, bl_len)].append((i, j))
-                uvbins[(-u, -v, bl_len)].append((j, i))
+
+        if add_conjugates:
+            for (u, v, bl_len), antpairs in list(uvbins.items()):
+                uvbins[(-u, -v, bl_len)] = [(j, i) for (i, j) in antpairs]
 
         return uvbins
 
@@ -485,6 +485,7 @@ class Observatory:
         observation_duration: tp.Time | None = None,
         ndecimals: int = 1,
         phase_center_dec: tp.Angle | None = None,
+        max_chunk_mem_gb: float = 1.0,
     ) -> np.ndarray:
         """
         Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
@@ -528,15 +529,6 @@ class Observatory:
         grid_baseline_incoherent :
             Incoherent sum over baseline groups of the output of this method.
         """
-        if baselines is not None:
-            assert un.get_physical_type(baselines) == "length"
-            assert baselines.ndim in (2, 3)
-
-        assert un.get_physical_type(integration_time) == "time"
-
-        if observation_duration is not None:
-            assert un.get_physical_type(observation_duration) == "time"
-
         if baselines is None:
             baseline_groups = self.get_redundant_baselines(
                 baseline_filters=baseline_filters, ndecimals=ndecimals
@@ -544,36 +536,31 @@ class Observatory:
             baselines = self.baseline_coords_from_groups(baseline_groups)
             weights = self.baseline_weights_from_groups(baseline_groups)
 
-        bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
+        assert un.get_physical_type(baselines) == "length"
+        assert baselines.ndim in (2, 3)
+        assert un.get_physical_type(integration_time) == "time"
+        if observation_duration is not None:
+            assert un.get_physical_type(observation_duration) == "time"
 
         if weights is None:
             raise ValueError("If baselines are provided, weights must also be provided.")
 
         time_offsets = self.time_offsets_from_obs_int_time(integration_time, observation_duration)
 
-        uvws = self.projected_baselines(
-            baselines, time_offsets, phase_center_dec=phase_center_dec
-        ).reshape(baselines.shape[0], time_offsets.size, 3)
+        bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
 
-        # grid each baseline type into uv plane
-        dim = len(self.ugrid(bl_max))
-        edges = self.ugrid_edges(bl_max)
-
-        uvsum = np.zeros((dim, dim))
-        for uvw, nbls in tqdm.tqdm(
-            zip(uvws, weights),
-            desc="gridding baselines",
-            unit="baselines",
-            disable=not config.PROGRESS,
-            total=len(weights),
-        ):
-            hist = np.histogram2d(uvw[:, 0], uvw[:, 1], bins=edges)[0] * nbls
-
-            uvsum += hist if coherent else hist**2
-        if not coherent:
-            uvsum = np.sqrt(uvsum)
-
-        return uvsum
+        return ut.grid_baselines(
+            coherent=coherent,
+            baselines=baselines,
+            weights=weights,
+            time_offsets=time_offsets,
+            frequencies=[self.beam.frequency],
+            ugrid_edges=self.ugrid_edges(bl_max),
+            phase_center_dec=phase_center_dec,
+            telescope_latitude=self.latitude,
+            world=self.world,
+            max_chunk_mem_gb=max_chunk_mem_gb,
+        )[0]
 
     def longest_used_baseline(self, bl_max: tp.Length = np.inf * un.m) -> float:
         """Determine the maximum baseline length kept in the array, in wavelengths."""
