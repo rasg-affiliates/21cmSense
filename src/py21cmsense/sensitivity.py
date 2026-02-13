@@ -12,13 +12,12 @@ from __future__ import annotations
 
 import importlib
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cached_property
 from os import path
 from pathlib import Path
-from typing import Callable
 
-import attr
+import attrs
 import h5py
 import hickle
 import numpy as np
@@ -42,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 @hickleable(evaluate_cached_properties=True)
-@attr.s(kw_only=True)
+@attrs.define(kw_only=True, slots=False)
 class Sensitivity:
     """
     Base class for sensitivity calculations.
@@ -57,8 +56,8 @@ class Sensitivity:
         represents a conservative choice.
     """
 
-    observation: obs.Observation = attr.ib(validator=vld.instance_of(obs.Observation))
-    no_ns_baselines: bool = attr.ib(default=False, converter=bool)
+    observation: obs.Observation = attrs.field(validator=vld.instance_of(obs.Observation))
+    no_ns_baselines: bool = attrs.field(default=False, converter=bool)
 
     @staticmethod
     def _load_yaml(yaml_file):
@@ -94,7 +93,7 @@ class Sensitivity:
 
     def clone(self, **kwargs):
         """Clone the object with new parameters."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
     def at_frequency(self, frequency: un.Quantity[un.MHz]) -> Sensitivity:
         """Return a new object at a new frequency."""
@@ -117,7 +116,7 @@ class Sensitivity:
         return self.observation.frequency
 
 
-@attr.s(kw_only=True)
+@attrs.define(kw_only=True, slots=False)
 class PowerSpectrum(Sensitivity):
     """
     A Power Spectrum sensitivity calculator.
@@ -149,13 +148,12 @@ class PowerSpectrum(Sensitivity):
         that is, it returns False for k's affected by systematics.
     """
 
-    horizon_buffer: tp.Wavenumber = attr.ib(default=0.1 * littleh / un.Mpc)
-    foreground_model: str = attr.ib(
+    horizon_buffer: tp.Wavenumber = attrs.field(default=0.1 * littleh / un.Mpc)
+    foreground_model: str = attrs.field(
         default="moderate", validator=vld.in_(["moderate", "optimistic", "foreground_free"])
     )
-    theory_model: TheoryModel = attr.ib()
-
-    systematics_mask: Callable | None = attr.ib(None)
+    theory_model: TheoryModel = attrs.field()
+    systematics_mask: Callable | None = attrs.field(default=None)
 
     @horizon_buffer.validator
     def _horizon_buffer_validator(self, att, val):
@@ -284,7 +282,7 @@ class PowerSpectrum(Sensitivity):
         # loop over uv_coverage to calculate k_pr
         nonzero = np.where(self.uv_coverage > 0)
         for iu, iv in tqdm.tqdm(
-            zip(nonzero[1], nonzero[0]),
+            zip(nonzero[1], nonzero[0], strict=False),
             desc="calculating 2D sensitivity",
             unit="uv-bins",
             disable=not config.PROGRESS,
@@ -643,13 +641,13 @@ class PowerSpectrum(Sensitivity):
         out = self._get_all_sensitivity_combos(thermal, sample)
         for key, value in out.items():
             plt.plot(self.k1d, value, label=key)
+
             plt.xscale("log")
             plt.yscale("log")
             plt.xlabel("k [h/Mpc]")
             plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2]$")
             plt.legend()
             plt.title(f"z={conv.f2z(self.observation.frequency):.2f}")
-
         return plt.gcf()
 
     def _get_all_sensitivity_combos(self, thermal: bool, sample: bool) -> dict[str, tp.Delta]:

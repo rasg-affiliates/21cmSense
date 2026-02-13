@@ -1,13 +1,19 @@
 """Utility functions for 21cmSense."""
 
 import numpy as np
+import tqdm
 from astropy import units as un
+from astropy.constants import c as speed_of_light
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.time import Time
+from fast_histogram import histogram2d
 from lunarsky import MoonLocation
 from lunarsky import SkyCoord as LunarSkyCoord
 from lunarsky import Time as LTime
 from pyuvdata import utils as uvutils
+
+from . import config
+from . import units as tp
 
 
 def between(xmin, xmax):
@@ -157,3 +163,195 @@ def phase_past_zenith(
         use_ant_pos=False,
     )
     return out.reshape((len(bls_enu), len(lsts), 3))
+
+
+def project_baselines(
+    baselines: tp.Length,
+    telescope_latitude: tp.Angle,
+    time_offsets: tp.Time = 0 * un.hour,
+    phase_center_dec: tp.Angle | None = None,
+    world: str = "earth",
+    squeeze: bool = True,
+) -> np.ndarray:
+    """Compute *projected* baseline vectors in metres.
+
+    Phased to a point that has rotated off zenith by some time_offset.
+
+    Parameters
+    ----------
+    baselines
+        The baseline co-ordinates to project, assumed to be in metres.
+        If not provided, uses all baselines of the observatory.
+        Shape of the array can be (N,N,3) or (N, 3).
+        The co-ordinates are expected to be in ENU.
+    time_offset
+        The amount of time elapsed since the phase center was at zenith.
+        Assumed to be in days unless otherwise defined. May be negative.
+    phase_center_dec
+        The declination of the phase center of the observation. By default, the
+        same as the latitude of the array.
+
+    Returns
+    -------
+    An array the same shape as :attr:`baselines_metres`, but phased to the
+    new phase centre.
+    """
+    orig_shape = baselines.shape
+
+    bls = baselines.reshape((-1, 3))
+
+    out = phase_past_zenith(
+        time_past_zenith=time_offsets,
+        bls_enu=bls,
+        latitude=telescope_latitude,
+        world=world,
+        phase_center_dec=phase_center_dec,
+    )
+
+    out = out.reshape(*orig_shape[:-1], np.size(time_offsets), orig_shape[-1])
+    if squeeze and np.size(time_offsets) == 1:
+        out = out.squeeze(-2)
+
+    return out
+
+
+def grid_baselines(
+    *,
+    coherent: bool,
+    baselines: tp.Length,
+    weights: np.ndarray | None = None,
+    time_offsets: tp.Time,
+    frequencies: tp.Frequency,
+    ugrid_edges: np.ndarray,
+    phase_center_dec: tp.Angle | None = None,
+    telescope_latitude: tp.Angle = 0 * un.deg,
+    world: str = "earth",
+    max_chunk_mem_gb: float = 1.0,
+) -> np.ndarray:
+    """
+    Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
+
+    Parameters
+    ----------
+    coherent
+        If True, coherently sum baselines within each uv cell before squaring.
+        If False, square visibilities before summing within each uv cell.
+    baselines : array_like, optional
+        The baseline co-ordinates to project, in length units (e.g. m). Shape of
+        the array is (N, 3). The co-ordinates are expected to be in ENU.
+    weights: array_like, optional
+        An array of the same length as `baselines`, giving the number of independent
+        baselines at each co-ordinate provided in `baselines`. Can be useful in highly
+        redundant layouts.
+    time_offsets : array_like
+        The time offsets from zenith to project baselines to. Should be astropy Time
+        quantities with time units.
+    frequencies : array_like
+        The frequencies at which to grid the baselines. Should be astropy Quantity
+        with frequency units.
+    ugrid_edges : array_like
+        The edges of the uv grid to use when gridding. If 1D, assumes the same grid for
+        all frequencies. If 2D, should have shape (Nfrequencies, Nuv+1), where Nuv is
+        the number of uv cells along one axis.
+    phase_center_dec : Angle, optional
+        The declination of the phase center of the observation. By default, the
+        same as the latitude of the array.
+    telescope_latitude : Angle, optional
+        The latitude of the telescope. Assumed to be in degrees unless otherwise
+        defined.
+    world : str, optional
+        Whether the telescope is on the Earth or Moon.
+    max_chunk_mem_gb : float, optional
+        The maximum memory to use when gridding baselines, in gigabytes. This is used to
+        chunk the gridding if there are a large number of baselines or time offsets.
+
+    Returns
+    -------
+    array :
+        Shape [n_baseline_groups, Nuv, Nuv]. The coherent sum of baselines within
+        grid cells given by :attr:`ugrid`. One can treat different baseline groups
+        independently, or sum over them.
+
+    See Also
+    --------
+    grid_baselines_coherent :
+        Coherent sum over baseline groups of the output of this method.
+    grid_baseline_incoherent :
+        Incoherent sum over baseline groups of the output of this method.
+    """
+    if not (baselines.ndim == 2 and baselines.shape[1] == 3):
+        raise ValueError("baselines must have shape (Nbls, 3)")
+
+    nbls = baselines.shape[0]
+    nt = len(time_offsets)
+
+    if weights is None:
+        weights = np.ones(nbls)
+
+    # Obtain the number of time chunks required, given the max memory
+    # setting
+    memory_req = 8 * nbls * nt * 3 / 1024**3  # gb
+    nchunks = int(np.ceil(memory_req / max_chunk_mem_gb))
+    chunksize = int(np.ceil(nt / nchunks))
+
+    # grid each baseline type into uv plane
+    dim = ugrid_edges.shape[-1] - 1
+    uvsum = np.zeros((len(frequencies), dim, dim))
+
+    chunk_start = 0
+    chunk_end = chunksize
+
+    for _ in range(nchunks):
+        chunk_end = min(chunk_end, nt)
+        chunksize = chunk_end - chunk_start
+
+        proj_bls = project_baselines(
+            baselines,
+            time_offsets=time_offsets[chunk_start:chunk_end],
+            phase_center_dec=phase_center_dec,
+            telescope_latitude=telescope_latitude,
+            world=world,
+            squeeze=False,
+        )[:, :, :2].reshape(nbls, chunksize, 2)
+
+        if coherent:
+            wght = np.repeat(weights, chunksize)
+
+        for i, freq in enumerate(frequencies):
+            uvws = (proj_bls * (freq / speed_of_light)).to_value(un.dimensionless_unscaled)
+            # Allow the possibility of frequency-dependent ugrid.
+            if ugrid_edges.ndim == 1:
+                rng = (ugrid_edges[0], ugrid_edges[-1])
+            else:
+                rng = (ugrid_edges[i, 0], ugrid_edges[i, -1])
+            if coherent:
+                uvsum[i] += histogram2d(
+                    uvws[:, :, 0].flatten(),
+                    uvws[:, :, 1].flatten(),
+                    range=[rng, rng],
+                    bins=(dim, dim),
+                    weights=wght,
+                )
+            else:
+                for uvw, nbls in tqdm.tqdm(
+                    zip(uvws, weights, strict=False),
+                    desc="gridding baselines",
+                    unit="baselines",
+                    disable=not config.PROGRESS,
+                    total=len(weights),
+                ):
+                    uvsum[i] += (
+                        histogram2d(
+                            uvw[:, 0],
+                            uvw[:, 1],
+                            range=[rng, rng],
+                            bins=(dim, dim),
+                        )
+                        * nbls
+                    ) ** 2
+
+                uvsum = np.sqrt(uvsum)
+        chunk_start += chunksize
+        chunk_end += chunksize
+
+    return uvsum
