@@ -221,8 +221,9 @@ def grid_baselines(
     baselines: tp.Length,
     weights: np.ndarray | None = None,
     time_offsets: tp.Time,
-    frequencies: tp.Frequency,
-    ugrid_edges: np.ndarray,
+    frequencies: tp.Frequency | None,
+    ugrid_edges: np.ndarray | tp.Meters,
+    vgrid_edges: np.ndarray | tp.Meters | None = None,
     phase_center_dec: tp.Angle | None = None,
     telescope_latitude: tp.Angle = 0 * un.deg,
     world: str = "earth",
@@ -253,6 +254,11 @@ def grid_baselines(
         The edges of the uv grid to use when gridding. If 1D, assumes the same grid for
         all frequencies. If 2D, should have shape (Nfrequencies, Nuv+1), where Nuv is
         the number of uv cells along one axis.
+    vgrid_edges : array_like, optional
+        The edges of the v grid to use when gridding. If 1D, assumes the same grid for
+        all frequencies. If 2D, should have shape (Nfrequencies, Nuv+1), where Nuv is
+        the number of uv cells along the v axis.
+        If not given, assumes the same grid as ugrid_edges.
     phase_center_dec : Angle, optional
         The declination of the phase center of the observation. By default, the
         same as the latitude of the array.
@@ -279,8 +285,29 @@ def grid_baselines(
     grid_baseline_incoherent :
         Incoherent sum over baseline groups of the output of this method.
     """
+    if vgrid_edges is None:
+        vgrid_edges = ugrid_edges
+
+    if np.any(baselines[:, 1] < 0):
+        raise ValueError("baselines must be in ENU co-ordinates, with positive Northing.")
+
     if not (baselines.ndim == 2 and baselines.shape[1] == 3):
         raise ValueError("baselines must have shape (Nbls, 3)")
+
+    if frequencies is None and (
+        not hasattr(ugrid_edges, "unit") or not ugrid_edges.unit.is_equivalent(un.m)
+    ):
+        raise ValueError(
+            "If frequencies is not given, ugrid_edges must have units of length (e.g. metres)."
+        )
+
+    if frequencies is None:
+        # If frequencies are not given, assume gridding in metres.
+        # To make it easier later, we just choose any arbitrary frequency to
+        # convert ugrid to dimensionless units.
+        frequencies = [150 * un.MHz]
+        ugrid_edges = ugrid_edges * (150 * un.MHz / speed_of_light)
+        vgrid_edges = vgrid_edges * (150 * un.MHz / speed_of_light)
 
     nbls = baselines.shape[0]
     nt = len(time_offsets)
@@ -295,8 +322,9 @@ def grid_baselines(
     chunksize = int(np.ceil(nt / nchunks))
 
     # grid each baseline type into uv plane
-    dim = ugrid_edges.shape[-1] - 1
-    uvsum = np.zeros((len(frequencies), dim, dim))
+    dimx = ugrid_edges.shape[-1] - 1
+    dimy = vgrid_edges.shape[-1] - 1
+    uvsum = np.zeros((len(frequencies), dimx, dimy))
 
     chunk_start = 0
     chunk_end = chunksize
@@ -312,7 +340,7 @@ def grid_baselines(
             telescope_latitude=telescope_latitude,
             world=world,
             squeeze=False,
-        )[:, :, :2].reshape(nbls, chunksize, 2)
+        )[..., :2].reshape(nbls, chunksize, 2)
 
         if coherent:
             wght = np.repeat(weights, chunksize)
@@ -321,15 +349,18 @@ def grid_baselines(
             uvws = (proj_bls * (freq / speed_of_light)).to_value(un.dimensionless_unscaled)
             # Allow the possibility of frequency-dependent ugrid.
             if ugrid_edges.ndim == 1:
-                rng = (ugrid_edges[0], ugrid_edges[-1])
+                rngx = (ugrid_edges[0], ugrid_edges[-1])
+                rngy = (vgrid_edges[0], vgrid_edges[-1])
             else:
-                rng = (ugrid_edges[i, 0], ugrid_edges[i, -1])
+                rngx = (ugrid_edges[i, 0], ugrid_edges[i, -1])
+                rngy = (vgrid_edges[i, 0], vgrid_edges[i, -1])
+
             if coherent:
                 uvsum[i] += histogram2d(
                     uvws[:, :, 0].flatten(),
                     uvws[:, :, 1].flatten(),
-                    range=[rng, rng],
-                    bins=(dim, dim),
+                    range=[rngx, rngy],
+                    bins=(dimx, dimy),
                     weights=wght,
                 )
             else:
@@ -344,8 +375,8 @@ def grid_baselines(
                         histogram2d(
                             uvw[:, 0],
                             uvw[:, 1],
-                            range=[rng, rng],
-                            bins=(dim, dim),
+                            range=[rngx, rngy],
+                            bins=(dimx, dimy),
                         )
                         * nbls
                     ) ** 2
@@ -354,4 +385,6 @@ def grid_baselines(
         chunk_start += chunksize
         chunk_end += chunksize
 
-    return uvsum
+    # For some reason, the fast_histogram output transposes the x/y axes, such that
+    # the y axis changes more slowly. Transpose back to the more intuitive ordering.
+    return uvsum  # .transpose(0, 2, 1)

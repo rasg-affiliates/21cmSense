@@ -18,7 +18,7 @@ from . import units as tp
 f21 = 1.42040575177 * un.GHz
 
 
-def f2z(fq: tp.Frequency) -> float:
+def f2z(fq: tp.Frequency) -> float | np.ndarray:
     """
     Convert frequency to redshift for 21 cm line.
 
@@ -34,7 +34,7 @@ def f2z(fq: tp.Frequency) -> float:
     return f21 / fq - 1
 
 
-def z2f(z: float | np.array) -> un.Quantity[un.GHz]:
+def z2f(z: float | np.ndarray) -> tp.Frequency:
     """
     Convert redshift to z=0 frequency for 21 cm line.
 

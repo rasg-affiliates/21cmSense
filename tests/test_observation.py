@@ -13,7 +13,7 @@ from py21cmsense import GaussianBeam, Observation, Observatory
 
 @pytest.fixture(scope="module")
 def bm():
-    return GaussianBeam(150.0 * units.MHz, dish_size=14 * units.m)
+    return GaussianBeam(dish_size=14 * units.m)
 
 
 @pytest.fixture(scope="module", params=["earth", "moon"])
@@ -39,12 +39,10 @@ def test_units(observatory):
     assert obs.lst_bin_size.to("min").unit == units.min
     assert obs.integration_time.to("s").unit == units.s
     assert obs.bandwidth.to("MHz").unit == units.MHz
-    assert obs.bl_min.to("m").unit == units.m
-    assert obs.bl_max.to("m").unit == units.m
+    assert obs.observatory.bl_max.to("m").unit == units.m
     assert obs.tsky_amplitude.to("mK").unit == units.mK
     assert obs.tsky_ref_freq.to("MHz").unit == units.MHz
 
-    assert obs.frequency == observatory.frequency
     assert obs.n_lst_bins > 1
     assert obs.Tsky.to("mK").unit == units.mK
     assert obs.Tsys.to("mK").unit == units.mK
@@ -85,7 +83,6 @@ def test_from_yaml(observatory):
                 "antpos": rng.random((20, 3)) * units.m,
                 "beam": {
                     "class": "GaussianBeam",
-                    "frequency": 150 * units.MHz,
                     "dish_size": 14 * units.m,
                 },
             }
@@ -135,7 +132,7 @@ def test_trcv_func(observatory: Observatory):
         observatory=observatory,
     )
     assert obs.Trcv.unit == units.K
-    assert obs.Trcv == (observatory.beam.frequency / units.MHz) * 0.01 * units.K
+    assert obs.Trcv == (obs.frequency / units.MHz) * 0.01 * units.K
 
 
 def test_non_zenith_pointing(bm):

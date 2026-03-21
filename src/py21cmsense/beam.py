@@ -26,50 +26,36 @@ class PrimaryBeam(metaclass=ABCMeta):
     it is not very important to implement beam sub-classes.
     """
 
-    frequency: tp.Frequency = attrs.field(
-        validator=(tp.vld_physical_type("frequency"), ut.positive),
-    )
-
     def new(self, **kwargs) -> PrimaryBeam:
         """Return a clone of this instance, but change kwargs."""
         return attrs.evolve(self, **kwargs)
 
-    def at(self, frequency: tp.Frequency) -> PrimaryBeam:
-        """Get a copy of the object at a new frequency."""
-        return attrs.evolve(self, frequency=frequency)
-
-    @property
     @abstractmethod
-    def area(self) -> un.Quantity[un.steradian]:
+    def area(self, frequency: tp.Frequency) -> un.Quantity[un.steradian]:
         """Beam area [units: sr]."""
 
-    @property
     @abstractmethod
-    def width(self) -> un.Quantity[un.radians]:
+    def width(self, frequency: tp.Frequency) -> un.Quantity[un.radians]:
         """Beam width [units: rad]."""
 
-    @property
     @abstractmethod
-    def first_null(self) -> un.Quantity[un.radians]:
-        """An approximation of the first null of the beam."""
+    def first_null(self, frequency: tp.Frequency) -> un.Quantity[un.radians]:
+        """Compute the zenith angle of the first null of the beam."""
 
-    @property
     @abstractmethod
-    def sq_area(self) -> un.Quantity[un.steradian]:
-        """The area of the beam^2."""
+    def sq_area(self, frequency: tp.Frequency) -> un.Quantity[un.steradian]:
+        """Compute the area of the beam^2."""
 
-    @property
-    def b_eff(self) -> un.Quantity[un.steradian]:
+    def b_eff(self, frequency: tp.Frequency) -> un.Quantity[un.steradian]:
         r"""Get the effective beam area (Parsons 2014).
 
         Defined as :math:`(\int B(\Omega) d \Omega)^2 / \int B^2 d\Omega`.
         """
-        return self.area**2 / self.sq_area
+        return self.area(frequency) ** 2 / self.sq_area(frequency)
 
-    @property
     @abstractmethod
-    def uv_resolution(self) -> un.Quantity[1 / un.radians]:
-        """The UV footprint of the beam."""
+    def uv_resolution(self, frequency: tp.Frequency) -> un.Quantity[1 / un.radians]:
+        """Compute the UV footprint of the beam."""
 
     @classmethod
     def from_uvbeam(cls) -> PrimaryBeam:
@@ -94,52 +80,40 @@ class GaussianBeam(PrimaryBeam):
 
     dish_size: tp.Length = attrs.field(validator=(tp.vld_physical_type("length"), ut.positive))
 
-    @property
-    def wavelength(self) -> un.Quantity[un.m]:
-        """The wavelength of the observation."""
-        return (cnst.c / self.frequency).to("m")
+    def dish_size_in_lambda(self, frequency: tp.Frequency) -> float:
+        """Compute the dish size in units of wavelengths."""
+        return (self.dish_size * frequency / cnst.c).to("").value
 
-    @property
-    def dish_size_in_lambda(self) -> float:
-        """The dish size in units of wavelengths."""
-        return (self.dish_size / (cnst.c / self.frequency)).to("").value
+    def uv_resolution(self, frequency: tp.Frequency) -> un.Quantity[1 / un.radian]:
+        """Compute the appropriate resolution of a UV cell given the beam size."""
+        return self.dish_size_in_lambda(frequency)
 
-    @property
-    def uv_resolution(self) -> un.Quantity[1 / un.radian]:
-        """The appropriate resolution of a UV cell given the beam size."""
-        return self.dish_size_in_lambda
+    def area(self, frequency: tp.Frequency) -> un.Quantity[un.steradian]:
+        """Compute the integral of the beam over angle, in sr."""
+        return 1.13 * self.fwhm(frequency) ** 2
 
-    @property
-    def area(self) -> un.Quantity[un.steradian]:
-        """The integral of the beam over angle, in sr."""
-        return 1.13 * self.fwhm**2
+    def width(self, frequency: tp.Frequency) -> un.Quantity[un.radian]:
+        """Compute the width of the beam (i.e. sigma), in radians."""
+        return un.rad * 0.45 / self.dish_size_in_lambda(frequency)
 
-    @property
-    def width(self) -> un.Quantity[un.radian]:
-        """The width of the beam (i.e. sigma), in radians."""
-        return un.rad * 0.45 / self.dish_size_in_lambda
+    def fwhm(self, frequency: tp.Frequency) -> un.Quantity[un.radians]:
+        """Compute the full-width half maximum of the beam."""
+        return 2.35 * self.width(frequency)
 
-    @property
-    def fwhm(self) -> un.Quantity[un.radians]:
-        """The full-width half maximum of the beam."""
-        return 2.35 * self.width
-
-    @property
-    def sq_area(self) -> un.Quantity[un.steradian]:
-        """The integral of the squared beam, in sr.
+    def sq_area(self, frequency: tp.Frequency) -> un.Quantity[un.steradian]:
+        """Compute the integral of the squared beam, in sr.
 
         If frequency is not given, uses the instance's `frequency`
         """
-        return self.area / 2
+        return self.area(frequency) / 2
 
-    @property
-    def first_null(self) -> un.Quantity[un.radians]:
-        """The angle of the first null of the beam.
+    def first_null(self, frequency: tp.Frequency) -> un.Quantity[un.radians]:
+        """Get the zenith angle of the first null of the beam.
 
         .. note:: The Gaussian beam has no null, and in this case we use the first null
                   for an airy disk.
         """
-        return un.rad * 1.22 / self.dish_size_in_lambda
+        return un.rad * 1.22 / self.dish_size_in_lambda(frequency)
 
     @classmethod
     def from_uvbeam(cls):

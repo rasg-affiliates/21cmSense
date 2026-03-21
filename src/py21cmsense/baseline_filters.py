@@ -61,13 +61,13 @@ class BaselineRange(BaselineFilter):
                 f"bl_max must be greater than bl_min, got bl_min={self.bl_min} and bl_max={val}"
             )
 
-    def __call__(self, bl: tp.Length) -> bool:
+    def __call__(self, bl: tp.Length) -> np.ndarray[bool]:
         """Determine whether a baseline should be included or not.
 
         Parameters
         ----------
         bl
-            The baseline, which will be a length-3 array whose elements are
+            The baseline, which will be an array of shape (Nbls, 3) whose elements are
             quantities (in length units, typically metres).
 
         Returns
@@ -75,10 +75,13 @@ class BaselineRange(BaselineFilter):
         bool
             True if the baseline should be included.
         """
-        if self.direction == "ew":
-            return self.bl_min <= bl[0] < self.bl_max
-        elif self.direction == "ns":
-            return self.bl_min <= bl[1] < self.bl_max
-        elif self.direction == "mag":
-            blsize = np.sqrt(bl[0] ** 2 + bl[1] ** 2)
-            return self.bl_min <= blsize < self.bl_max
+        match self.direction:
+            case "ew":
+                return (self.bl_min <= bl[..., 0]) & (bl[..., 0] < self.bl_max)
+            case "ns":
+                return (self.bl_min <= bl[..., 1]) & (bl[..., 1] < self.bl_max)
+            case "mag":
+                blsize = np.sqrt(bl[..., 0] ** 2 + bl[..., 1] ** 2)
+                return (self.bl_min <= blsize) & (blsize < self.bl_max)
+            case _:
+                raise ValueError(f"Invalid direction {self.direction}")

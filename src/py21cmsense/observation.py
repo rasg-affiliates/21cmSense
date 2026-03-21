@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import collections
-from collections import defaultdict
-from collections.abc import Callable
 from functools import cached_property
 from os import path
 from typing import Any
 
 import attrs
 import numpy as np
+from astropy import constants as cnst
 from astropy import units as un
 from astropy.cosmology import LambdaCDM, Planck15
 from astropy.io.misc import yaml
@@ -100,6 +99,9 @@ class Observation:
 
     observatory: obs.Observatory = attrs.field(validator=vld.instance_of(obs.Observatory))
 
+    frequency: tp.Frequency = attrs.field(
+        default=150 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
+    )
     time_per_day: tp.Time = attrs.field(
         validator=(tp.vld_physical_type("time")),
     )
@@ -118,10 +120,6 @@ class Observation:
         default=8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
     )
     n_days: int = attrs.field(converter=int, validator=ut.positive)
-    baseline_filters: tuple[Callable[[tp.Length], bool]] = attrs.field(
-        default=(), converter=tp._tuplify
-    )
-    redundancy_tol: int = attrs.field(default=1, converter=int, validator=ut.nonnegative)
     coherent: bool = attrs.field(default=True, converter=bool)
     # The following defaults are based on Mozdzen et al. 2017: 2017MNRAS.464.4995M,
     # figure 8, with galaxy down.
@@ -213,7 +211,7 @@ class Observation:
         if self.track is not None:
             return self.track
         else:
-            return self.observatory.observation_duration
+            return self.observation_duration
 
     @n_days.default
     def _n_days_default(self):
@@ -234,64 +232,26 @@ class Observation:
         in turn defines the cosmic sample variance. Observations are not assumed to be
         averaged coherently within this time (for thermal variance calculations).
         """
-        return self.observatory.observation_duration
+        return self.observation_duration
 
     @cached_property
-    def baseline_groups(
-        self,
-    ) -> dict[tuple[float, float, float], list[tuple[int, int]]]:
-        """A dictionary of redundant baseline groups.
-
-        Keys are tuples of floats (X,Y,LENGTH), and
-        values are lists of two-tuples of baseline antenna indices in that particular
-        baseline group.
-        """
-        return self.observatory.get_redundant_baselines(
-            baseline_filters=self.baseline_filters, ndecimals=self.redundancy_tol
+    def observation_duration(self) -> un.Quantity[un.day]:
+        """The time it takes for the sky to drift through the FWHM."""
+        latfac = (
+            np.cos(self.observatory.latitude)
+            if self.observatory.beam_crossing_time_incl_latitude
+            else 1
         )
-
-    def __getstate__(self):
-        """Get state so that defaultdict is not used."""
-        d = dict(self.__dict__.items())
-        if "baseline_groups" in d:
-            d["baseline_groups"] = dict(d["baseline_groups"])
-        return d
-
-    def __setstate__(self, state):
-        """Set state so that defaultdict is restored."""
-        if "baseline_groups" in state:
-            state["baseline_groups"] = defaultdict(list, state["baseline_groups"])
-        self.__dict__.update(state)
+        earth = un.day * self.observatory.beam.fwhm(self.frequency) / (2 * np.pi * un.rad * latfac)
+        if self.observatory.world == "earth":
+            return earth
+        else:
+            return 27.3 * earth
 
     @cached_property
-    def baseline_group_coords(self) -> un.Quantity[un.m]:
-        """Co-ordinates of baseline groups in metres."""
-        return self.observatory.baseline_coords_from_groups(self.baseline_groups)
-
-    @cached_property
-    def baseline_group_counts(self) -> np.ndarray:
-        """The number of baselines in each group."""
-        return self.observatory.baseline_weights_from_groups(self.baseline_groups)
-
-    @cached_property
-    def baseline_group_lengths(self) -> un.Quantity[un.m]:
-        """The displacement magnitude of the baseline groups."""
-        return np.sqrt(np.sum(self.baseline_group_coords**2, axis=1))
-
-    @cached_property
-    def bl_min(self) -> un.Quantity[un.m]:
-        """Shortest included baseline."""
-        return self.baseline_group_lengths.min()
-
-    @cached_property
-    def bl_max(self) -> un.Quantity[un.m]:
-        """Shortest included baseline."""
-        return self.baseline_group_lengths.max()
-
-    @property
-    def frequency(self) -> un.Quantity[un.MHz]:
-        """Frequency of the observation."""
-        return self.observatory.frequency
+    def metres_to_wavelengths(self) -> un.Quantity[1 / un.m]:
+        """Conversion factor for metres to wavelengths at fiducial frequency."""
+        return (self.frequency / cnst.c).to("1/m")
 
     @cached_property
     def uv_coverage(self) -> np.ndarray:
@@ -302,11 +262,8 @@ class Observation:
         """
         return self.observatory.grid_baselines(
             coherent=self.coherent,
-            baselines=self.baseline_group_coords,
-            weights=self.baseline_group_counts,
             integration_time=self.integration_time,
             observation_duration=self.lst_bin_size,
-            ndecimals=self.redundancy_tol,
             phase_center_dec=self.phase_center_dec,
             max_chunk_mem_gb=self.max_chunk_mem_gb,
         )
@@ -392,7 +349,7 @@ class Observation:
 
         The UV grid is defined by :func:`uv_coverage`.
         """
-        return self.observatory.ugrid(self.bl_max)
+        return self.observatory.ugrid(self.frequency)
 
     @cached_property
     def ugrid_edges(self) -> np.ndarray:
@@ -400,8 +357,13 @@ class Observation:
 
         The UV grid is defined by :func:`uv_coverage`.
         """
-        return self.observatory.ugrid_edges(self.bl_max)
+        return self.observatory.ugrid_edges(self.frequency)
 
     def clone(self, **kwargs) -> Observation:
         """Create a clone of this instance, with arbitrary changes to parameters."""
         return attrs.evolve(self, **kwargs)
+
+    @property
+    def baseline_groups(self) -> dict[tuple[float, float], list[int]]:
+        """The baseline groups for this observation, defined by the observatory."""
+        return self.observatory.redundant_baseline_groups
