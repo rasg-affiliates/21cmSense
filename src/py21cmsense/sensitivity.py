@@ -516,7 +516,7 @@ class PowerSpectrum(Sensitivity):
             beam = self.observation.observatory.beam
             return horizon * np.sin(beam.first_null(self.frequency) / 2)
         elif self.foreground_model in ["foreground_free"]:
-            return 0
+            return np.zeros_like(horizon)
 
     def _average_sense_to_1d(
         self,

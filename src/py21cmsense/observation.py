@@ -359,6 +359,22 @@ class Observation:
         """
         return self.observatory.ugrid_edges(self.frequency)
 
+    @cached_property
+    def vgrid(self) -> np.ndarray:
+        """Centres of the linear grid which defines a side of the UV grid.
+
+        The UV grid is defined by :func:`uv_coverage`.
+        """
+        return self.observatory.vgrid(self.frequency)
+
+    @cached_property
+    def vgrid_edges(self) -> np.ndarray:
+        """Edges of the linear grid which defines a side of the UV grid.
+
+        The UV grid is defined by :func:`uv_coverage`.
+        """
+        return self.observatory.vgrid_edges(self.frequency)
+
     def clone(self, **kwargs) -> Observation:
         """Create a clone of this instance, with arbitrary changes to parameters."""
         return attrs.evolve(self, **kwargs)

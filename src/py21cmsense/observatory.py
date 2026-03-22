@@ -519,13 +519,12 @@ class Observatory:
         """
         return (self.xgrid_edges * frequency / cnst.c).to("")
 
-    def ugrid(self, frequency: tp.Frequency) -> np.ndarray:
-        """Get a uv grid out to the maximum used baseline smaller than given bl_max.
+    def vgrid_edges(self, frequency: tp.Frequency) -> np.ndarray:
+        """TReturn grid edges in the v direction (i.e. north-south).
 
-        This is simply the :attribute:`xgrid` converted to units of wavelengths
-        at the given frequency.
-
-        The resulting array represents the *centers* of the grid cells.
+        The v-direction only has positive values, including zero, since we take only
+        one of the two conjugate baselines for each pair of antennas, and we sort along
+        the Northing direction to ensure that we get the positive v values.
 
         Parameters
         ----------
@@ -536,8 +535,63 @@ class Observatory:
         -------
         array :
             1D array of regularly spaced uv. Unitless.
+
+        See Also
+        --------
+        ugrid_edges
+            The same as this method, but for the u direction.
+        vgrid
+            The same as this method, but returning the centers of the grid cells
+            instead of the edges.
+        """
+        u = self.ugrid_edges(frequency)
+        du = u[1] - u[0]
+        return u[u + du > 0]
+
+    def ugrid(self, frequency: tp.Frequency) -> np.ndarray:
+        """Get a uv grid out to the maximum used baseline smaller than given bl_max.
+
+        This is simply the :attribute:`xgrid` converted to units of wavelengths
+        at the given frequency.
+
+        The resulting array represents the *centers* of the grid cells.
+
+        Parameters
+        ----------
+        frequency
+            The frequency at which to convert the grid to units of wavelengths.
+
+        Returns
+        -------
+        array :
+            1D array of regularly spaced uv. Unitless.
         """
         return (self.xgrid * frequency / cnst.c).to("")
+
+    def vgrid(self, frequency: tp.Frequency) -> np.ndarray:
+        """Return grid centers in the v direction (i.e. north-south).
+
+        The v-direction only has positive values, including zero, since we take only
+        one of the two conjugate baselines for each pair of antennas, and we sort along
+        the Northing direction to ensure that we get the positive v values.
+
+        Parameters
+        ----------
+        frequency
+            The frequency at which to convert the grid to units of wavelengths.
+
+        Returns
+        -------
+        array :
+            1D array of regularly spaced uv. Unitless.
+
+        See Also
+        --------
+        ugrid : The same as this method, but for the u direction.
+        vgrid_edges : The same as this method, but returning the edges of the grid cells.
+        """
+        ve = self.vgrid_edges(frequency)
+        return (ve[:-1] + ve[1:]) / 2
 
     def grid_baselines(
         self,
