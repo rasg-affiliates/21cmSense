@@ -342,6 +342,9 @@ def grid_baselines(
             squeeze=False,
         )[..., :2].reshape(nbls, chunksize, 2)
 
+        # Baselines could be rotated into the -v plane, so move them back if so.
+        proj_bls[proj_bls[..., 1] < 0] *= -1
+
         if coherent:
             wght = np.repeat(weights, chunksize)
 
