@@ -11,7 +11,7 @@ authors = [
   {name="Steven Murray", email="murray.steveng@gmail.com"},
   {name="Matt Kolopanis", email="matthew.kolopanis@gmail.com"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 # Add here all kinds of additional classifiers as defined under
 # https://pypi.python.org/pypi?%3Aaction=list_classifiers
 classifiers = [
@@ -44,6 +44,7 @@ dependencies = [
   "attrs",
   "hickleable>=0.1.1",
   "lunarsky>=0.2.5",
+  "fast-histogram",
 ]
 
 [project.optional-dependencies]
@@ -76,7 +77,7 @@ sense = "py21cmsense.cli:main"
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
 extend-select = [
@@ -162,3 +163,13 @@ exclude = '''
   | dist
 )/
 '''
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "ipython>=9.10.0",
+    "pip>=26.0.1",
+]
+docs = [
+    "ipywidgets>=8.1.8",
+]

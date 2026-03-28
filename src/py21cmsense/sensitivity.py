@@ -12,13 +12,12 @@ from __future__ import annotations
 
 import importlib
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cached_property
 from os import path
 from pathlib import Path
-from typing import Callable
 
-import attr
+import attrs
 import h5py
 import hickle
 import numpy as np
@@ -42,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 @hickleable(evaluate_cached_properties=True)
-@attr.s(kw_only=True)
+@attrs.define(kw_only=True, slots=False)
 class Sensitivity:
     """
     Base class for sensitivity calculations.
@@ -57,8 +56,8 @@ class Sensitivity:
         represents a conservative choice.
     """
 
-    observation: obs.Observation = attr.ib(validator=vld.instance_of(obs.Observation))
-    no_ns_baselines: bool = attr.ib(default=False, converter=bool)
+    observation: obs.Observation = attrs.field(validator=vld.instance_of(obs.Observation))
+    no_ns_baselines: bool = attrs.field(default=False, converter=bool)
 
     @staticmethod
     def _load_yaml(yaml_file):
@@ -94,17 +93,11 @@ class Sensitivity:
 
     def clone(self, **kwargs):
         """Clone the object with new parameters."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
     def at_frequency(self, frequency: un.Quantity[un.MHz]) -> Sensitivity:
         """Return a new object at a new frequency."""
-        return self.clone(
-            observation=self.observation.clone(
-                observatory=self.observation.observatory.clone(
-                    beam=self.observation.observatory.beam.clone(frequency=frequency)
-                )
-            )
-        )
+        return self.clone(observation=self.observation.clone(frequency=frequency))
 
     @property
     def cosmo(self) -> LambdaCDM:
@@ -117,7 +110,7 @@ class Sensitivity:
         return self.observation.frequency
 
 
-@attr.s(kw_only=True)
+@attrs.define(kw_only=True, slots=False)
 class PowerSpectrum(Sensitivity):
     """
     A Power Spectrum sensitivity calculator.
@@ -149,13 +142,12 @@ class PowerSpectrum(Sensitivity):
         that is, it returns False for k's affected by systematics.
     """
 
-    horizon_buffer: tp.Wavenumber = attr.ib(default=0.1 * littleh / un.Mpc)
-    foreground_model: str = attr.ib(
+    horizon_buffer: tp.Wavenumber = attrs.field(default=0.1 * littleh / un.Mpc)
+    foreground_model: str = attrs.field(
         default="moderate", validator=vld.in_(["moderate", "optimistic", "foreground_free"])
     )
-    theory_model: TheoryModel = attr.ib()
-
-    systematics_mask: Callable | None = attr.ib(None)
+    theory_model: TheoryModel = attrs.field()
+    systematics_mask: Callable | None = attrs.field(default=None)
 
     @horizon_buffer.validator
     def _horizon_buffer_validator(self, att, val):
@@ -181,7 +173,7 @@ class PowerSpectrum(Sensitivity):
             for mdl in data.pop("plugins"):
                 try:
                     importlib.import_module(mdl)
-                except Exception as e:  # noqa: PERF203
+                except Exception as e:
                     raise ImportError(f"Could not import {mdl}") from e
 
         if "theory_model" in data:
@@ -231,18 +223,20 @@ class PowerSpectrum(Sensitivity):
     def uv_coverage(self) -> np.ndarray:
         """The UV-coverage of the array, with unused/redundant baselines set to zero."""
         grid = self.observation.uv_coverage.copy()
-        size = grid.shape[0]
-
-        # Cut unnecessary data out of uv coverage: auto-correlations & half of uv
-        # plane (which is not statistically independent for real sky)
-        grid[size // 2, size // 2] = 0.0
-        grid[:, : size // 2] = 0.0
-        grid[size // 2 :, size // 2] = 0.0
 
         if self.no_ns_baselines:
-            grid[:, size // 2] = 0.0
+            grid[:, 0] = 0.0
 
         return grid
+
+    @cached_property
+    def kparallel(self) -> tp.Wavenumber:
+        """The kparallel magnitudes.
+
+        Only positive kparallel are returned, since negative kparallel have the same
+        sensitivity and so are redundant for our calculations.
+        """
+        return self.observation.kparallel[self.observation.kparallel > 0]
 
     def power_normalisation(self, k: tp.Wavenumber) -> float:
         """Normalisation constant for power spectrum."""
@@ -251,23 +245,20 @@ class PowerSpectrum(Sensitivity):
 
         return (
             self.X2Y
-            * self.observation.observatory.beam.b_eff
+            * self.observation.observatory.beam.b_eff(self.frequency)
             * self.observation.bandwidth
             * k**3
             / (2 * np.pi**2)
         ).to_value("")
 
-    def thermal_noise(
-        self, k_par: tp.Wavenumber, k_perp: tp.Wavenumber, trms: tp.Temperature
-    ) -> tp.Delta:
+    def thermal_noise(self, k: tp.Wavenumber, trms: tp.Temperature) -> tp.Delta:
         """Thermal noise contribution at particular k mode."""
-        k = np.sqrt(k_par**2 + k_perp**2)
         scalar = self.power_normalisation(k)
         return scalar * trms.to("mK") ** 2
 
-    def sample_noise(self, k_par: tp.Wavenumber, k_perp: tp.Wavenumber) -> tp.Delta:
+    def sample_noise(self, k: tp.Wavenumber) -> tp.Delta:
         """Sample variance contribution at a particular k mode."""
-        k = np.sqrt(k_par**2 + k_perp**2).to_value(
+        k = k.to_value(
             littleh / un.Mpc if self.theory_model.use_littleh else un.Mpc**-1,
             with_H0(self.cosmo.H0),
         )
@@ -281,65 +272,71 @@ class PowerSpectrum(Sensitivity):
         # set up blank arrays/dictionaries
         sense = {"sample": {}, "thermal": {}, "both": {}}
 
-        # loop over uv_coverage to calculate k_pr
-        nonzero = np.where(self.uv_coverage > 0)
-        for iu, iv in tqdm.tqdm(
-            zip(nonzero[1], nonzero[0]),
+        n2 = len(self.uv_coverage[:, 0]) // 2
+
+        ugrid = self.observation.ugrid
+        umag = np.sqrt(np.add.outer(ugrid**2, ugrid[n2:] ** 2))
+
+        k_perps = umag.flatten() * conv.dk_du(
+            self.observation.redshift,
+            self.cosmo,
+            approximate=self.observation.use_approximate_cosmo,
+        )
+
+        horizon_limits = self.horizon_limit(umag).flatten()
+
+        mask = (self.kparallel.max() >= horizon_limits) & (
+            ~np.isinf(self.observation.Trms.flatten())
+        )
+
+        k_perps = k_perps[mask]
+        horizon_limits = horizon_limits[mask]
+        trms_vals = self.observation.Trms.flatten()[mask]
+
+        # Only take positive kparallel since negatives have the same
+        # sensitivity and are dealt with when combining the info later.
+        kpar = self.kparallel
+
+        # This could turn into a very big array. Maybe there's a better
+        # way to do this?
+        k = np.sqrt(kpar[:, None] ** 2 + k_perps[None, :] ** 2)
+        thermal = self.thermal_noise(k, trms_vals)
+        sample = self.sample_noise(k)
+
+        for k_perp, hor, tnoise, snoise in tqdm.tqdm(
+            zip(k_perps, horizon_limits, thermal.T, sample.T, strict=False),
             desc="calculating 2D sensitivity",
             unit="uv-bins",
             disable=not config.PROGRESS,
-            total=len(nonzero[1]),
+            total=len(k_perps),
         ):
-            u, v = self.observation.ugrid[iu], self.observation.ugrid[iv]
-            trms = self.observation.Trms[iv, iu]
-
-            if np.isinf(trms):
-                continue
-
-            umag = np.sqrt(u**2 + v**2)
-            k_perp = umag * conv.dk_du(
-                self.observation.redshift,
-                self.cosmo,
-                approximate=self.observation.use_approximate_cosmo,
-            )
-
-            hor = self.horizon_limit(umag)
+            # Exclude parallel modes dominated by foregrounds
+            mask = kpar >= hor
 
             if k_perp not in sense["thermal"]:
-                sense["thermal"][k_perp] = np.zeros(len(self.observation.kparallel)) / un.mK**4
-                sense["sample"][k_perp] = np.zeros(len(self.observation.kparallel)) / un.mK**4
-                sense["both"][k_perp] = np.zeros(len(self.observation.kparallel)) / un.mK**4
-
-            # Exclude parallel modes dominated by foregrounds
-            kpars = self.observation.kparallel[self.observation.kparallel >= hor]
-
-            if not len(kpars):
-                continue
-
-            start = np.where(self.observation.kparallel >= hor)[0][0]
-            n_inds = (self.observation.kparallel.size - 1) // 2 + 1
-            inds = np.arange(start=start, stop=n_inds)
-
-            thermal = self.thermal_noise(kpars, k_perp, trms)
-            sample = self.sample_noise(kpars, k_perp)
+                sense["thermal"][k_perp] = np.zeros(len(kpar)) / un.mK**4
+                sense["sample"][k_perp] = np.zeros(len(kpar)) / un.mK**4
+                sense["both"][k_perp] = np.zeros(len(kpar)) / un.mK**4
 
             # The following assumes that the power spectra are averaged with inverse
-            # variance weighting.
-            t = 1.0 / thermal**2
-            s = 1.0 / sample**2
-            ts = 1.0 / (thermal + sample) ** 2
-            sense["thermal"][k_perp][inds] += t
-            sense["thermal"][k_perp][-inds] += t
-            sense["sample"][k_perp][inds] += s
-            sense["sample"][k_perp][-inds] += s
-            sense["both"][k_perp][inds] += ts
-            sense["both"][k_perp][-inds] += ts
+            # variance weighting. The scaling by 2 is due to the fact that we add
+            # both positive and negative k_parallel contributions together, which are
+            # independent measurements of the same underlying power spectrum mode.
+            t = 1.0 / tnoise[mask] ** 2
+            s = 1.0 / snoise[mask] ** 2
+            ts = 1.0 / (tnoise[mask] + snoise[mask]) ** 2
+            sense["thermal"][k_perp][mask] += 2 * t
+            sense["sample"][k_perp][mask] += 2 * s
+            sense["both"][k_perp][mask] += 2 * ts
 
         return sense
 
     @lru_cache()
     def calculate_sensitivity_2d(
-        self, thermal: bool = True, sample: bool = True
+        self,
+        thermal: bool = True,
+        sample: bool = True,
+        compute_all: bool = False,
     ) -> dict[tp.Wavenumber, tp.Delta]:
         """
         Calculate power spectrum sensitivity for a grid of cylindrical k modes.
@@ -372,28 +369,47 @@ class PowerSpectrum(Sensitivity):
         # errors were added in inverse quadrature, now need to invert and take
         # square root to have error bars; also divide errors by number of indep. fields
         final_sense = {}
+        if compute_all:
+            final_sense["thermal"] = {}
+            final_sense["sample"] = {}
+            final_sense["both"] = {}
+
         for k_perp in sense:
             mask = sense[k_perp] > 0
             if self.systematics_mask is not None:
-                mask &= self.systematics_mask(k_perp, self.observation.kparallel)
+                mask &= self.systematics_mask(k_perp, self.kparallel)
 
             if not np.any(mask):
                 continue
 
-            final_sense[k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
-            if thermal:
+            if compute_all:
+                final_sense["thermal"][k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
+                final_sense["sample"][k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
+                final_sense["both"][k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
+            else:
+                final_sense[k_perp] = np.inf * np.ones(len(mask)) * un.mK**2
+
+            thermal_std = 0
+            if thermal or compute_all:
                 total_std = thermal_std = 1 / np.sqrt(
                     self._nsamples_2d["thermal"][k_perp][mask] * self.observation.n_lst_bins
                 )
-            if sample:
+
+            sample_std = 0
+            if sample or compute_all:
                 total_std = sample_std = 1 / np.sqrt(
                     self._nsamples_2d["sample"][k_perp][mask]
                     * (self.observation.time_per_day / self.observation.lst_bin_size).to("")
                 )
-            if thermal and sample:
+            if (thermal and sample) or compute_all:
                 total_std = thermal_std + sample_std
 
-            final_sense[k_perp][mask] = total_std
+            if compute_all:
+                final_sense["thermal"][k_perp][mask] = thermal_std
+                final_sense["sample"][k_perp][mask] = sample_std
+                final_sense["both"][k_perp][mask] = total_std
+            else:
+                final_sense[k_perp][mask] = total_std
 
         return final_sense
 
@@ -403,6 +419,7 @@ class PowerSpectrum(Sensitivity):
         kpar_edges: tp.Wavenumber,
         thermal: bool = True,
         sample: bool = True,
+        compute_all: bool = False,
     ) -> tp.Delta:
         """Calculate the 2D cylindrical sensitivity on a grid of kperp/kpar.
 
@@ -413,14 +430,22 @@ class PowerSpectrum(Sensitivity):
         kpar_edges
             The edges of the bins in kpar.
         """
-        sense2d_inv = np.zeros((len(kperp_edges) - 1, len(kpar_edges) - 1)) << (1 / un.mK**4)
-        sense = self.calculate_sensitivity_2d(thermal=thermal, sample=sample)
+        if compute_all:
+            sense2d_inv = {
+                "thermal": np.zeros((len(kperp_edges) - 1, len(kpar_edges) - 1)) / un.mK**4,
+                "sample": np.zeros((len(kperp_edges) - 1, len(kpar_edges) - 1)) / un.mK**4,
+                "both": np.zeros((len(kperp_edges) - 1, len(kpar_edges) - 1)) / un.mK**4,
+            }
+        else:
+            sense2d_inv = np.zeros((len(kperp_edges) - 1, len(kpar_edges) - 1)) << (1 / un.mK**4)
+
+        sense = self.calculate_sensitivity_2d(compute_all=True)
 
         assert np.all(np.diff(kperp_edges) > 0)
         assert np.all(np.diff(kpar_edges) > 0)
 
         for k_perp in tqdm.tqdm(
-            sense.keys(),
+            sense["thermal"].keys(),
             desc="averaging to 2D grid",
             unit="kperp-bins",
             disable=not config.PROGRESS,
@@ -431,17 +456,35 @@ class PowerSpectrum(Sensitivity):
             # Get the kperp bin it's in.
             kperp_indx = np.where(k_perp >= kperp_edges)[0][-1]
 
-            kpar_indx = np.digitize(self.observation.kparallel, kpar_edges) - 1
+            kpar_indx = np.digitize(self.kparallel, kpar_edges) - 1
             good_ks = kpar_indx >= 0
             good_ks &= kpar_indx < len(kpar_edges) - 1
 
-            sense2d_inv[kperp_indx][kpar_indx[good_ks]] += 1.0 / sense[k_perp][good_ks] ** 2
+            if compute_all:
+                for key in ["thermal", "sample", "both"]:
+                    sense2d_inv[key][kperp_indx][kpar_indx[good_ks]] += (
+                        1.0 / sense[key][k_perp][good_ks] ** 2
+                    )
+            else:
+                key = "both" if (thermal and sample) else "thermal" if thermal else "sample"
+                sense2d_inv[kperp_indx][kpar_indx[good_ks]] += (
+                    1.0 / sense[key][k_perp][good_ks] ** 2
+                )
 
         # invert errors and take square root again for final answer
-        sense2d = np.ones(sense2d_inv.shape) * un.mK**2 * np.inf
-        mask = sense2d_inv > 0
-        sense2d[mask] = 1 / np.sqrt(sense2d_inv[mask])
-        return sense2d
+        if compute_all:
+            final_sense2d = {}
+            for key in ["thermal", "sample", "both"]:
+                sense2d = np.ones(sense2d_inv[key].shape) * un.mK**2 * np.inf
+                mask = sense2d_inv[key] > 0
+                sense2d[mask] = 1 / np.sqrt(sense2d_inv[key][mask])
+                final_sense2d[key] = sense2d
+            return final_sense2d
+        else:
+            sense2d = np.ones(sense2d_inv.shape) * un.mK**2 * np.inf
+            mask = sense2d_inv > 0
+            sense2d[mask] = 1 / np.sqrt(sense2d_inv[mask])
+            return sense2d
 
     def horizon_limit(self, umag: float) -> tp.Wavenumber:
         """
@@ -470,40 +513,70 @@ class PowerSpectrum(Sensitivity):
         if self.foreground_model in ["moderate", "pessimistic"]:
             return horizon + self.horizon_buffer
         elif self.foreground_model in ["optimistic"]:
-            return horizon * np.sin(self.observation.observatory.beam.first_null / 2)
+            beam = self.observation.observatory.beam
+            return horizon * np.sin(beam.first_null(self.frequency) / 2)
         elif self.foreground_model in ["foreground_free"]:
-            return 0
+            return np.zeros_like(horizon)
 
     def _average_sense_to_1d(
-        self, sense: dict[tp.Wavenumber, tp.Delta], k1d: tp.Wavenumber | None = None
+        self,
+        sense: dict[tp.Wavenumber, tp.Delta] | dict[str, dict[tp.Wavenumber, tp.Delta]],
+        k1d: tp.Wavenumber | None = None,
+        compute_all: bool = False,
     ) -> tp.Delta:
         """Bin 2D sensitivity down to 1D."""
         if k1d is None:
             k1d = self.k1d
-        sense1d_inv = np.zeros(len(k1d)) / un.mK**4
+
+        if compute_all:
+            sense1d_inv = {
+                "thermal": np.zeros(len(k1d)) / un.mK**4,
+                "sample": np.zeros(len(k1d)) / un.mK**4,
+                "both": np.zeros(len(k1d)) / un.mK**4,
+            }
+            k_perps = list(sense["thermal"].keys())
+        else:
+            sense1d_inv = np.zeros(len(k1d)) / un.mK**4
+            k_perps = list(sense.keys())
 
         for k_perp in tqdm.tqdm(
-            sense.keys(),
+            k_perps,
             desc="averaging to 1D",
             unit="kperp-bins",
             disable=not config.PROGRESS,
         ):
-            k = np.sqrt(self.observation.kparallel**2 + k_perp**2)
+            k = np.sqrt(self.kparallel**2 + k_perp**2)
 
             good_ks = k >= k1d.min()
             good_ks &= k < k1d.max()
 
             for cnt, kbin in enumerate(ut.find_nearest(k1d, k[good_ks])):
-                sense1d_inv[kbin] += 1.0 / sense[k_perp][good_ks][cnt] ** 2
+                if compute_all:
+                    for key in ["thermal", "sample", "both"]:
+                        sense1d_inv[key][kbin] += 1.0 / sense[key][k_perp][good_ks][cnt] ** 2
+                else:
+                    sense1d_inv[kbin] += 1.0 / sense[k_perp][good_ks][cnt] ** 2
 
         # invert errors and take square root again for final answer
-        sense1d = np.ones(sense1d_inv.shape) * un.mK**2 * np.inf
-        mask = sense1d_inv > 0
-        sense1d[mask] = 1 / np.sqrt(sense1d_inv[mask])
+        if compute_all:
+            sense1d = {}
+            for key in ["thermal", "sample", "both"]:
+                sense1d[key] = np.ones(sense1d_inv[key].shape) * un.mK**2 * np.inf
+                mask = sense1d_inv[key] > 0
+                sense1d[key][mask] = 1 / np.sqrt(sense1d_inv[key][mask])
+        else:
+            sense1d = np.ones(sense1d_inv.shape) * un.mK**2 * np.inf
+            mask = sense1d_inv > 0
+            sense1d[mask] = 1 / np.sqrt(sense1d_inv[mask])
         return sense1d
 
     @lru_cache()
-    def calculate_sensitivity_1d(self, thermal: bool = True, sample: bool = True) -> tp.Delta:
+    def calculate_sensitivity_1d(
+        self,
+        thermal: bool = True,
+        sample: bool = True,
+        compute_all: bool = False,
+    ) -> tp.Delta:
         """Calculate a 1D sensitivity curve.
 
         Parameters
@@ -518,13 +591,17 @@ class PowerSpectrum(Sensitivity):
         array :
             1D array with units mK^2... the variance of spherical k modes.
         """
-        sense = self.calculate_sensitivity_2d(thermal=thermal, sample=sample)
-        return self._average_sense_to_1d(sense)
+        sense = self.calculate_sensitivity_2d(
+            thermal=thermal, sample=sample, compute_all=compute_all
+        )
+        return self._average_sense_to_1d(sense, compute_all=compute_all)
 
-    def calculate_sensitivity_1d_binned(self, k: tp.Wavenumber, **kwargs):
+    def calculate_sensitivity_1d_binned(
+        self, k: tp.Wavenumber, compute_all: bool = False, **kwargs
+    ):
         """Calculate the 1D sensitivity at arbitrary k-bins."""
-        sense2d = self.calculate_sensitivity_2d(**kwargs)
-        return self._average_sense_to_1d(sense2d, k1d=k)
+        sense2d = self.calculate_sensitivity_2d(**kwargs, compute_all=compute_all)
+        return self._average_sense_to_1d(sense2d, k1d=k, compute_all=compute_all)
 
     @property
     def delta_squared(self) -> tp.Delta:
@@ -567,17 +644,10 @@ class PowerSpectrum(Sensitivity):
 
         keys = sorted(sense2d.keys())
         x = np.array([v.value for v in keys])
-        x = (
-            np.repeat(x, len(self.observation.kparallel))
-            .reshape((len(x), len(self.observation.kparallel)))
-            .T
-        )
-        y = np.fft.fftshift(
-            np.repeat(self.observation.kparallel.value, x.shape[1]).reshape(
-                (len(self.observation.kparallel), x.shape[1])
-            )
-        )
-        z = np.array([np.fft.fftshift(sense2d[key]) for key in keys]).T
+        x = np.repeat(x, len(self.kparallel)).reshape((len(x), len(self.kparallel))).T
+        y = np.repeat(self.kparallel.value, x.shape[1]).reshape((len(self.kparallel), x.shape[1]))
+
+        z = np.array([sense2d[key] for key in keys]).T
 
         plt.pcolormesh(x, y, np.log10(z))
         cbar = plt.colorbar()
@@ -600,7 +670,7 @@ class PowerSpectrum(Sensitivity):
         filename
             The path to the file that is written.
         """
-        out = self._get_all_sensitivity_combos(thermal, sample)
+        out = self.calculate_sensitivity_1d(compute_all=True)
         prefix = f"{prefix}_" if prefix else ""
         if filename is None:
             filename = Path(
@@ -620,8 +690,10 @@ class PowerSpectrum(Sensitivity):
             # i.e. all the parameters etc.
 
             for k, v in out.items():
+                if k == "both":
+                    k = "sample+thermal"
                 fl[k] = v
-                fl[k.replace("noise", "snr")] = self.delta_squared / v
+                fl[f"{k}_snr"] = self.delta_squared / v
 
             fl["k"] = self.k1d.to("1/Mpc", with_H0(self.cosmo.H0)).value
             fl["delta_squared"] = self.delta_squared
@@ -633,35 +705,21 @@ class PowerSpectrum(Sensitivity):
 
         return filename
 
-    def plot_sense_1d(self, sample: bool = True, thermal: bool = True):
+    def plot_sense_1d(self):
         """Create a plot of the sensitivity in 1D k-bins."""
         try:
             import matplotlib.pyplot as plt
         except ImportError as e:  # pragma: no cover
             raise ImportError("matplotlib is required to make plots...") from e
 
-        out = self._get_all_sensitivity_combos(thermal, sample)
+        out = self.calculate_sensitivity_1d(compute_all=True)
         for key, value in out.items():
             plt.plot(self.k1d, value, label=key)
+
             plt.xscale("log")
             plt.yscale("log")
             plt.xlabel("k [h/Mpc]")
             plt.ylabel(r"$\Delta^2_N \  [{\rm mK}^2]$")
             plt.legend()
             plt.title(f"z={conv.f2z(self.observation.frequency):.2f}")
-
         return plt.gcf()
-
-    def _get_all_sensitivity_combos(self, thermal: bool, sample: bool) -> dict[str, tp.Delta]:
-        result = {}
-        if thermal:
-            result["thermal_noise"] = self.calculate_sensitivity_1d(sample=False)
-        if sample:
-            result["sample_noise"] = self.calculate_sensitivity_1d(thermal=False, sample=True)
-
-        if thermal and sample:
-            result["sample+thermal_noise"] = self.calculate_sensitivity_1d(
-                thermal=True, sample=True
-            )
-
-        return result
