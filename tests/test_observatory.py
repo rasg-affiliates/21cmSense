@@ -18,7 +18,7 @@ from py21cmsense.data import PATH
 
 @pytest.fixture(scope="module")
 def bm():
-    return GaussianBeam(frequency=150.0 * units.MHz, dish_size=14 * units.m)
+    return GaussianBeam(dish_size=14 * units.m)
 
 
 def test_antpos(bm):
@@ -69,36 +69,25 @@ def test_Trcv_func_bad(bm):
 
 def test_observatory(bm):
     a = Observatory(antpos=np.zeros((3, 3)) * units.m, beam=bm)
-    assert a.frequency == bm.frequency
-    assert a.baselines_metres.shape == (3, 3, 3)
-    assert (a.baselines_metres * a.metres_to_wavelengths).unit == units.dimensionless_unscaled
-    assert a.baseline_lengths.shape == (3, 3)
+    assert a.baselines_metres.shape == (3, 3)
+    assert a.baseline_lengths.shape == (3,)
     assert np.all(a.baseline_lengths == 0)
 
     b = Observatory(antpos=np.array([[0, 0, 0], [1, 0, 0], [3, 0, 0]]) * units.m, beam=bm)
-    assert units.isclose(b.shortest_baseline / b.metres_to_wavelengths, 1 * units.m, rtol=1e-3)
-    assert units.isclose(b.longest_baseline / b.metres_to_wavelengths, 3 * units.m, rtol=1e-3)
-    assert b.observation_duration < 1 * units.day
-    assert len(b.get_redundant_baselines()) == 6  # including swapped ones
+    assert len(b.redundant_baseline_groups) == 3
     with pytest.raises(AssertionError):
-        b.time_offsets_from_obs_int_time(b.observation_duration * 1.1)
+        b.time_offsets_from_obs_int_time(
+            integration_time=3 * units.hour * 1.1, observation_duration=3 * units.hour
+        )
 
-    assert len(b.time_offsets_from_obs_int_time(b.observation_duration / 1.05)) == 2
-    assert units.isclose(
-        b.longest_used_baseline() / b.metres_to_wavelengths, 3 * units.m, rtol=1e-3
+    assert (
+        len(
+            b.time_offsets_from_obs_int_time(
+                integration_time=3 * units.hour / 1.05, observation_duration=3 * units.hour
+            )
+        )
+        == 2
     )
-
-
-def test_grid_baselines(bm):
-    rng = np.random.default_rng(1234)
-    a = Observatory(antpos=rng.normal(loc=0, scale=50, size=(20, 3)) * units.m, beam=bm)
-    bl_groups = a.get_redundant_baselines()
-    bl_coords = a.baseline_coords_from_groups(bl_groups)
-    bl_counts = a.baseline_weights_from_groups(bl_groups)
-
-    grid0 = a.grid_baselines(coherent=True)
-    grid1 = a.grid_baselines(coherent=True, baselines=bl_coords, weights=bl_counts)
-    assert np.allclose(grid0, grid1)
 
 
 def test_min_max_antpos(bm):
@@ -143,9 +132,6 @@ def test_different_antpos_loaders(tmp_path: Path):
     beamtxt = """
     beam:
         class: GaussianBeam
-        frequency: !astropy.units.Quantity
-            unit: !astropy.units.Unit {unit: MHz}
-            value: 150
         dish_size: !astropy.units.Quantity
             unit: !astropy.units.Unit {unit: m}
             value: 14.0
@@ -177,17 +163,6 @@ def test_different_antpos_loaders(tmp_path: Path):
     assert obsnpy == obstxt
 
 
-def test_longest_used_baseline(bm):
-    a = Observatory(antpos=np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]) * units.m, beam=bm)
-
-    assert np.isclose(a.longest_used_baseline() / a.metres_to_wavelengths, 2 * units.m, atol=1e-3)
-    assert np.isclose(
-        a.longest_used_baseline(bl_max=1.5 * units.m) / a.metres_to_wavelengths,
-        1 * units.m,
-        atol=1e-4,
-    )
-
-
 def test_from_yaml(bm):
     rng = np.random.default_rng(1234)
     obs = Observatory.from_yaml(
@@ -195,7 +170,6 @@ def test_from_yaml(bm):
             "antpos": rng.random((20, 3)) * units.m,
             "beam": {
                 "class": "GaussianBeam",
-                "frequency": 150 * units.MHz,
                 "dish_size": 14 * units.m,
             },
         }
@@ -212,17 +186,16 @@ def test_from_ska():
     from ska_ost_array_config import UVW, get_subarray_template
     from ska_ost_array_config.simulation_utils import simulate_observation
 
-    obs = Observatory.from_ska("LOW_FULL_AASTAR", frequency=300.0 * units.MHz)
+    obs = Observatory.from_ska("LOW_FULL_AASTAR")
     low_aastar = get_subarray_template("LOW_FULL_AASTAR")
     assert obs.antpos.shape == low_aastar.array_config.xyz.data.shape
-    Observatory.from_ska(subarray_template="MID_FULL_AASTAR", frequency=300.0 * units.MHz)
-    obs = Observatory.from_ska(subarray_template="LOW_FULL_AA4", frequency=300.0 * units.MHz)
+    Observatory.from_ska(subarray_template="MID_FULL_AASTAR")
+    obs = Observatory.from_ska(subarray_template="LOW_FULL_AA4")
     low_aa4 = get_subarray_template("LOW_FULL_AA4")
     assert obs.antpos.shape == low_aa4.array_config.xyz.data.shape
     obs = Observatory.from_ska(
         subarray_template="LOW_INNER_R350M_AASTAR",
         Trcv=100.0 * units.K,
-        frequency=150.0 * units.MHz,
         exclude_stations="C1,C2",
     )
     low_custom = get_subarray_template("LOW_INNER_R350M_AASTAR", exclude_stations="C1,C2")
@@ -247,17 +220,19 @@ def test_from_ska():
     )
     uvw = UVW.UVW(vis, ignore_autocorr=False)
     uvw_m = uvw.uvdist_m
-    assert np.allclose(obs.longest_baseline / obs.metres_to_wavelengths, uvw_m.max() * units.m)
+    assert np.allclose(obs.bl_max, uvw_m.max() * units.m)
 
 
 def test_get_redundant_baselines(bm):
     a = Observatory(antpos=np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]) * units.m, beam=bm)
 
-    reds = a.get_redundant_baselines()
-    assert len(reds) == 4  # len-1, len-2 and backwards
+    reds = a.redundant_baseline_groups
+    assert len(reds) == 2  # len-1, len-2
 
-    reds = a.get_redundant_baselines(baseline_filters=BaselineRange(bl_max=1.5 * units.m))
-    assert len(reds) == 2  # len-1
+    a = a.clone(baseline_filters=BaselineRange(bl_max=1.5 * units.m))
+    print(a.baselines_metres)
+    reds = a.redundant_baseline_groups
+    assert len(reds) == 1  # len-1
 
 
 def test_no_up_coordinate(tmp_path: Path):
@@ -274,9 +249,6 @@ antpos: !astropy.units.Quantity
   unit: !astropy.units.Unit {{unit: m}}
 beam:
   class: GaussianBeam
-  frequency: !astropy.units.Quantity
-    unit: !astropy.units.Unit {{unit: MHz}}
-    value: 150
   dish_size: !astropy.units.Quantity
     unit: !astropy.units.Unit {{unit: m}}
     value: 35
@@ -295,6 +267,18 @@ Trcv: !astropy.units.Quantity
     assert np.all(obs.antpos[:, 2] == 0)
 
 
-def test_setting_freq_in_profile():
-    obs = Observatory.from_profile("MWA-PhaseII", frequency=75 * units.MHz)
-    assert obs.frequency == 75 * units.MHz
+def test_projected_baselines_metres(bm):
+    rng = np.random.default_rng(1234)
+    obs = Observatory(antpos=rng.normal(loc=0, scale=50, size=(20, 3)) * units.m, beam=bm)
+    bl_coords = obs.redundant_baseline_vectors
+
+    time_offsets = obs.time_offsets_from_obs_int_time(
+        integration_time=3 / 10 * units.hour, observation_duration=3 * units.hour
+    )
+
+    proj_bls = obs.projected_baselines(
+        baselines=bl_coords,
+        time_offset=time_offsets,
+    )
+    assert proj_bls.unit == units.m
+    assert proj_bls.shape == (len(bl_coords), len(time_offsets), 3)

@@ -10,11 +10,11 @@ from __future__ import annotations
 import collections
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from functools import cached_property
 from pathlib import Path
-from typing import Callable
 
-import attr
+import attrs
 import numpy as np
 import tqdm
 from astropy import constants as cnst
@@ -39,7 +39,7 @@ def get_builtin_profiles() -> list[str]:
 
 
 @hickleable(evaluate_cached_properties=True)
-@attr.s(kw_only=True, order=False)
+@attrs.define(kw_only=True, order=False, slots=False)
 class Observatory:
     """
     A class defining an interferometric Observatory and its properties.
@@ -72,21 +72,25 @@ class Observatory:
         A string specifying whether the telescope is on the Earth or the moon.
     """
 
-    _antpos: tp.Length = attr.ib(eq=attr.cmp_using(eq=np.array_equal))
-    beam: beam.PrimaryBeam = attr.ib(validator=vld.instance_of(beam.PrimaryBeam))
-    latitude: un.rad = attr.ib(
-        0 * un.rad,
+    _antpos: tp.Length = attrs.field(eq=attrs.cmp_using(eq=np.array_equal))
+    beam: beam.PrimaryBeam = attrs.field(validator=vld.instance_of(beam.PrimaryBeam))
+    latitude: un.rad = attrs.field(
+        default=0 * un.rad,
         validator=ut.between(-np.pi * un.rad / 2, np.pi * un.rad / 2),
     )
-    Trcv: tp.Temperature | Callable = attr.ib(100 * un.K)
-    max_antpos: tp.Length = attr.ib(
+    Trcv: tp.Temperature | Callable = attrs.field(default=100 * un.K)
+    max_antpos: tp.Length = attrs.field(
         default=np.inf * un.m, validator=(tp.vld_physical_type("length"), ut.positive)
     )
-    min_antpos: tp.Length = attr.ib(
+    min_antpos: tp.Length = attrs.field(
         default=0.0 * un.m, validator=(tp.vld_physical_type("length"), ut.nonnegative)
     )
-    beam_crossing_time_incl_latitude: bool = attr.ib(default=True, converter=bool)
-    world: str = attr.ib(default="earth", validator=vld.in_(["earth", "moon"]))
+    beam_crossing_time_incl_latitude: bool = attrs.field(default=True, converter=bool)
+    world: str = attrs.field(default="earth", validator=vld.in_(["earth", "moon"]))
+    baseline_filters: tuple[Callable[[tp.Length], bool]] = attrs.field(
+        default=(), converter=tp._tuplify
+    )
+    redundancy_tol: int = attrs.field(default=1, converter=int, validator=ut.nonnegative)
 
     @_antpos.validator
     def _antpos_validator(self, att, val):
@@ -137,11 +141,6 @@ class Observatory:
         else:
             tp.vld_physical_type("temperature")(self, att, val)
 
-    @property
-    def frequency(self) -> un.Quantity[un.MHz]:
-        """Central frequency of the observation."""
-        return self.beam.frequency.to("MHz")
-
     @cached_property
     def n_antennas(self) -> int:
         """Number of antennas in the array."""
@@ -149,7 +148,7 @@ class Observatory:
 
     def clone(self, **kwargs) -> Observatory:
         """Return a clone of this instance, but change kwargs."""
-        return attr.evolve(self, **kwargs)
+        return attrs.evolve(self, **kwargs)
 
     @classmethod
     def from_uvdata(cls, uvdata, beam: beam.PrimaryBeam, **kwargs) -> Observatory:
@@ -162,7 +161,7 @@ class Observatory:
         )
 
     @classmethod
-    def from_yaml(cls, yaml_file: str | dict, frequency: tp.Frequency | None = None) -> Observatory:
+    def from_yaml(cls, yaml_file: str | dict) -> Observatory:
         """Instantiate an Observatory from a compatible YAML config file."""
         if isinstance(yaml_file, (str, Path)):
             with open(yaml_file) as fl:
@@ -191,8 +190,6 @@ class Observatory:
             antpos = np.hstack((antpos, np.zeros((len(antpos), 1))))
 
         _beam = data.pop("beam")
-        if frequency is not None:
-            _beam["frequency"] = frequency
 
         kind = _beam.pop("class")
         _beam = getattr(beam, kind)(**_beam)
@@ -200,7 +197,7 @@ class Observatory:
         return cls(antpos=antpos, beam=_beam, **data)
 
     @classmethod
-    def from_profile(cls, profile: str, frequency: tp.Frequency | None = None, **kwargs):
+    def from_profile(cls, profile: str, **kwargs):
         """Instantiate the Observatory from a builtin profile.
 
         Parameters
@@ -223,7 +220,7 @@ class Observatory:
                 f"profile {profile} not available. Available profiles: {get_builtin_profiles()}"
             )
 
-        obj = cls.from_yaml(fl, frequency=frequency)
+        obj = cls.from_yaml(fl)
         return obj.clone(**kwargs)
 
     @classmethod
@@ -231,7 +228,6 @@ class Observatory:
         cls,
         subarray_template: str,
         Trcv: tp.Temperature | Callable = 100 * un.K,  # noqa N803
-        frequency: tp.Frequency | None = 150.0 * un.MHz,
         **kwargs,
     ) -> Observatory:
         """Instantiate an SKA-Low or SKA-Mid subarray.
@@ -264,29 +260,60 @@ class Observatory:
         subarray = get_subarray_template(subarray_template, **kwargs)
 
         antpos = subarray.array_config.xyz.data * un.m
-        _beam = beam.GaussianBeam(
-            frequency=frequency, dish_size=np.array(subarray.array_config.diameter)[0] * un.m
-        )
+        _beam = beam.GaussianBeam(dish_size=np.array(subarray.array_config.diameter)[0] * un.m)
         lat = subarray.array_config.location.lat.rad * un.rad
         return cls(antpos=antpos, beam=_beam, latitude=lat, Trcv=Trcv)
 
+    @property
+    def unfiltered_baselines(self) -> tp.Meters:
+        """Raw baseline distances in metres for every pair of antennas.
+
+        This includes only one of the two conjugate baselines, no autocorrelations, and
+        does not apply any baseline filters.
+
+        Shape is ``(Nant*(Nant-1)/2, 3)``.
+        """
+        # sort along Northing so that when we take the upper triangle
+        # we get only positive y-values.
+        inds = np.argsort(self.antpos[:, 1])
+        antpos = self.antpos[inds]
+        n = len(self.antpos)
+        allbls = (antpos[np.newaxis, :, :] - antpos[:, np.newaxis, :]).to(un.m)
+        indices = np.triu_indices(n, k=1)
+        return allbls[indices]
+
     @cached_property
+    def baselines(self) -> tp.Meters:
+        """Baseline vectors in metres for every pair of antennas, after applying filters.
+
+        Shape is ``(Nbls, 3)``.
+        """
+        bls = self.unfiltered_baselines
+
+        # Apply baseline filters
+        mask = np.ones(bls.shape[:-1], dtype=bool)
+        for filt in self.baseline_filters:
+            mask &= filt(bls)
+
+        return bls[mask]
+
+    @property
     def baselines_metres(self) -> tp.Meters:
         """Raw baseline distances in metres for every pair of antennas.
 
+        Deprecated -- use :attr:`baselines` instead.
+
         Shape is ``(Nant, Nant, 3)``.
         """
-        # this does an "outer" subtraction, leaving the inner 2- or 3- length positions
-        # as atomic quantities.
-        return (self.antpos[np.newaxis, :, :] - self.antpos[:, np.newaxis, :]).to(un.m)
+        return self.baselines.to(un.m)
 
     def projected_baselines(
         self,
         baselines: tp.Length | None = None,
         time_offset: tp.Time = 0 * un.hour,
         phase_center_dec: tp.Angle | None = None,
-    ) -> np.ndarray:
-        """Compute the *projected* baseline lengths (in wavelengths).
+    ) -> tp.Meters:
+        """Compute *projected* baseline vectors.
 
         Phased to a point that has rotated off zenith by some time_offset.
 
@@ -306,75 +333,38 @@ class Observatory:
 
         Returns
         -------
-        An array the same shape as :attr:`baselines_metres`, but phased to the
+        An array the same shape as :attr:`baselines`, but phased to the
         new phase centre.
         """
         if baselines is None:
-            baselines = self.baselines_metres
+            baselines = self.baselines
 
-        orig_shape = baselines.shape
-
-        bl_wavelengths = baselines.reshape((-1, 3)) * self.metres_to_wavelengths
-
-        out = ut.phase_past_zenith(
-            time_past_zenith=time_offset,
-            bls_enu=bl_wavelengths,
-            latitude=self.latitude,
-            world=self.world,
+        return ut.project_baselines(
+            baselines=baselines,
+            telescope_latitude=self.latitude,
+            time_offsets=time_offset,
             phase_center_dec=phase_center_dec,
+            world=self.world,
         )
 
-        out = out.reshape(*orig_shape[:-1], np.size(time_offset), orig_shape[-1])
-        if np.size(time_offset) == 1:
-            out = out.squeeze(-2)
-
-        return out
-
     @cached_property
-    def metres_to_wavelengths(self) -> un.Quantity[1 / un.m]:
-        """Conversion factor for metres to wavelengths at fiducial frequency."""
-        return (self.frequency / cnst.c).to("1/m")
-
-    @cached_property
-    def baseline_lengths(self) -> np.ndarray:
-        """Lengths of baselines in units of wavelengths, shape (Nant, Nant)."""
+    def baseline_lengths(self) -> tp.Meters:
+        """Lengths of baselines in units of meters, shape (Nbls,)."""
         return np.sqrt(np.sum(self.projected_baselines() ** 2, axis=-1))
 
     @cached_property
-    def shortest_baseline(self) -> float:
-        """Shortest baseline in units of wavelengths."""
-        return np.min(self.baseline_lengths[self.baseline_lengths > 0])
+    def bl_min(self) -> un.Quantity[un.m]:
+        """Shortest included baseline."""
+        return self.baseline_group_lengths.min()
 
     @cached_property
-    def longest_baseline(self) -> float:
-        """Longest baseline in units of wavelengths."""
-        return np.max(self.baseline_lengths)
+    def bl_max(self) -> un.Quantity[un.m]:
+        """Shortest included baseline."""
+        return self.baseline_group_lengths.max()
 
-    @cached_property
-    def observation_duration(self) -> un.Quantity[un.day]:
-        """The time it takes for the sky to drift through the FWHM."""
-        latfac = np.cos(self.latitude) if self.beam_crossing_time_incl_latitude else 1
-        if self.world == "earth":
-            return un.day * self.beam.fwhm / (2 * np.pi * un.rad * latfac)
-        else:
-            return 27.3 * un.day * self.beam.fwhm / (2 * np.pi * un.rad * latfac)
-
-    def get_redundant_baselines(
-        self,
-        baseline_filters: Callable | tuple[Callable] = (),
-        ndecimals: int = 1,
-    ) -> dict[tuple[float, float, float], list[tuple[int, int]]]:
+    def get_redundant_baselines(self) -> list[list[int]]:
         """
         Determine all baseline groups.
-
-        Parameters
-        ----------
-        baseline_filters
-            Callable function (or functions) of a single 3-coordinate baseline vector
-            that returns a bool indicating whether to include the baseline.
-        ndecimals : int, optional
-            The number of decimals to which the UV points must be the same to be
-            considered redundant.
 
         Returns
         -------
@@ -383,42 +373,48 @@ class Observatory:
             of a pair of antennas with those co-ordinates.
         """
         uvbins = defaultdict(list)
-        baseline_filters = tp._tuplify(baseline_filters, 1)
 
-        def filt(blm):
-            return all(filt(blm) for filt in baseline_filters)
-
-        # Everything here is in wavelengths
-        uvw = self.projected_baselines()[:, :, :2].value
-        uvw = np.round(uvw, decimals=ndecimals)
-        bl_lens = np.round(self.baseline_lengths.value, decimals=ndecimals)
+        # Everything here is in meters
+        uvw = self.projected_baselines()[:, :2].value
+        uvw = np.round(uvw, decimals=self.redundancy_tol)
 
         # group redundant baselines
-        for i in tqdm.tqdm(
-            range(self.n_antennas - 1),
+        for i, (u, v) in tqdm.tqdm(
+            enumerate(uvw),
             desc="finding redundancies",
             unit="ants",
             disable=not config.PROGRESS,
         ):
-            for j in range(i + 1, self.n_antennas):
-                blm = self.baselines_metres[i, j]
+            uvbins[(u, v)].append(i)
 
-                # Check if we want to include this baseline.
-                if not filt(blm):
-                    continue
+        return list(uvbins.values())
+        return self.redundant_baseline_groups
 
-                bl_len = bl_lens[i, j]  # in wavelengths
+    @cached_property
+    def redundant_baseline_groups(self) -> list[list[int]]:
+        """A list of lists of redundant baseline groups as indices into :attr:`baselines`."""
+        return self.get_redundant_baselines()
 
-                u, v = uvw[i, j]
+    @cached_property
+    def redundant_baseline_vectors(self) -> tp.Meters:
+        """Get the baseline vectors for each redundant baseline group."""
+        idx = [bls[0] for bls in self.redundant_baseline_groups]
+        return self.baselines[idx]
 
-                # add the uv point and its inverse to the redundant baseline dict.
-                uvbins[(u, v, bl_len)].append((i, j))
-                uvbins[(-u, -v, bl_len)].append((j, i))
+    @cached_property
+    def redundant_baseline_weights(self) -> np.ndarray:
+        """Get the weights for each redundant baseline group."""
+        return np.array([len(bls) for bls in self.redundant_baseline_groups])
 
-        return uvbins
+    @cached_property
+    def baseline_group_lengths(self) -> un.Quantity[un.m]:
+        """The displacement magnitude of the baseline groups."""
+        return np.sqrt(np.sum(self.redundant_baseline_vectors**2, axis=-1))
 
     def time_offsets_from_obs_int_time(
-        self, integration_time: tp.Time, observation_duration: tp.Time | None = None
+        self,
+        integration_time: tp.Time,
+        observation_duration: tp.Time,
     ):
         """Compute a list of time offsets within an LST-bin.
 
@@ -438,9 +434,6 @@ class Observatory:
         array :
             Time offsets (in julian days).
         """
-        if observation_duration is None:
-            observation_duration = self.observation_duration
-
         assert integration_time <= observation_duration
 
         return (
@@ -452,140 +445,12 @@ class Observatory:
             << un.day
         )
 
-    def baseline_coords_from_groups(self, baseline_groups) -> un.Quantity[un.m]:
-        """Convert a dictionary of baseline groups to an array of ENU co-ordinates."""
-        out = np.zeros((len(baseline_groups), 3)) * un.m
-        for i, antpairs in enumerate(baseline_groups.values()):
-            out[i] = self.baselines_metres[antpairs[0][0], antpairs[0][1]]
-        return out
+    @cached_property
+    def xgrid_edges(self) -> tp.Meters:
+        """Get a grid of bl length to the max used baseline smaller than given bl_max.
 
-    @staticmethod
-    def baseline_weights_from_groups(baseline_groups) -> np.ndarray:
-        """Get number of baselines in each group.
-
-        Parameters
-        ----------
-        baseline_groups
-            A dictionary in the format output by :func:`get_redundant_baselines`.
-
-        Returns
-        -------
-        weights
-            An array containing the number of baselines in each group.
-        """
-        return np.array([len(antpairs) for antpairs in baseline_groups.values()])
-
-    def grid_baselines(
-        self,
-        coherent: bool,
-        baselines: tp.Length | None = None,
-        weights: np.ndarray | None = None,
-        integration_time: tp.Time = 60.0 * un.s,
-        baseline_filters: Callable | tuple[Callable] = (),
-        observation_duration: tp.Time | None = None,
-        ndecimals: int = 1,
-        phase_center_dec: tp.Angle | None = None,
-    ) -> np.ndarray:
-        """
-        Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
-
-        Parameters
-        ----------
-        baselines : array_like, optional
-            The baseline co-ordinates to project, assumed to be in metres.
-            If not provided, calculates effective baselines by finding redundancies on
-            all baselines in the observatory. Shape of the array can be (N,N,3) or (N, 3).
-            The co-ordinates are expected to be in ENU. If `baselines` is provided,
-            `weights` must also be provided.
-        weights: array_like, optional
-            An array of the same length as `baselines`, giving the number of independent
-            baselines at each co-ordinate. If not provided, calculates effective
-            baselines by finding redundancies on all baselines in the observatory.
-            If `baselines` is provided, `weights` must also be provided.
-        integration_time : float or Quantity, optional
-            The amount of time integrated into a snapshot visibility, assumed
-            to be in seconds.
-        baseline_filters
-            A function that takes a single value: a length-3 array of baseline co-ordinates,
-            and returns a bool indicating whether to include the baseline. Built-in filters
-            are provided in the :mod:`~baseline_filters` module.
-        observation_duration : float or Quantity, optional
-            Amount of time in a single (coherent) LST bin, assumed to be in minutes.
-        ndecimals : int, optional
-            Number of decimals to which baselines must match to be considered redundant.
-
-        Returns
-        -------
-        array :
-            Shape [n_baseline_groups, Nuv, Nuv]. The coherent sum of baselines within
-            grid cells given by :attr:`ugrid`. One can treat different baseline groups
-            independently, or sum over them.
-
-        See Also
-        --------
-        grid_baselines_coherent :
-            Coherent sum over baseline groups of the output of this method.
-        grid_baseline_incoherent :
-            Incoherent sum over baseline groups of the output of this method.
-        """
-        if baselines is not None:
-            assert un.get_physical_type(baselines) == "length"
-            assert baselines.ndim in (2, 3)
-
-        assert un.get_physical_type(integration_time) == "time"
-
-        if observation_duration is not None:
-            assert un.get_physical_type(observation_duration) == "time"
-
-        if baselines is None:
-            baseline_groups = self.get_redundant_baselines(
-                baseline_filters=baseline_filters, ndecimals=ndecimals
-            )
-            baselines = self.baseline_coords_from_groups(baseline_groups)
-            weights = self.baseline_weights_from_groups(baseline_groups)
-
-        bl_max = np.sqrt(np.max(np.sum(baselines**2, axis=1)))
-
-        if weights is None:
-            raise ValueError("If baselines are provided, weights must also be provided.")
-
-        time_offsets = self.time_offsets_from_obs_int_time(integration_time, observation_duration)
-
-        uvws = self.projected_baselines(
-            baselines, time_offsets, phase_center_dec=phase_center_dec
-        ).reshape(baselines.shape[0], time_offsets.size, 3)
-
-        # grid each baseline type into uv plane
-        dim = len(self.ugrid(bl_max))
-        edges = self.ugrid_edges(bl_max)
-
-        uvsum = np.zeros((dim, dim))
-        for uvw, nbls in tqdm.tqdm(
-            zip(uvws, weights),
-            desc="gridding baselines",
-            unit="baselines",
-            disable=not config.PROGRESS,
-            total=len(weights),
-        ):
-            hist = np.histogram2d(uvw[:, 0], uvw[:, 1], bins=edges)[0] * nbls
-
-            uvsum += hist if coherent else hist**2
-        if not coherent:
-            uvsum = np.sqrt(uvsum)
-
-        return uvsum
-
-    def longest_used_baseline(self, bl_max: tp.Length = np.inf * un.m) -> float:
-        """Determine the maximum baseline length kept in the array, in wavelengths."""
-        if np.isinf(bl_max):
-            return self.longest_baseline
-
-        # Note we don't do the conversion in-place!
-        bl_max = bl_max * self.metres_to_wavelengths
-        return np.max(self.baseline_lengths[self.baseline_lengths <= bl_max])
-
-    def ugrid_edges(self, bl_max: tp.Length = np.inf * un.m) -> np.ndarray:
-        """Get a uv grid out to the maximum used baseline smaller than given bl_max.
+        This grid is optimized such that the grid size is the same as the dish size,
+        i.e. such that the pixels are roughly uncorrelated.
 
         The resulting array represents the *edges* of the grid (so the number of cells
         is one fewer than this).
@@ -600,21 +465,219 @@ class Observatory:
         array :
             1D array of regularly spaced un.
         """
-        bl_max = self.longest_used_baseline(bl_max)
+        bl_max = self.bl_max
 
         # We're doing edges of bins here, and the first edge is at uv_res/2
-        n_positive = int(np.ceil((bl_max - self.beam.uv_resolution / 2) / self.beam.uv_resolution))
+        n_positive = int(np.ceil((bl_max - self.beam.dish_size / 2) / self.beam.dish_size))
 
         # Grid from uv_res/2 to just past (or equal to) bl_max, in steps of resolution.
-        positive = np.linspace(
-            self.beam.uv_resolution / 2,
-            self.beam.uv_resolution / 2 + n_positive * self.beam.uv_resolution,
-            n_positive + 1,
-        )
-        return np.concatenate((-positive[::-1], positive))
+        xmin = self.beam.dish_size.to_value("m") / 2
+        dx = self.beam.dish_size.to_value("m")
+        positive = np.linspace(xmin, xmin + n_positive * dx, n_positive + 1)
+        return np.concatenate((-positive[::-1], positive)) * un.m
 
-    def ugrid(self, bl_max: tp.Length = np.inf * un.m) -> np.ndarray:
-        """Centres of the UV grid plane."""
-        # Shift the edges by half a cell, and omit the last one
-        edges = self.ugrid_edges(bl_max)
-        return (edges[1:] + edges[:-1]) / 2
+    @property
+    def xgrid(self) -> tp.Meters:
+        """Get a grid of bl length to the max used baseline smaller than given bl_max.
+
+        This grid is optimized such that the grid size is the same as the dish size,
+        i.e. such that the pixels are roughly uncorrelated.
+
+        The resulting array represents the *centers* of the grid cells.
+
+        Parameters
+        ----------
+        bl_max : float or Quantity
+            Include all baselines smaller than this number. Units of m.
+
+        Returns
+        -------
+        array :
+            1D array of regularly spaced un.
+        """
+        edges = self.xgrid_edges
+        return (edges[:-1] + edges[1:]) / 2
+
+    def ugrid_edges(self, frequency: tp.Frequency) -> np.ndarray:
+        """Get a uv grid out to the maximum used baseline smaller than given bl_max.
+
+        This is simply the :attribute:`xgrid_edges` converted to units of wavelengths
+        at the given frequency.
+
+        The resulting array represents the *edges* of the grid (so the number of cells
+        is one fewer than this).
+
+        Parameters
+        ----------
+        bl_max : float or Quantity
+            Include all baselines smaller than this number. Units of length.
+
+        Returns
+        -------
+        array :
+            1D array of regularly spaced uv. Unitless.
+        """
+        return (self.xgrid_edges * frequency / cnst.c).to("")
+
+    def vgrid_edges(self, frequency: tp.Frequency) -> np.ndarray:
+        """TReturn grid edges in the v direction (i.e. north-south).
+
+        The v-direction only has positive values, including zero, since we take only
+        one of the two conjugate baselines for each pair of antennas, and we sort along
+        the Northing direction to ensure that we get the positive v values.
+
+        Parameters
+        ----------
+        bl_max : float or Quantity
+            Include all baselines smaller than this number. Units of length.
+
+        Returns
+        -------
+        array :
+            1D array of regularly spaced uv. Unitless.
+
+        See Also
+        --------
+        ugrid_edges
+            The same as this method, but for the u direction.
+        vgrid
+            The same as this method, but returning the centers of the grid cells
+            instead of the edges.
+        """
+        u = self.ugrid_edges(frequency)
+        du = u[1] - u[0]
+        return u[u + du > 0]
+
+    def ugrid(self, frequency: tp.Frequency) -> np.ndarray:
+        """Get a uv grid out to the maximum used baseline smaller than given bl_max.
+
+        This is simply the :attribute:`xgrid` converted to units of wavelengths
+        at the given frequency.
+
+        The resulting array represents the *centers* of the grid cells.
+
+        Parameters
+        ----------
+        frequency
+            The frequency at which to convert the grid to units of wavelengths.
+
+        Returns
+        -------
+        array :
+            1D array of regularly spaced uv. Unitless.
+        """
+        return (self.xgrid * frequency / cnst.c).to("")
+
+    def vgrid(self, frequency: tp.Frequency) -> np.ndarray:
+        """Return grid centers in the v direction (i.e. north-south).
+
+        The v-direction only has positive values, including zero, since we take only
+        one of the two conjugate baselines for each pair of antennas, and we sort along
+        the Northing direction to ensure that we get the positive v values.
+
+        Parameters
+        ----------
+        frequency
+            The frequency at which to convert the grid to units of wavelengths.
+
+        Returns
+        -------
+        array :
+            1D array of regularly spaced uv. Unitless.
+
+        See Also
+        --------
+        ugrid : The same as this method, but for the u direction.
+        vgrid_edges : The same as this method, but returning the edges of the grid cells.
+        """
+        ve = self.vgrid_edges(frequency)
+        return (ve[:-1] + ve[1:]) / 2
+
+    def grid_baselines(
+        self,
+        coherent: bool,
+        frequency: tp.Frequency | None = None,
+        integration_time: tp.Time = 60.0 * un.s,
+        observation_duration: tp.Time | None = None,
+        phase_center_dec: tp.Angle | None = None,
+        max_chunk_mem_gb: float = 1.0,
+    ) -> np.ndarray:
+        """
+        Grid baselines onto a pre-determined uvgrid, accounting for earth rotation.
+
+        Parameters
+        ----------
+        coherent
+            Whether to coherently sum baselines within each uv cell, or
+            incoherently sum them.
+        frequency
+            The frequency at which to grid the baselines. If not given, grids the
+            baselines in bins of distance in meters.
+        integration_time : float or Quantity, optional
+            The amount of time integrated into a snapshot visibility.
+        observation_duration : float or Quantity, optional
+            Amount of time in a single (coherent) LST bin, assumed to be in minutes.
+        ndecimals : int, optional
+            Number of decimals to which baselines must match to be considered redundant.
+
+        Returns
+        -------
+        array :
+            Shape [n_baseline_groups, Nuv, Nuv]. The coherent sum of baselines within
+            grid cells given by :attr:`ugrid`. One can treat different baseline groups
+            independently, or sum over them.
+
+        Notes
+        -----
+        The grid can either be in units of distance (meters) or in units of wavelengths,
+        depending on the value of `frequency`. If `frequency` is None, the grid is in
+        meters, which will yield the _same_ grid for all frequencies. If `frequency` is
+        given, the grid is in units of wavelengths, and will be different for different
+        frequencies (i.e. the grid will be constant in units of wavelengths, while the
+        baselines themselves will change in units of wavelengths).
+
+        For calculating the power spectrum sensitivity in 21cmSense, it is sufficient
+        to use the same grid in units of meters for all frequencies. In general this
+        should only cause very slight differences in the results, and it has the
+        advantage of being much faster to compute over many frequencies/redshifts.
+
+        If the :class:`Observatory` object is being used to generate noise realizations
+        for other purposes, it may be important to use a grid in units of wavelengths.
+
+        See Also
+        --------
+        grid_baselines_coherent :
+            Coherent sum over baseline groups of the output of this method.
+        grid_baseline_incoherent :
+            Incoherent sum over baseline groups of the output of this method.
+        """
+        if observation_duration is None:
+            # by default, assume a snapshot integration
+            observation_duration = integration_time
+
+        assert un.get_physical_type(integration_time) == "time"
+        assert un.get_physical_type(observation_duration) == "time"
+
+        time_offsets = self.time_offsets_from_obs_int_time(integration_time, observation_duration)
+
+        if frequency is None:
+            grid_edges = self.xgrid_edges
+            frequencies = None
+        else:
+            grid_edges = self.ugrid_edges(frequency)
+            frequencies = [frequency]
+
+        du = grid_edges[1] - grid_edges[0]
+        return ut.grid_baselines(
+            coherent=coherent,
+            baselines=self.redundant_baseline_vectors,
+            weights=self.redundant_baseline_weights,
+            time_offsets=time_offsets,
+            frequencies=frequencies,
+            ugrid_edges=grid_edges,
+            vgrid_edges=grid_edges[grid_edges + du > 0],
+            phase_center_dec=phase_center_dec,
+            telescope_latitude=self.latitude,
+            world=self.world,
+            max_chunk_mem_gb=max_chunk_mem_gb,
+        )[0]

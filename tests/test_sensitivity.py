@@ -33,7 +33,7 @@ def skip_on(exception, reason="Default reason"):
 
 @pytest.fixture(scope="module")
 def bm():
-    return GaussianBeam(150.0 * units.MHz, dish_size=14 * units.m)
+    return GaussianBeam(dish_size=14 * units.m)
 
 
 @pytest.fixture(scope="module", params=["earth", "moon"])
@@ -52,7 +52,9 @@ def observatory(bm, wd):
 
 @pytest.fixture(scope="module")
 def observation(observatory):
-    return Observation(observatory=observatory)
+    return Observation(
+        observatory=observatory, integration_time=10 * units.second, lst_bin_size=10 * units.second
+    )
 
 
 def test_units(observation):
@@ -78,7 +80,9 @@ def test_sensitivity_2d(observation):
 @skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_sensitivity_2d_grid(observation, caplog):
     ps = PowerSpectrum(observation=observation)
+    print(ps.observation.ugrid_edges)
     sense_ungridded = ps.calculate_sensitivity_2d(thermal=True, sample=True)
+    print(sense_ungridded.keys())
     kperp = np.array([x.value for x in sense_ungridded]) * next(iter(sense_ungridded.keys())).unit
     sense = ps.calculate_sensitivity_2d_grid(
         kperp_edges=np.linspace(kperp.min().value, kperp.max().value, 10) * kperp.unit,
