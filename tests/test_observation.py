@@ -8,7 +8,7 @@ import pytest
 from astropy import units
 from astropy.cosmology.units import littleh
 
-from py21cmsense import GaussianBeam, Observation, Observatory
+from py21cmsense import GaussianBeam, Observation, Observatory, convert_half_to_full_uv_plane
 
 
 @pytest.fixture(scope="module")
@@ -170,4 +170,12 @@ def test_non_zenith_pointing_only_ew(bm):
         observatory=observatory,
         phase_center_dec=observatory.latitude + 45 * units.deg,
     )
-    np.testing.assert_allclose(not_zenith.uv_coverage, at_zenith.uv_coverage)
+
+    # The UV coverage should be identical since all baselines are purely EW,
+    # so the change in declination doesn't affect the projected baselines.
+    # However, the half-plane gridding will differ since the v grid depends on
+    # declination, so convert both to full-plane gridded UV coverage before comparing.
+    full_zenith = convert_half_to_full_uv_plane(at_zenith.uv_coverage)
+    full_not_zenith = convert_half_to_full_uv_plane(not_zenith.uv_coverage)
+
+    np.testing.assert_allclose(full_not_zenith, full_zenith)
