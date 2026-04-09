@@ -124,7 +124,7 @@ class PowerSpectrum(Sensitivity):
 
     Note that the sensitivity calculation contains two major parts: thermal variance
     and sample variance (aka cosmic variance). The latter requires a model of the power
-    spetrum itself, which you should provide via ``k_21`` and ``delta_21``.
+    spectrum itself, which you should provide via ``theory_model``.
     Remember that the power spectrum is redshift dependent, and so should be supplied
     differently at each frequency being calculated.
 
@@ -135,14 +135,10 @@ class PowerSpectrum(Sensitivity):
     foreground_model : str, {moderate, optimistic}
         Which approach to take for foreground excision. Moderate uses a defined horizon buffer,
         while optimistic excludes all k modes inside the primary field of view.
-    k_21 : array or Quantity, optional
-        An array of wavenumbers used to define a cosmological power spectrum, in order to get
-        sample variance. If not a Quantity, will assume k has units of 1/Mpc, though it will
-        convert these units to h/Mpc throughout the class. Default is to use built-in
-        data file from 21cmFAST.
-    delta_21 : array or Quantity, optional
-        An array of Delta^2 power spectrum values used for sample variance.
-        If not a Quantity, will assume units of mK^2.
+    theory_model : :class:`~py21cmsense.theory.TheoryModel`, optional
+        An instance of a :class:`~py21cmsense.theory.TheoryModel` subclass that provides the
+        cosmological power spectrum (Delta^2) as a function of redshift and wavenumber, used
+        to compute sample variance. Default is :class:`~py21cmsense.theory.EOS2021`.
     systematics_mask : callable
         A function that takes a single kperp and an array of kpar, and returns a boolean
         array specifying which of the k's are useable after accounting for systematics.
@@ -167,8 +163,8 @@ class PowerSpectrum(Sensitivity):
         """
         Construct a PowerSpectrum sensitivity from yaml.
 
-        YAML spec has p21 as a file which obtains k_21 and delta_21.
-        It is assumed that k in the file is in units of 1/Mpc (true for 21cmFAST).
+        YAML spec may specify a ``theory_model`` by name (one of the registered
+        :class:`~py21cmsense.theory.TheoryModel` subclasses).
         """
         data = cls._load_yaml(yaml_file)
 
