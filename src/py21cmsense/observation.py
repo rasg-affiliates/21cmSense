@@ -52,16 +52,17 @@ class Observation:
     integration_time : float or Quantity, optional
         The amount of time integrated into a single visibility, by default a minute.
         If a float, assumed to be in seconds.
-    bandwidth : float or Quantity, optional
-        The bandwidth used for the observation, assumed to be in MHz. Note this is not the total
-        instrument bandwidth, but the redshift range that can be considered co-evaluated.
-    channel_bandwidth : float or Quantity, optional
-        The bandwidth of a single frequency channel, assumed to be in MHz. If provided,
-        overrides ``n_channels`` (which is computed as ``bandwidth / channel_bandwidth``).
-        Not set by default. If both ``channel_bandwidth`` and ``n_channels`` are explicitly
-        provided, ``n_channels`` takes precedence.
+    bandwidth : Quantity, optional
+        The bandwidth used for the observation; must be an astropy Quantity with frequency units.
+        Note this is not the total instrument bandwidth, but the redshift range that can be
+        considered coeval.
+    channel_bandwidth : Quantity, optional
+        The bandwidth of a single frequency channel; must be an astropy Quantity with frequency
+        units. If provided, overrides ``n_channels`` (which is computed as
+        ``bandwidth / channel_bandwidth``). Not set by default. If both ``channel_bandwidth``
+        and ``n_channels`` are explicitly provided, ``n_channels`` takes precedence.
     n_channels : int, optional
-        Number of channels across the co-evaluated bandwidth (see ``bandwidth`` parameter).
+        Number of channels across the coeval bandwidth (see ``bandwidth`` parameter).
         Defaults to 82, to match the HERA 97 kHz channel width across 8 MHz. Sets maximum
         k_parallel that can be probed, but little to no overall effect on sensitivity.
         Overridden by ``channel_bandwidth`` if that parameter is provided.
