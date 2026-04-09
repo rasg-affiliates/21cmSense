@@ -38,7 +38,7 @@ dependencies = [
   "click",
   "tqdm",
   "pyyaml",
-  "astropy>=5",
+  "astropy>=7",
   "methodtools",
   "pyuvdata>=3.0.0",
   "cached_property",
@@ -64,8 +64,6 @@ test = [
   "matplotlib",
   "pytest-cov",
   "pytest-xdist",
-  #"ska-sdp-datamodels @ git+https://gitlab.com/ska-telescope/sdp/ska-sdp-datamodels.git",
-  #"ska-ost-array-config @ git+https://gitlab.com/ska-telescope/sdp/ska-ost-array-config.git",
 ]
 dev = [
   {include-group = "test"},

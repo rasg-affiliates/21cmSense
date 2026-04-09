@@ -6,11 +6,6 @@ jobs:
   tests:
     name: Run Demo
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      ENV_NAME: testing
     strategy:
       fail-fast: false
       matrix:
