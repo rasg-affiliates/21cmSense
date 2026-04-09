@@ -3,6 +3,7 @@
 import warnings
 from functools import wraps
 
+import hickle
 import numpy as np
 import pytest
 from astropy import units
@@ -202,3 +203,52 @@ def test_at_freq(observation):
 def test_bad_theory(observation):
     with pytest.raises(ValueError, match="The theory_model must be an instance of TheoryModel"):
         PowerSpectrum(observation=observation, theory_model=3)
+
+
+def test_sensitivity_from_yaml_relative_observation_path(observation, tmp_path):
+    """Sensitivity YAML resolves relative observation filenames."""
+    obsfile = tmp_path / "obs.h5"
+    hickle.dump(observation, obsfile)
+
+    sense_yaml = tmp_path / "sense.yml"
+    sense_yaml.write_text("observation: obs.h5\n")
+
+    sens = Sensitivity.from_yaml(str(sense_yaml))
+    assert sens.observation == observation
+
+
+def test_sensitivity_from_yaml_invalid_observation_extension():
+    with pytest.raises(ValueError, match="observation must be a filename"):
+        Sensitivity.from_yaml({"observation": "observation.txt"})
+
+
+def test_powerspectrum_from_yaml_mapping_uses_observation_path(observation, tmp_path):
+    """Mapping input to PowerSpectrum.from_yaml should preserve observation path loading."""
+    obsfile = tmp_path / "obs.h5"
+    hickle.dump(observation, obsfile)
+
+    ps = PowerSpectrum.from_yaml({"observation": str(obsfile), "no_ns_baselines": True})
+    assert np.all(ps.uv_coverage[:, 0] == 0.0)
+
+
+@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
+def test_sensitivity_2d_sample_only(observation):
+    ps = PowerSpectrum(observation=observation)
+    sense_sample = ps.calculate_sensitivity_2d(thermal=False, sample=True)
+
+    assert len(sense_sample) > 0
+
+
+@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
+def test_sensitivity_2d_grid_compute_all(observation):
+    ps = PowerSpectrum(observation=observation)
+    sense_ungridded = ps.calculate_sensitivity_2d(thermal=True, sample=True)
+    kperp = np.array([x.value for x in sense_ungridded]) * next(iter(sense_ungridded.keys())).unit
+
+    sense = ps.calculate_sensitivity_2d_grid(
+        kperp_edges=np.linspace(kperp.min().value, kperp.max().value, 5) * kperp.unit,
+        kpar_edges=ps.k1d,
+        compute_all=True,
+    )
+
+    assert set(sense.keys()) == {"thermal", "sample", "both"}

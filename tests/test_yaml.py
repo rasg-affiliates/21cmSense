@@ -61,3 +61,11 @@ def test_txt_loader_with_unit(tmpdirec):
     d = yaml.load(f"!txt {txt} | m")
     assert d.unit == un.m
     assert np.allclose(d, obj * un.m)
+
+
+def test_txt_loader_too_many_args(tmpdirec):
+    txt = tmpdirec / "test-txt-too-many.txt"
+    np.savetxt(txt, np.linspace(0, 1, 3))
+
+    with pytest.raises(ValueError, match="Too many arguments"):
+        yaml.load(f"!txt {txt} | m | s")

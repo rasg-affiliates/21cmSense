@@ -67,6 +67,15 @@ def test_Trcv_func_bad(bm):
         Observatory(antpos=np.zeros((3, 3)) * units.m, beam=bm, Trcv=lambda f: 3)
 
 
+def test_Trcv_func_bad_signature(bm):
+    with pytest.raises(ValueError, match="Trcv function must take a frequency Quantity"):
+        Observatory(
+            antpos=np.zeros((3, 3)) * units.m,
+            beam=bm,
+            Trcv=lambda f: 1 / 0,
+        )
+
+
 def test_observatory(bm):
     a = Observatory(antpos=np.zeros((3, 3)) * units.m, beam=bm)
     assert a.baselines_metres.shape == (3, 3)
@@ -180,6 +189,21 @@ def test_from_yaml(bm):
         Observatory.from_yaml(3)
 
 
+def test_from_yaml_with_max_antpos_filtering(bm):
+    obs = Observatory.from_yaml(
+        {
+            "antpos": np.array([[0, 0, 0], [5, 0, 0], [50, 0, 0]]) * units.m,
+            "max_antpos": 10 * units.m,
+            "beam": {
+                "class": "GaussianBeam",
+                "dish_size": 14 * units.m,
+            },
+        }
+    )
+    assert obs.beam == bm
+    assert len(obs.antpos) == 2
+
+
 def test_from_ska():
     pytest.importorskip("ska_ost_array_config")
 
@@ -282,3 +306,15 @@ def test_projected_baselines_metres(bm):
     )
     assert proj_bls.unit == units.m
     assert proj_bls.shape == (len(bl_coords), len(time_offsets), 3)
+
+
+def test_grid_baselines_frequency_defaults_observation_duration(bm):
+    obs = Observatory(antpos=np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0]]) * units.m, beam=bm)
+
+    grid = obs.grid_baselines(
+        coherent=True,
+        frequency=150 * units.MHz,
+        integration_time=10 * units.s,
+    )
+
+    assert grid.ndim == 2

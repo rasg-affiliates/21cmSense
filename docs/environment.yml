@@ -20,7 +20,7 @@ dependencies:
   - ipython
   - pandoc
   - pip
-  - python=3.10
+  - python=3.13
   - setuptools_scm
   - pip:
     - furo

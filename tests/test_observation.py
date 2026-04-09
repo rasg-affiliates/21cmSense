@@ -179,3 +179,33 @@ def test_non_zenith_pointing_only_ew(bm):
     full_not_zenith = convert_half_to_full_uv_plane(not_zenith.uv_coverage)
 
     np.testing.assert_allclose(full_not_zenith, full_zenith)
+
+
+def test_from_yaml_with_relative_observatory_path(tmp_path):
+    """Observation YAML should resolve relative observatory YAML paths."""
+    antpos = np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0]])
+    np.savetxt(tmp_path / "antpos.txt", antpos)
+
+    obs_yaml = tmp_path / "observatory.yml"
+    obs_yaml.write_text(
+        f"""
+antpos: !astropy.units.Quantity
+    value: !txt {tmp_path / "antpos.txt"}
+    unit: !astropy.units.Unit {{unit: m}}
+beam:
+    class: GaussianBeam
+    dish_size: !astropy.units.Quantity
+        unit: !astropy.units.Unit {{unit: m}}
+        value: 14
+""".strip()
+    )
+
+    sense_yaml = tmp_path / "observation.yml"
+    sense_yaml.write_text(
+        """
+observatory: observatory.yml
+""".strip()
+    )
+
+    obs = Observation.from_yaml(str(sense_yaml))
+    assert obs.observatory.antpos.shape == (4, 3)

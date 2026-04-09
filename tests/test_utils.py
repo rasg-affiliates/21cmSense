@@ -156,6 +156,49 @@ class TestGridBaselines:
                 ugrid_edges=ugrid_edges,
             )
 
+    def test_bad_vgrid_shape(self):
+        """V-grid edges must be either full-plane or half-plane compatible."""
+        bls = np.array([[0.5, 0.5, 0]]) * un.m
+        freq = const.c / (np.array([1]) * un.m)
+
+        with pytest.raises(ValueError, match="vgrid_edges must either be the same"):
+            ut.grid_baselines(
+                coherent=True,
+                baselines=bls,
+                frequencies=freq,
+                time_offsets=np.array([0]) * un.s,
+                ugrid_edges=np.array([0.0, 1.0, 2.0]),
+                vgrid_edges=np.array([0.0, 1.0, 2.0, 3.0]),
+            )
+
+    def test_half_plane_requires_positive_northing(self):
+        """Half-plane gridding expects ENU baselines with non-negative northing."""
+        bls = np.array([[0.5, -0.5, 0]]) * un.m
+        freq = const.c / (np.array([1]) * un.m)
+
+        with pytest.raises(ValueError, match="positive Northing"):
+            ut.grid_baselines(
+                coherent=True,
+                baselines=bls,
+                frequencies=freq,
+                time_offsets=np.array([0]) * un.s,
+                ugrid_edges=np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
+                vgrid_edges=np.array([0.0, 1.0, 2.0, 3.0]),
+            )
+
+    def test_grid_in_metres_requires_length_units(self):
+        """If frequencies are omitted, the uv-grid must carry length units."""
+        bls = np.array([[0.5, 0.5, 0]]) * un.m
+
+        with pytest.raises(ValueError, match="ugrid_edges must have units of length"):
+            ut.grid_baselines(
+                coherent=True,
+                baselines=bls,
+                frequencies=None,
+                time_offsets=np.array([0]) * un.s,
+                ugrid_edges=np.array([0.0, 1.0, 2.0]),
+            )
+
 
 def test_convert_half_to_full_uv_plane_matches_full_gridding():
     """Half-plane conversion reproduces full-plane gridding for odd-sized grids."""

@@ -5,42 +5,27 @@ on: [pull_request]
 jobs:
   tests:
     name: Test With Warnings
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      ENV_NAME: testing
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.10"]
     steps:
       - uses: actions/checkout@master
         with:
           fetch-depth: 1
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3.3.0
+      - uses: actions/setup-python@v6
         with:
-          auto-update-conda: true
-          channels: conda-forge,defaults
-          channel-priority: true
-          python-version: ${{ matrix.python-version }}
-          environment-file: ci/${{ env.ENV_NAME }}.yaml
-          activate-environment: ${{ env.ENV_NAME }}
+          python-version-file: pyproject.toml
 
-      - name: Conda Info
-        run: |
-          conda info
-          python --version
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Install Test Deps
         run: |
-          pip install .[test]
-          conda list
+          uv sync --all-extras --dev
 
       - name: Run Tests
         run: |
-          python -m pytest -W error
+          uv run pytest -W error

@@ -11,6 +11,9 @@ def test_abc():
     with pytest.raises(TypeError):
         beam.PrimaryBeam(150.0)
 
+    with pytest.raises(NotImplementedError):
+        beam.PrimaryBeam.from_uvbeam()
+
 
 def test_gaussian_beam():
     bm = GaussianBeam(dish_size=14 * units.m)
@@ -33,3 +36,6 @@ def test_gaussian_beam():
     assert bm.first_null(freq) < np.pi * units.rad / 2
 
     assert bm.new() == bm
+
+    bm2 = bm.clone(dish_size=20 * units.m)
+    assert bm2.dish_size == 20 * units.m
