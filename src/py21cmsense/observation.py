@@ -58,7 +58,8 @@ class Observation:
     channel_bandwidth : float or Quantity, optional
         The bandwidth of a single frequency channel, assumed to be in MHz. If provided,
         overrides ``n_channels`` (which is computed as ``bandwidth / channel_bandwidth``).
-        Not set by default.
+        Not set by default. If both ``channel_bandwidth`` and ``n_channels`` are explicitly
+        provided, ``n_channels`` takes precedence.
     n_channels : int, optional
         Number of channels across the co-evaluated bandwidth (see ``bandwidth`` parameter).
         Defaults to 82, to match the HERA 97 kHz channel width across 8 MHz. Sets maximum
@@ -233,7 +234,7 @@ class Observation:
     @n_channels.default
     def _n_channels_default(self):
         if self.channel_bandwidth is not None:
-            return int(np.round((self.bandwidth / self.channel_bandwidth).to("").value))
+            return round((self.bandwidth / self.channel_bandwidth).to("").value)
         return 82
 
     @phase_center_dec.default

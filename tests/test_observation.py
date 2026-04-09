@@ -193,3 +193,9 @@ def test_channel_bandwidth(observatory):
     # Explicit n_channels still works (without channel_bandwidth)
     obs_explicit = Observation(observatory=observatory, n_channels=100)
     assert obs_explicit.n_channels == 100
+
+    # When both are provided, explicit n_channels takes precedence
+    obs_both = Observation(
+        observatory=observatory, channel_bandwidth=0.1 * units.MHz, n_channels=50
+    )
+    assert obs_both.n_channels == 50
