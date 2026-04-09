@@ -174,3 +174,22 @@ def test_non_zenith_pointing_only_ew(bm):
         phase_center_dec=observatory.latitude + 45 * units.deg,
     )
     np.testing.assert_allclose(not_zenith.uv_coverage, at_zenith.uv_coverage)
+
+
+def test_channel_bandwidth(observatory):
+    """Test that channel_bandwidth overrides n_channels."""
+    # Default: 82 channels across 8 MHz (97 kHz per channel)
+    obs_default = Observation(observatory=observatory)
+    assert obs_default.n_channels == 82
+
+    # Providing channel_bandwidth should compute n_channels
+    obs_ch_bw = Observation(observatory=observatory, channel_bandwidth=0.1 * units.MHz)
+    assert obs_ch_bw.n_channels == 80  # 8 MHz / 0.1 MHz = 80 channels
+
+    # channel_bandwidth consistent with default n_channels
+    obs_97khz = Observation(observatory=observatory, channel_bandwidth=97e-3 * units.MHz)
+    assert obs_97khz.n_channels == 82  # 8 MHz / 0.097 MHz ~ 82 channels
+
+    # Explicit n_channels still works (without channel_bandwidth)
+    obs_explicit = Observation(observatory=observatory, n_channels=100)
+    assert obs_explicit.n_channels == 100

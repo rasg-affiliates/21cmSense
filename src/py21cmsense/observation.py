@@ -52,13 +52,18 @@ class Observation:
     integration_time : float or Quantity, optional
         The amount of time integrated into a single visibility, by default a minute.
         If a float, assumed to be in seconds.
-    n_channels : int, optional
-        Number of channels used in the observation. Defaults to 82, which is equivalent
-        to 1024 channels over 100 MHz of bandwidth. Sets maximum k_parallel that can be
-        probed, but little to no overall effect on sensitivity.
     bandwidth : float or Quantity, optional
         The bandwidth used for the observation, assumed to be in MHz. Note this is not the total
-        instrument bandwidth, but the redshift range that can be considered co-eval.
+        instrument bandwidth, but the redshift range that can be considered co-evaluated.
+    channel_bandwidth : float or Quantity, optional
+        The bandwidth of a single frequency channel, assumed to be in MHz. If provided,
+        overrides ``n_channels`` (which is computed as ``bandwidth / channel_bandwidth``).
+        Not set by default.
+    n_channels : int, optional
+        Number of channels across the co-evaluated bandwidth (see ``bandwidth`` parameter).
+        Defaults to 82, to match the HERA 97 kHz channel width across 8 MHz. Sets maximum
+        k_parallel that can be probed, but little to no overall effect on sensitivity.
+        Overridden by ``channel_bandwidth`` if that parameter is provided.
     n_days : int, optional
         The number of days observed (for the same set of LSTs). The default is 180 (6 on moon),
         which is the maximum a particular R.A. can be observed in one year if one only observes
@@ -112,10 +117,14 @@ class Observation:
     integration_time: tp.Time = attr.ib(
         60 * un.second, validator=(tp.vld_physical_type("time"), ut.positive)
     )
-    n_channels: int = attr.ib(82, converter=int, validator=ut.positive)
     bandwidth: tp.Frequency = attr.ib(
         8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
     )
+    channel_bandwidth: tp.Frequency | None = attr.ib(
+        default=None,
+        validator=attr.validators.optional([tp.vld_physical_type("frequency"), ut.positive]),
+    )
+    n_channels: int = attr.ib(converter=int, validator=ut.positive)
     n_days: int = attr.ib(converter=int, validator=ut.positive)
     baseline_filters: tuple[Callable[[tp.Length], bool]] = attr.ib(
         default=(), converter=tp._tuplify
@@ -220,6 +229,12 @@ class Observation:
             return 180
         else:
             return 6
+
+    @n_channels.default
+    def _n_channels_default(self):
+        if self.channel_bandwidth is not None:
+            return int(np.round((self.bandwidth / self.channel_bandwidth).to("").value))
+        return 82
 
     @phase_center_dec.default
     def _phase_center_dec_default(self):
