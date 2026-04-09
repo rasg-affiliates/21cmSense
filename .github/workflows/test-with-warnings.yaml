@@ -28,10 +28,7 @@ jobs:
 
       - name: Install ska-ost-array
         run: |
-          git clone https://gitlab.com/ska-telescope/ost/ska-ost-array-config.git
-          cd ska-ost-array-config
-          uv pip install .
-          cd ..
+          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple ska-ost-config-array
 
       - name: Run Tests
         run: |
