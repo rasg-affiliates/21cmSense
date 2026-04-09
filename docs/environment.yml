@@ -2,13 +2,13 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - numpy<1.22
+  - numpy
   - scipy
   - future
   - click
   - tqdm
   - pyyaml
-  - astropy>=5
+  - astropy>=7
   - methodtools
   - pyuvdata
   - cached_property

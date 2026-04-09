@@ -45,7 +45,7 @@ dependencies = [
   "rich",
   "attrs",
   "hickleable>=0.1.1",
-  "lunarsky>=0.2.5",
+  "lunarsky>=0.2.7",
   "fast-histogram",
 ]
 
@@ -65,21 +65,21 @@ test = [
   "pytest-cov",
   "pytest-xdist",
 ]
+doctest = [
+  "ipykernel>=7.2.0",
+]
+
 dev = [
   {include-group = "test"},
   {include-group = "docs"},
   "prek",
   "commitizen",
   "ruff",
-  "ipykernel>=7.2.0",
   "ipython>=9.10.0",
 ]
 
 [project.scripts]
 sense = "py21cmsense.cli:main"
-
-[[tool.uv.index]]
-url = "https://artefact.skao.int/repository/pypi-internal/simple"
 
 [tool.ruff]
 line-length = 100

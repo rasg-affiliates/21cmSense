@@ -30,7 +30,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "commitizen" },
-    { name = "ipykernel" },
     { name = "ipython", version = "9.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "ipython", version = "9.11.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "ipywidgets" },
@@ -57,6 +56,9 @@ docs = [
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "sphinx-rtd-theme" },
 ]
+doctest = [
+    { name = "ipykernel" },
+]
 test = [
     { name = "matplotlib" },
     { name = "pre-commit" },
@@ -74,7 +76,7 @@ requires-dist = [
     { name = "fast-histogram" },
     { name = "future" },
     { name = "hickleable", specifier = ">=0.1.1" },
-    { name = "lunarsky", specifier = ">=0.2.5" },
+    { name = "lunarsky", specifier = ">=0.2.7" },
     { name = "methodtools" },
     { name = "numpy", specifier = ">2" },
     { name = "pyuvdata", specifier = ">=3.0.0" },
@@ -87,7 +89,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "commitizen" },
-    { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "ipython" },
     { name = "ipython", specifier = ">=9.10.0" },
     { name = "ipywidgets", specifier = ">=8.1.8" },
@@ -111,6 +112,7 @@ docs = [
     { name = "sphinx", specifier = ">=1.3" },
     { name = "sphinx-rtd-theme" },
 ]
+doctest = [{ name = "ipykernel", specifier = ">=7.2.0" }]
 test = [
     { name = "matplotlib" },
     { name = "pre-commit" },
@@ -1330,7 +1332,7 @@ wheels = [
 
 [[package]]
 name = "lunarsky"
-version = "0.2.6"
+version = "0.2.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astropy" },
@@ -1338,9 +1340,9 @@ dependencies = [
     { name = "numpy" },
     { name = "spiceypy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e1/3d/29edd202c05fafaa926893d6d29bee656aad7ec2b197538d092c8b0f49a1/lunarsky-0.2.6.tar.gz", hash = "sha256:ee720c32066ad4991b213fc49396e7a66ad265e60f2cd62e623bba5f1a2e8efb", size = 1724498, upload-time = "2024-12-12T20:54:15.513Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/4f/a75b0080492de1ba9435661a703bcd81e1405deee04e50d9209470340d8e/lunarsky-0.2.7.tar.gz", hash = "sha256:9fe8dc27496f3fb5f89cde43b63c1459bb066c81c65f747a29d995c4bed74f60", size = 1724742, upload-time = "2026-04-07T21:56:59.084Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/96/b7c87fc2df203ea2d26e0690b6376f458876d75e0edc5e8b26e692788351/lunarsky-0.2.6-py3-none-any.whl", hash = "sha256:963fccb2e11fe0be8ba630dd261f82f86205bf0a607c0cb6d3a173a0c235d8d6", size = 1702340, upload-time = "2024-12-12T20:54:13.963Z" },
+    { url = "https://files.pythonhosted.org/packages/28/a3/41ad0dbe80a960d5437558fa1c44b8847a7b36cb62542b4ea7e08428c4d0/lunarsky-0.2.7-py3-none-any.whl", hash = "sha256:0c5a4361986ad4a70cd6bae716158c0b3eac652f891a8f21e903dd817540f5dd", size = 1702428, upload-time = "2026-04-07T21:56:57.51Z" },
 ]
 
 [[package]]
