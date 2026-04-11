@@ -26,10 +26,6 @@ jobs:
         run: |
           uv sync --all-extras --dev
 
-      - name: Install ska-ost-array
-        run: |
-          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple ska-ost-array-config
-
       - name: Run Tests
         run: |
           uv run pytest -W error

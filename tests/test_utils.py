@@ -205,7 +205,7 @@ def test_convert_half_to_full_uv_plane_matches_full_gridding():
     from py21cmsense import Observatory
     from py21cmsense.baseline_filters import BaselineRange
 
-    obs = Observatory.from_ska("LOW_FULL_AA4").clone(
+    obs = Observatory.from_profile("SKA-LOW1-core").clone(
         baseline_filters=BaselineRange(bl_max=250 * un.m)
     )
     time_offsets = np.arange(-3, 4, 1) * un.hour
@@ -267,7 +267,7 @@ def test_convert_half_to_full_uv_plane_inverse_counts_matches_full_gridding():
     from py21cmsense import Observatory
     from py21cmsense.baseline_filters import BaselineRange
 
-    obs = Observatory.from_ska("LOW_FULL_AA4").clone(
+    obs = Observatory.from_profile("SKA-LOW1-central").clone(
         baseline_filters=BaselineRange(bl_max=250 * un.m)
     )
     time_offsets = np.arange(-3, 4, 1) * un.hour
