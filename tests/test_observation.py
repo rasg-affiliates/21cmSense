@@ -8,12 +8,12 @@ import pytest
 from astropy import units
 from astropy.cosmology.units import littleh
 
-from py21cmsense import GaussianBeam, Observation, Observatory
+from py21cmsense import GaussianBeam, Observation, Observatory, convert_half_to_full_uv_plane
 
 
 @pytest.fixture(scope="module")
 def bm():
-    return GaussianBeam(150.0 * units.MHz, dish_size=14 * units.m)
+    return GaussianBeam(dish_size=14 * units.m)
 
 
 @pytest.fixture(scope="module", params=["earth", "moon"])
@@ -39,12 +39,10 @@ def test_units(observatory):
     assert obs.lst_bin_size.to("min").unit == units.min
     assert obs.integration_time.to("s").unit == units.s
     assert obs.bandwidth.to("MHz").unit == units.MHz
-    assert obs.bl_min.to("m").unit == units.m
-    assert obs.bl_max.to("m").unit == units.m
+    assert obs.observatory.bl_max.to("m").unit == units.m
     assert obs.tsky_amplitude.to("mK").unit == units.mK
     assert obs.tsky_ref_freq.to("MHz").unit == units.MHz
 
-    assert obs.frequency == observatory.frequency
     assert obs.n_lst_bins > 1
     assert obs.Tsky.to("mK").unit == units.mK
     assert obs.Tsys.to("mK").unit == units.mK
@@ -85,7 +83,6 @@ def test_from_yaml(observatory):
                 "antpos": rng.random((20, 3)) * units.m,
                 "beam": {
                     "class": "GaussianBeam",
-                    "frequency": 150 * units.MHz,
                     "dish_size": 14 * units.m,
                 },
             }
@@ -135,7 +132,7 @@ def test_trcv_func(observatory: Observatory):
         observatory=observatory,
     )
     assert obs.Trcv.unit == units.K
-    assert obs.Trcv == (observatory.beam.frequency / units.MHz) * 0.01 * units.K
+    assert obs.Trcv == (obs.frequency / units.MHz) * 0.01 * units.K
 
 
 def test_non_zenith_pointing(bm):
@@ -173,4 +170,42 @@ def test_non_zenith_pointing_only_ew(bm):
         observatory=observatory,
         phase_center_dec=observatory.latitude + 45 * units.deg,
     )
-    np.testing.assert_allclose(not_zenith.uv_coverage, at_zenith.uv_coverage)
+
+    # The UV coverage should be identical since all baselines are purely EW,
+    # so the change in declination doesn't affect the projected baselines.
+    # However, the half-plane gridding will differ since the v grid depends on
+    # declination, so convert both to full-plane gridded UV coverage before comparing.
+    full_zenith = convert_half_to_full_uv_plane(at_zenith.uv_coverage)
+    full_not_zenith = convert_half_to_full_uv_plane(not_zenith.uv_coverage)
+
+    np.testing.assert_allclose(full_not_zenith, full_zenith)
+
+
+def test_from_yaml_with_relative_observatory_path(tmp_path):
+    """Observation YAML should resolve relative observatory YAML paths."""
+    antpos = np.array([[0, 0, 0], [14, 0, 0], [28, 0, 0], [70, 0, 0]])
+    np.savetxt(tmp_path / "antpos.txt", antpos)
+
+    obs_yaml = tmp_path / "observatory.yml"
+    obs_yaml.write_text(
+        f"""
+antpos: !astropy.units.Quantity
+    value: !txt {tmp_path / "antpos.txt"}
+    unit: !astropy.units.Unit {{unit: m}}
+beam:
+    class: GaussianBeam
+    dish_size: !astropy.units.Quantity
+        unit: !astropy.units.Unit {{unit: m}}
+        value: 14
+""".strip()
+    )
+
+    sense_yaml = tmp_path / "observation.yml"
+    sense_yaml.write_text(
+        """
+observatory: observatory.yml
+""".strip()
+    )
+
+    obs = Observation.from_yaml(str(sense_yaml))
+    assert obs.observatory.antpos.shape == (4, 3)

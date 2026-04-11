@@ -6,11 +6,6 @@ jobs:
   tests:
     name: Run Demo
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      ENV_NAME: testing
     strategy:
       fail-fast: false
       matrix:
@@ -20,44 +15,30 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3.3.0
+      - uses: actions/setup-python@v6
         with:
-          auto-update-conda: true
-          channels: conda-forge,defaults
-          channel-priority: true
-          python-version: "3.10"
-          environment-file: ci/${{ env.ENV_NAME }}.yaml
-          activate-environment: ${{ env.ENV_NAME }}
+          python-version-file: pyproject.toml
 
-      - name: Conda Info
-        run: |
-          conda info
-          python --version
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
-      - name: Install Deps
+      - name: Install Test Deps
         run: |
-          pip install .
-          pip install papermill ipykernel
-          conda list
+          uv sync --all-extras --group doctest --group test
 
-      - name: Install Poetry
-        run: |
-          pipx install poetry
-          poetry --version
       - name: Install ska-ost-array
         run: |
-          git clone https://gitlab.com/ska-telescope/ost/ska-ost-array-config.git
-          cd ska-ost-array-config
-          poetry install
-          cd ..
+          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple ska-ost-array-config
 
       - name: Install ipykernel
-        run: python -m ipykernel install --user --name sense --display-name "sense"
+        run: |
+          uv run python -m ipykernel install --user --name sense --display-name "sense"
 
       - name: Run Notebook
         run: |
-          papermill -k sense docs/tutorials/${{ matrix.demo }}.ipynb output-${{ matrix.demo }}.ipynb
+          uv run papermill -k sense docs/tutorials/${{ matrix.demo }}.ipynb output-${{ matrix.demo }}.ipynb
 
       - uses: actions/upload-artifact@v7
         if: always()

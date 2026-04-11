@@ -2,6 +2,8 @@
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools_scm]
+
 [project]
 name = "21cmSense"
 description = "Compute sensitivies of radio interferometers to the cosmic 21cm signal."
@@ -11,7 +13,7 @@ authors = [
   {name="Steven Murray", email="murray.steveng@gmail.com"},
   {name="Matt Kolopanis", email="matthew.kolopanis@gmail.com"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 # Add here all kinds of additional classifiers as defined under
 # https://pypi.python.org/pypi?%3Aaction=list_classifiers
 classifiers = [
@@ -36,23 +38,25 @@ dependencies = [
   "click",
   "tqdm",
   "pyyaml",
-  "astropy>=5",
+  "astropy>=7",
   "methodtools",
   "pyuvdata>=3.0.0",
   "cached_property",
   "rich",
   "attrs",
   "hickleable>=0.1.1",
-  "lunarsky>=0.2.5",
+  "lunarsky>=0.2.7",
+  "fast-histogram",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 docs = [
   "sphinx>=1.3",
   "sphinx-rtd-theme",
   "numpydoc",
   "nbsphinx",
   "ipython",
+  "ipywidgets>=8.1.8",
 ]
 test = [
   "pre-commit",
@@ -61,22 +65,26 @@ test = [
   "pytest-cov",
   "pytest-xdist",
 ]
+doctest = [
+  "ipykernel>=7.2.0",
+  "papermill>=2.7.0",
+]
+
 dev = [
-  "21cmSense[docs,test]",
-  "pre-commit",
+  {include-group = "test"},
+  {include-group = "docs"},
+  {include-group = "doctest"},
+  "prek",
   "commitizen",
-  "ruff"
+  "ruff",
+  "ipython>=9.10.0",
 ]
 
 [project.scripts]
 sense = "py21cmsense.cli:main"
 
-
-[tool.setuptools_scm]
-
 [tool.ruff]
 line-length = 100
-target-version = "py39"
 
 [tool.ruff.lint]
 extend-select = [
@@ -145,20 +153,3 @@ norecursedirs = [
   ".tox",
 ]
 testpaths = "tests"
-
-[tool.black]
-line-length = 88
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
