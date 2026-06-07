@@ -308,13 +308,43 @@ def test_convert_half_to_full_uv_plane_inverse_counts_matches_full_gridding():
     np.testing.assert_allclose(converted_inv, full_inv)
 
 
-@pytest.mark.parametrize("nu", [4, 6])
-def test_convert_half_to_full_uv_plane_even_nu_raises(nu: int):
-    """Even-sized Nu inputs are rejected with guidance for the odd-grid workflow."""
-    nv = nu // 2 + 1
-    uv = np.ones((nu, nv))
-    with pytest.raises(ValueError, match="requires an odd number of u-cells"):
-        ut.convert_half_to_full_uv_plane(uv)
+@pytest.mark.parametrize("n", [8, 9])
+def test_convert_half_to_full_uv_plane_preserves_ft(n):
+    rng = np.random.default_rng(1234 + 10 * n)
+
+    # Produce random real space data.
+    realspace = rng.random(size=(n, n))
+
+    # Take its Fourier transform, both in the full and half-plane forms.
+    ftfull = np.fft.fft2(realspace)
+    fthalf = np.fft.rfft2(realspace)
+
+    # Specify some random baseline counts in the half-plane form.
+    blcounts = rng.integers(1, 10, size=(n, n // 2 + 1)).astype(float)
+
+    # The converter combines mirror pairs on v=0 (and Nyquist-v for even-sized grids).
+    # Build an equivalent half-plane weighting for irfft2 so we compare like-for-like.
+    blcounts_half = blcounts.copy()
+    mirror_u = (2 * (n // 2) - np.arange(n)) % n
+    v0 = blcounts[:, 0]
+    blcounts_half[:, 0] = v0 + v0[mirror_u]
+    if n % 2 == 0:
+        vnyq = blcounts[:, -1]
+        blcounts_half[:, -1] = vnyq + vnyq[mirror_u]
+
+    # Convert the half-plane counts to the full-plane form.
+    blcounts_full = ut.convert_half_to_full_uv_plane(blcounts, inverse_counts=False)
+
+    # Take the inverse Fourier transform of the counts-weighted Fourier coefficients in
+    # both forms.
+    rl_from_half = np.fft.irfft2(fthalf * np.fft.ifftshift(blcounts_half, axes=(0,)), s=(n, n))
+    rl_from_full = np.fft.ifft2(ftfull * np.fft.ifftshift(blcounts_full))
+
+    # The results should match, because the conversion of the counts from half-plane to
+    # full-plane form is designed to preserve the reality of the inverse FT.
+    np.testing.assert_allclose(rl_from_half.imag, 0, atol=1e-10)
+    np.testing.assert_allclose(rl_from_full.imag, 0, atol=1e-10)
+    np.testing.assert_allclose(rl_from_half, rl_from_full)
 
 
 def test_convert_half_to_full_uv_plane_bad_shape():

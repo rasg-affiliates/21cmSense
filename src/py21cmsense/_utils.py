@@ -454,9 +454,37 @@ def convert_half_to_full_uv_plane(uv: np.ndarray, inverse_counts: bool = False) 
 
     Notes
     -----
-    This function requires an odd number of u-cells (`Nu`). For even `Nu`, the
-    Nyquist-edge mapping in half-plane form is ambiguous, which introduces a
-    reconstruction convention.
+    For even `Nu`, the Nyquist-edge mapping in half-plane form is ambiguous, which
+    introduces a reconstruction convention. Put simply, consider the following 2D grid
+    of cells in the (u,v) plane, where `x` denotes a cell that is measured in the
+    half-plane directly, `p` represents mirrored values, and `?` denotes the
+    cell that is not measured at all in the half-plane form (its mirror is outside the
+    grid):
+
+    ```
+    v
+    ^
+    |
+    |  ?  p  p  p
+    0  x  x  x  x
+    |  x  x  x  x
+    |  x  x  x  x
+    ---------0-----> u
+    ```
+
+    We make the choice to set the ambiguos cells to their mirrors at the same u (i.e.
+    instead of flipping both in u and v, just flip over v=0). This preserves the
+    correct total number of baseline counts in the upper and lower half-planes, and
+    also preserves the reality of an inverse Fourier transform of the full grid, if the
+    half-plane values are interpreted as counts of baselines in each cell. However, it
+    is important to note that this is just a convention, and the values in these cells
+    are not actually measured in the half-plane form, so should not be over-interpreted.
+    To go with that convention, we also set the counts to be symmetric around u=0 on the
+    nyquist v line so that the weighted iFFT is real.
+
+    WIthin 21cmSense itself we *always* use odd `Nu` and thus avoid this Nyquist-edge
+    ambiguity, but this function is designed to be general and handle even `Nu` as well,
+    with the above convention.
 
     Returns
     -------
@@ -470,22 +498,36 @@ def convert_half_to_full_uv_plane(uv: np.ndarray, inverse_counts: bool = False) 
             f"Input UV grid must have shape (Nu, Nu//2 + 1, ...), but has shape {uv.shape}."
         )
 
-    if nu % 2 == 0:
-        raise ValueError(
-            "convert_half_to_full_uv_plane requires an odd number of u-cells (Nu). "
-            f"Received Nu={nu}. For even-sized final products, first grid on an odd "
-            "Nu (e.g. add one extra cell), perform the half->full conversion, then "
-            "crop or regrid to the desired even size. This preserves all information "
-            "and avoids Nyquist-edge reconstruction conventions."
-        )
+    # Work in FFT ordering where mirror indices are simple modulo negation.
+    # Input uses centered-u ordering, so only shift the u axis here.
+    half_fft = np.fft.ifftshift(uv, axes=0)
+    full_fft = np.zeros((nu, nu, *uv.shape[2:]), dtype=uv.dtype)
+    full_fft[:, :nv, ...] = half_fft
 
-    full = np.concatenate((uv[::-1, ::-1, ...], uv[:, 1:, ...]), axis=1)
+    # Fill strictly negative-v columns from mirrored positive-v samples.
+    # For even nu, skip the Nyquist-v column here because it mirrors onto itself.
+    src_v = np.arange(1, nv - 1) if nu % 2 == 0 else np.arange(1, nv)
+    if src_v.size > 0:
+        mirror_u = (-np.arange(nu)) % nu
+        mirror_v = (-src_v) % nu
+        full_fft[np.ix_(mirror_u, mirror_v)] = half_fft[:, src_v, ...]
+
+    mirror_u = (-np.arange(nu)) % nu
 
     if inverse_counts:
         with np.errstate(divide="ignore", invalid="ignore"):
-            inv = 1 / full[:, nu // 2, ...] + 1 / full[::-1, nu // 2, ...]
-            full[:, nu // 2, ...] = np.where(inv == 0, 0.0, 1 / inv)
-    else:
-        full[:, nu // 2, ...] += full[::-1, nu // 2, ...]
+            inv = 1 / half_fft[:, 0, ...] + 1 / half_fft[mirror_u, 0, ...]
+            full_fft[:, 0, ...] = np.where(inv == 0, 0.0, 1 / inv)
 
-    return full
+            if nu % 2 == 0:
+                nyq = nv - 1
+                inv_nyq = 1 / half_fft[:, nyq, ...] + 1 / half_fft[mirror_u, nyq, ...]
+                full_fft[:, nyq, ...] = np.where(inv_nyq == 0, 0.0, 1 / inv_nyq)
+    else:
+        full_fft[:, 0, ...] = half_fft[:, 0, ...] + half_fft[mirror_u, 0, ...]
+
+        if nu % 2 == 0:
+            nyq = nv - 1
+            full_fft[:, nyq, ...] = half_fft[:, nyq, ...] + half_fft[mirror_u, nyq, ...]
+
+    return np.fft.fftshift(full_fft, axes=(0, 1))
