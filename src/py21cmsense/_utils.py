@@ -337,7 +337,7 @@ def grid_baselines(
     if vgrid_edges is None:
         vgrid_edges = ugrid_edges
 
-    nu, nv = len(ugrid_edges) - 1, len(vgrid_edges) - 1
+    nu, nv = ugrid_edges.shape[-1] - 1, vgrid_edges.shape[-1] - 1
 
     if nu == nv:
         full_plane = True
