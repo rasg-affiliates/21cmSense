@@ -52,13 +52,20 @@ class Observation:
     integration_time : float or Quantity, optional
         The amount of time integrated into a single visibility, by default a minute.
         If a float, assumed to be in seconds.
+    bandwidth : Quantity, optional
+        The bandwidth used for the observation; must be an astropy Quantity with frequency units.
+        Note this is not the total instrument bandwidth, but the redshift range that can be
+        considered coeval.
+    channel_bandwidth : Quantity, optional
+        The bandwidth of a single frequency channel; must be an astropy Quantity with frequency
+        units. If provided, overrides ``n_channels`` (which is computed as
+        ``bandwidth / channel_bandwidth``). Not set by default. If both ``channel_bandwidth``
+        and ``n_channels`` are explicitly provided, ``n_channels`` takes precedence.
     n_channels : int, optional
-        Number of channels used in the observation. Defaults to 82, which is equivalent
-        to 1024 channels over 100 MHz of bandwidth. Sets maximum k_parallel that can be
-        probed, but little to no overall effect on sensitivity.
-    bandwidth : float or Quantity, optional
-        The bandwidth used for the observation, assumed to be in MHz. Note this is not the total
-        instrument bandwidth, but the redshift range that can be considered co-eval.
+        Number of channels across the coeval bandwidth (see ``bandwidth`` parameter).
+        Defaults to 82, to match the HERA 97 kHz channel width across 8 MHz. Sets maximum
+        k_parallel that can be probed, but little to no overall effect on sensitivity.
+        Overridden by ``channel_bandwidth`` if that parameter is provided.
     n_days : int, optional
         The number of days observed (for the same set of LSTs). The default is 180 (6 on moon),
         which is the maximum a particular R.A. can be observed in one year if one only observes
@@ -118,6 +125,9 @@ class Observation:
     n_channels: int = attrs.field(default=82, converter=int, validator=ut.positive)
     bandwidth: tp.Frequency = attrs.field(
         default=8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
+    channel_bandwidth: tp.Frequency | None = attrs.field(
+        default=None,
+        validator=attr.validators.optional([tp.vld_physical_type("frequency"), ut.positive]),
     )
     n_days: int = attrs.field(converter=int, validator=ut.positive)
     coherent: bool = attrs.field(default=True, converter=bool)
@@ -219,6 +229,12 @@ class Observation:
             return 180
         else:
             return 6
+
+    @n_channels.default
+    def _n_channels_default(self):
+        if self.channel_bandwidth is not None:
+            return round((self.bandwidth / self.channel_bandwidth).to("").value)
+        return 82
 
     @phase_center_dec.default
     def _phase_center_dec_default(self):
