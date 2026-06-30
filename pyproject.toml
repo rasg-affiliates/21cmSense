@@ -43,7 +43,7 @@ dependencies = [
   "rich",
   "attrs",
   "hickleable>=0.1.1",
-  "lunarsky>=0.2.5",
+  "lunarsky>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -60,6 +60,7 @@ test = [
   "matplotlib",
   "pytest-cov",
   "pytest-xdist",
+  "spiceypy"
 ]
 dev = [
   "21cmSense[docs,test]",

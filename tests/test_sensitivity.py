@@ -7,7 +7,6 @@ import numpy as np
 import pytest
 from astropy import units
 from astropy.cosmology.units import littleh
-from spiceypy.utils.exceptions import SpiceUNKNOWNFRAME
 
 from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum, theory
 from py21cmsense.sensitivity import Sensitivity
@@ -64,7 +63,6 @@ def test_units(observation):
     assert ps.horizon_limit(10).to("littleh/Mpc").unit == littleh / units.Mpc
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_sensitivity_2d(observation):
     ps = PowerSpectrum(observation=observation)
     sense_thermal = ps.calculate_sensitivity_2d(thermal=True, sample=False)
@@ -75,7 +73,6 @@ def test_sensitivity_2d(observation):
         ps.calculate_sensitivity_2d(thermal=False, sample=False)
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_sensitivity_2d_grid(observation, caplog):
     ps = PowerSpectrum(observation=observation)
     sense_ungridded = ps.calculate_sensitivity_2d(thermal=True, sample=True)
@@ -87,7 +84,6 @@ def test_sensitivity_2d_grid(observation, caplog):
     assert sense.shape == (9, len(ps.k1d) - 1)
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_sensitivity_1d_binned(observation):
     ps = PowerSpectrum(observation=observation)
     assert np.all(ps.calculate_sensitivity_1d() == ps.calculate_sensitivity_1d_binned(ps.k1d))
@@ -96,7 +92,6 @@ def test_sensitivity_1d_binned(observation):
     assert len(sense1d_sample) == len(kbins)
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_plots(observation):
     # this is a dumb test, just checking that it doesn't error.
     ps = PowerSpectrum(observation=observation)
@@ -104,19 +99,16 @@ def test_plots(observation):
     ps.plot_sense_2d(sense2d)
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_sensitivity_optimistic(observation):
     ps = PowerSpectrum(observation=observation, foreground_model="optimistic")
     assert ps.horizon_limit(10.0) > ps.horizon_limit(5.0)
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_sensitivity_foreground_free(observation):
     ps = PowerSpectrum(observation=observation, foreground_model="foreground_free")
     assert ps.horizon_limit(10.0) == 0
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_infs_in_trms(observation):
     # default dumb layout should have lots of infs..
     assert np.any(np.isinf(observation.Trms))
@@ -158,7 +150,6 @@ def test_load_yaml_bad():
         )
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_systematics_mask(observation):
     ps = PowerSpectrum(
         observation=observation,
@@ -167,7 +158,6 @@ def test_systematics_mask(observation):
     assert len(ps.calculate_sensitivity_2d()) == 0
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_track(observatory):
     """Test that setting `track` is the same as setting lst_bin_width."""
     obs1 = Observation(observatory=observatory, lst_bin_size=1 * units.hour)
@@ -185,7 +175,6 @@ def test_clone(observation):
     assert ps2 == ps
 
 
-@skip_on(SpiceUNKNOWNFRAME, "Unknown FRAME (flaky exception)")
 def test_at_freq(observation):
     ps = PowerSpectrum(observation=observation, theory_model=theory.EOS2016Bright())
     ps2 = ps.at_frequency(0.9 * observation.frequency)
