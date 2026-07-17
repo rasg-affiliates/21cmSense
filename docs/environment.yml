@@ -14,6 +14,7 @@ dependencies:
   - cached_property
   - rich
   - attrs
+  - fast-histogram
   - sphinx>=5.0
   - numpydoc
   - nbsphinx
@@ -24,5 +25,6 @@ dependencies:
   - setuptools_scm
   - pip:
     - furo
-    - lunarsky>=0.2.5
+    - lunarsky>=1.0.0
     - sphinx_design
+    - hickleable>=0.1.1

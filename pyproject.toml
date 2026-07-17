@@ -53,6 +53,8 @@ dependencies = [
 docs = [
   "sphinx>=1.3",
   "sphinx-rtd-theme",
+  "sphinx-design",
+  "furo",
   "numpydoc",
   "nbsphinx",
   "ipython",
