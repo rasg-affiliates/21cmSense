@@ -45,8 +45,8 @@ dependencies = [
   "rich",
   "attrs",
   "hickleable>=0.1.1",
-  "lunarsky>=0.2.7",
   "fast-histogram",
+  "lunarsky>=1.0.0",
 ]
 
 [dependency-groups]
@@ -64,6 +64,7 @@ test = [
   "matplotlib",
   "pytest-cov",
   "pytest-xdist",
+  "spiceypy"
 ]
 doctest = [
   "ipykernel>=7.2.0",
