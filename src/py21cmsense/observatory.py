@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import collections
 import logging
+import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from functools import cached_property
@@ -299,12 +300,22 @@ class Observatory:
 
     @property
     def baselines_metres(self) -> tp.Meters:
-        """Raw baseline distances in metres for every pair of antennas.
+        """Baseline vectors in metres for every pair of antennas, after applying filters.
 
-        Deprecated -- use :attr:`baselines` instead.
+        .. deprecated:: 3.0.0
+            Use :attr:`baselines` instead. Note that, unlike in previous versions,
+            this is *not* the full ``(Nant, Nant, 3)`` antenna-pair matrix -- it is
+            the same de-duplicated ``(Nbls, 3)`` array as :attr:`baselines`.
 
-        Shape is ``(Nant, Nant, 3)``.
+        Shape is ``(Nbls, 3)``.
         """
+        warnings.warn(
+            "baselines_metres is deprecated and will be removed in a future release. "
+            "Use `baselines` instead (note: same (Nbls, 3) shape, not the old "
+            "(Nant, Nant, 3) matrix).",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return self.baselines.to(un.m)
 
     def projected_baselines(
@@ -359,7 +370,7 @@ class Observatory:
 
     @cached_property
     def bl_max(self) -> un.Quantity[un.m]:
-        """Shortest included baseline."""
+        """Longest included baseline."""
         return self.baseline_group_lengths.max()
 
     def get_redundant_baselines(self) -> list[list[int]]:
@@ -368,9 +379,8 @@ class Observatory:
 
         Returns
         -------
-        dict: a dictionary in which keys are 3-tuples of ``(u,v, |u|)`` co-ordinates and
-            values are lists of 2-tuples, where each 2-tuple consists of the indices
-            of a pair of antennas with those co-ordinates.
+        list: a list of lists, where each inner list contains the indices (into
+            :attr:`baselines`) of all baselines that are redundant with each other.
         """
         uvbins = defaultdict(list)
 
@@ -388,7 +398,6 @@ class Observatory:
             uvbins[(u, v)].append(i)
 
         return list(uvbins.values())
-        return self.redundant_baseline_groups
 
     @cached_property
     def redundant_baseline_groups(self) -> list[list[int]]:

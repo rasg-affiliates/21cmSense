@@ -25,7 +25,7 @@ def test_antpos(bm):
     a = Observatory(antpos=np.zeros((10, 3)) * units.m, beam=bm)
     assert a.antpos.unit == units.m
 
-    assert np.all(a.baselines_metres == 0)
+    assert np.all(a.baselines == 0)
 
     # If bad units given, should raise error.
     with pytest.raises(units.UnitConversionError):
@@ -76,9 +76,17 @@ def test_Trcv_func_bad_signature(bm):
         )
 
 
+def test_baselines_metres_deprecated(bm):
+    a = Observatory(antpos=np.zeros((3, 3)) * units.m, beam=bm)
+    with pytest.warns(DeprecationWarning, match="baselines_metres is deprecated"):
+        bm_ = a.baselines_metres
+    assert bm_.shape == a.baselines.shape
+    assert np.all(bm_ == a.baselines)
+
+
 def test_observatory(bm):
     a = Observatory(antpos=np.zeros((3, 3)) * units.m, beam=bm)
-    assert a.baselines_metres.shape == (3, 3)
+    assert a.baselines.shape == (3, 3)
     assert a.baseline_lengths.shape == (3,)
     assert np.all(a.baseline_lengths == 0)
 
@@ -254,7 +262,7 @@ def test_get_redundant_baselines(bm):
     assert len(reds) == 2  # len-1, len-2
 
     a = a.clone(baseline_filters=BaselineRange(bl_max=1.5 * units.m))
-    print(a.baselines_metres)
+    print(a.baselines)
     reds = a.redundant_baseline_groups
     assert len(reds) == 1  # len-1
 

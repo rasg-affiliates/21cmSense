@@ -209,7 +209,6 @@ observatory: observatory.yml
 
     obs = Observation.from_yaml(str(sense_yaml))
     assert obs.observatory.antpos.shape == (4, 3)
-    np.testing.assert_allclose(not_zenith.uv_coverage, at_zenith.uv_coverage)
 
 
 def test_channel_bandwidth(observatory):

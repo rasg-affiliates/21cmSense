@@ -122,13 +122,14 @@ class Observation:
     integration_time: tp.Time = attrs.field(
         default=60 * un.second, validator=(tp.vld_physical_type("time"), ut.positive)
     )
-    n_channels: int = attrs.field(default=82, converter=int, validator=ut.positive)
     bandwidth: tp.Frequency = attrs.field(
         default=8 * un.MHz, validator=(tp.vld_physical_type("frequency"), ut.positive)
+    )
     channel_bandwidth: tp.Frequency | None = attrs.field(
         default=None,
-        validator=attr.validators.optional([tp.vld_physical_type("frequency"), ut.positive]),
+        validator=attrs.validators.optional([tp.vld_physical_type("frequency"), ut.positive]),
     )
+    n_channels: int = attrs.field(converter=int, validator=ut.positive)
     n_days: int = attrs.field(converter=int, validator=ut.positive)
     coherent: bool = attrs.field(default=True, converter=bool)
     # The following defaults are based on Mozdzen et al. 2017: 2017MNRAS.464.4995M,
