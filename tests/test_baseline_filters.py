@@ -83,3 +83,12 @@ def test_error_cases():
 
     with pytest.raises(ValueError, match="Can only apply"):
         baseline_range(np.array([1, 1, 0]))
+
+
+def test_invalid_direction_runtime_branch():
+    """The defensive match-case fallback raises on unexpected direction values."""
+    baseline_range = BaselineRange(bl_min=1 * un.m, bl_max=2 * un.m, direction="ew")
+    object.__setattr__(baseline_range, "direction", "invalid")
+
+    with pytest.raises(ValueError, match="Invalid direction"):
+        baseline_range(np.array([1, 1, 0]) * un.m)

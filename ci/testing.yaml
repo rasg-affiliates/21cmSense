@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - astropy>=5
+  - astropy>=7
   - cached_property
   - click
   - future
@@ -14,9 +14,11 @@ dependencies:
   - pyuvdata
   - pytest
   - pytest-cov
+  - pytest-xdist
   - scipy
   - tqdm
   - matplotlib
+  - spiceypy
   - pip:
     - methodtools
-    - lunarsky>=0.2.5
+    - lunarsky>=1.0.0

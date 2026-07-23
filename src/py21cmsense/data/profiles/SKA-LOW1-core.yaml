@@ -3,9 +3,6 @@ antpos: !astropy.units.Quantity
   unit: !astropy.units.Unit {unit: m}
 beam:
   class: GaussianBeam
-  frequency: !astropy.units.Quantity
-    unit: !astropy.units.Unit {unit: MHz}
-    value: 150
   dish_size: !astropy.units.Quantity
     unit: !astropy.units.Unit {unit: m}
     value: 35
