@@ -202,7 +202,7 @@ def test_from_yaml(bm):
     )
     assert obs.beam == bm
 
-    with pytest.raises(ValueError, match="yaml_file must be a string filepath"):
+    with pytest.raises(TypeError, match="yaml_file must be a string filepath"):
         Observatory.from_yaml(3)
 
 

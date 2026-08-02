@@ -93,7 +93,7 @@ def test_from_yaml(observatory):
     )
     assert obs.observatory.antpos.shape == (20, 3)
 
-    with pytest.raises(ValueError, match="yaml_file must be a string filepath"):
+    with pytest.raises(TypeError, match="yaml_file must be a string filepath"):
         Observation.from_yaml(3)
 
 
