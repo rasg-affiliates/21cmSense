@@ -68,7 +68,7 @@ class Sensitivity:
         elif isinstance(yaml_file, Mapping):
             data = yaml_file
         else:
-            raise ValueError("yaml_file must be a string filepath or a raw dict from such a file.")
+            raise TypeError("yaml_file must be a string filepath or a raw dict from such a file.")
         return data
 
     @classmethod
@@ -199,7 +199,7 @@ class PowerSpectrum(Sensitivity):
     @theory_model.validator
     def _theory_model_validator(self, att, val):
         if not isinstance(val, TheoryModel):
-            raise ValueError("The theory_model must be an instance of TheoryModel")
+            raise TypeError("The theory_model must be an instance of TheoryModel")
 
     @cached_property
     def k1d(self) -> tp.Wavenumber:

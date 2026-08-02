@@ -128,7 +128,7 @@ def test_write_to_custom_filename(observation, tmp_path):
 
 def test_load_yaml_bad():
     with pytest.raises(
-        ValueError,
+        TypeError,
         match="yaml_file must be a string filepath or a raw dict from such a file",
     ):
         Sensitivity.from_yaml(1)
@@ -185,5 +185,5 @@ def test_at_freq(observation):
 
 
 def test_bad_theory(observation):
-    with pytest.raises(ValueError, match="The theory_model must be an instance of TheoryModel"):
+    with pytest.raises(TypeError, match="The theory_model must be an instance of TheoryModel"):
         PowerSpectrum(observation=observation, theory_model=3)

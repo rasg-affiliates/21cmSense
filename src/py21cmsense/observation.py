@@ -155,7 +155,7 @@ class Observation:
         elif isinstance(yaml_file, collections.abc.Mapping):
             data = yaml_file
         else:
-            raise ValueError("yaml_file must be a string filepath or a raw dict from such a file.")
+            raise TypeError("yaml_file must be a string filepath or a raw dict from such a file.")
 
         if (
             isinstance(data["observatory"], str)
