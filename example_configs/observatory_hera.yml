@@ -7,9 +7,6 @@ antpos: !hera
   hex_num: 3
 beam:
   class: GaussianBeam
-  frequency: !astropy.units.Quantity
-    unit: !astropy.units.Unit {unit: MHz}
-    value: 150
   dish_size: !astropy.units.Quantity
     unit: !astropy.units.Unit {unit: m}
     value: 14.0

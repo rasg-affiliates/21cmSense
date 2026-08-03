@@ -2,27 +2,29 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - numpy<1.22
+  - numpy
   - scipy
   - future
   - click
   - tqdm
   - pyyaml
-  - astropy>=5
+  - astropy>=7
   - methodtools
   - pyuvdata
   - cached_property
   - rich
   - attrs
+  - fast-histogram
   - sphinx>=5.0
   - numpydoc
   - nbsphinx
   - ipython
   - pandoc
   - pip
-  - python=3.10
+  - python=3.13
   - setuptools_scm
   - pip:
     - furo
-    - lunarsky>=0.2.5
+    - lunarsky>=1.0.0
     - sphinx_design
+    - hickleable>=0.1.1
