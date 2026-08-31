@@ -49,7 +49,7 @@ def grid_baselines(configfile, direc, outfile):
 
     if outfile is None:
         outfile = Path(direc) / (
-            f"blmin{obs.bl_min.value:.3f}_blmax{obs.bl_max.value:.3f}_"
+            f"blmin{obs.observatory.bl_min.value:.3f}_blmax{obs.observatory.bl_max.value:.3f}_"
             f"{obs.frequency.to('GHz').value:.3f}GHz_observation.h5"
         )
     elif not Path(outfile).is_absolute():
@@ -142,7 +142,7 @@ def calc_sense(
         logger.info(f"Significance of detection: {sig}")
 
     if plot and HAVE_MPL:
-        fig = sensitivity.plot_sense_1d(thermal=thermal, sample=samplevar)
+        fig = sensitivity.plot_sense_1d()
         if plot_title:
             plt.title(plot_title)
         prefix = f"{prefix}_" if prefix else ""

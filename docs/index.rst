@@ -6,6 +6,7 @@ Contents
    :maxdepth: 2
 
    tutorials
+   migration_v2_to_v3
    faqs
    reference/index
    contributing
