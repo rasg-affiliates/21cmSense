@@ -48,6 +48,14 @@ jobs:
         run: |
           git clone https://gitlab.com/ska-telescope/ost/ska-ost-array-config.git
           cd ska-ost-array-config
+          # Pinned to tag 4.5.0 (2026-09-09): upstream's default branch (5.0.0)
+          # migrated from poetry to uv and now declares
+          # ska-ser-sphinx-theme>=0.1.1 in a way that fails poetry's solver
+          # ("version solving failed"), breaking `poetry install` here.
+          # 4.5.0 is the last tag that still resolves cleanly with poetry.
+          # Safe to bump forward once upstream fixes this (or once this repo
+          # migrates off poetry for this install step).
+          git checkout 4.5.0
           poetry install
           cd ..
 
