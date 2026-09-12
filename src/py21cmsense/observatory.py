@@ -172,7 +172,7 @@ class Observatory:
         elif isinstance(yaml_file, collections.abc.Mapping):
             data = yaml_file
         else:
-            raise ValueError("yaml_file must be a string filepath or a raw dict from such a file.")
+            raise TypeError("yaml_file must be a string filepath or a raw dict from such a file.")
 
         # Mask out some antennas if a max_antpos is set in the YAML
         max_antpos = data.pop("max_antpos", np.inf * un.m)
