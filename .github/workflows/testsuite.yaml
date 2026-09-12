@@ -6,11 +6,6 @@ jobs:
   tests:
     name: Test Suite
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      ENV_NAME: testing
     strategy:
       fail-fast: false
       matrix:
@@ -21,35 +16,24 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v4.0.1
+      - name: Set up Python
+        uses: actions/setup-python@v7
         with:
-          auto-update-conda: true
-          channels: conda-forge,defaults
-          channel-priority: true
           python-version: ${{ matrix.python-version }}
-          environment-file: ci/${{ env.ENV_NAME }}.yaml
-          activate-environment: ${{ env.ENV_NAME }}
 
-      - name: Conda Info
-        run: |
-          conda info
-          python --version
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
 
       - name: Install Test Deps
         run: |
-          pip install .[test]
-          conda list
-      - name: Install Poetry
+          uv pip install --system .[test]
+          uv pip list --system
+
+      - name: Install ska-ost-array-config
         run: |
-          pipx install poetry
-          poetry --version
-      - name: Install ska-ost-array
-        run: |
-          git clone https://gitlab.com/ska-telescope/ost/ska-ost-array-config.git
-          cd ska-ost-array-config
-          poetry install
-          cd ..
+          uv pip install --system \
+            --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple/ \
+            "ska-ost-array-config>=5"
 
       - name: Run Tests
         run: |
