@@ -2,6 +2,11 @@
 Migrating from v2 to v3
 ========================
 
+.. note::
+  If you wish to keep using the last stable release of v2 (for backwards compatibility)
+  please install ``21cmSense`` with ``pip install 21cmSense<3`` (or the equivalent
+  for ``conda`` or ``uv``).
+
 v3 contains a significant internal rewrite aimed at making sensitivity calculations
 over many frequencies/redshifts much faster and more memory-efficient. The core change
 underlying almost everything below is that **frequency is no longer "baked into"**
@@ -40,7 +45,7 @@ Instead, ``Observation`` has a ``frequency`` field (default ``150 * un.MHz``).
     observation = Observation(observatory=observatory, frequency=150 * un.MHz)
 
 If you are loading a YAML config for the observatory/beam, remove ``frequency`` from the
-``beam:`` block and add it to the observation config instead (or pass it to
+``beam`` block and add it to the observation config instead (or pass it to
 ``Observation(..., frequency=...)`` directly).
 
 ``Sensitivity.at_frequency`` still works the same way from the caller's perspective --
@@ -153,7 +158,9 @@ The corresponding coordinate/weight helpers changed accordingly:
 
 The grid now always extends to ``observatory.bl_max`` (there's no way to truncate it to a
 smaller ``bl_max`` directly any more); use a baseline filter on the ``Observatory`` if you
-need a shorter maximum baseline. Grid *positions* in metres are available via the new
+need a shorter maximum baseline (see example usage in the
+`SKA forecast tutorial <tutorials/SKA_forecast.html>`_).
+Grid *positions* in metres are available via the new
 ``xgrid``/``xgrid_edges`` properties, which don't need a frequency at all.
 
 ``grid_baselines`` signature changed
