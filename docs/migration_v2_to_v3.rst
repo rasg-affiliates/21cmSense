@@ -5,7 +5,8 @@ Migrating from v2 to v3
 .. note::
   If you wish to keep using the last stable release of v2 (for backwards compatibility)
   please install ``21cmSense`` with ``pip install 21cmSense<3`` (or the equivalent
-  for ``conda`` or ``uv``).
+  for ``conda`` or ``uv``). Stable documentation for this version can be found
+  `here <https://21cmsense.readthedocs.io/en/v2.2.1/>`_
 
 v3 contains a significant internal rewrite aimed at making sensitivity calculations
 over many frequencies/redshifts much faster and more memory-efficient. The core change
