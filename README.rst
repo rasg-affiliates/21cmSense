@@ -34,6 +34,13 @@ using ``conda`` rather than them being automatically installed with pip::
 To test that the package has installed correctly, install with ``pip install -e .[test]``
 and run ``pytest`` in the top-level directory.
 
+
+.. note::
+  If you wish to keep using the last stable release of v2 (for backwards compatibility)
+  please install ``21cmSense`` with ``pip install 21cmSense<3`` (or the equivalent
+  for ``conda`` or ``uv``).
+
+
 For Development
 ---------------
 Clone/download the package and run ``pip install [-e] .[dev]`` in the top-level.

@@ -15,12 +15,15 @@ __all__ = [
     "Observation",
     "Observatory",
     "PowerSpectrum",
+    "convert_half_to_full_uv_plane",
     "data",
+    "grid_baselines",
     "hera",
     "theory",
     "yaml",
 ]
 from . import data, theory, yaml
+from ._utils import convert_half_to_full_uv_plane, grid_baselines
 from .antpos import hera
 from .baseline_filters import BaselineRange
 from .beam import GaussianBeam
