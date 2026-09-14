@@ -15,32 +15,30 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version-file: pyproject.toml
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
-      - name: Install Deps
+      - name: Install Test Deps
         run: |
-          uv pip install --system .
-          uv pip install --system papermill ipykernel
-          uv pip list --system
+          uv sync --all-extras --group doctest --group test
 
       - name: Install ska-ost-array-config
         run: |
-          uv pip install --system \
-            --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple/ \
-            "ska-ost-array-config>=5"
+          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple "ska-ost-array-config>=5"
 
       - name: Install ipykernel
-        run: python -m ipykernel install --user --name sense --display-name "sense"
+        run: |
+          uv run python -m ipykernel install --user --name sense --display-name "sense"
 
       - name: Run Notebook
         run: |
-          papermill -k sense docs/tutorials/${{ matrix.demo }}.ipynb output-${{ matrix.demo }}.ipynb
+          uv run papermill -k sense docs/tutorials/${{ matrix.demo }}.ipynb output-${{ matrix.demo }}.ipynb
 
       - uses: actions/upload-artifact@v7
         if: always()
