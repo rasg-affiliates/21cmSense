@@ -29,10 +29,6 @@ jobs:
         run: |
           uv sync --all-extras --group test
 
-      - name: Install ska-ost-array-config
-        run: |
-          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple "ska-ost-array-config==5.0.0"
-
       - name: Run Tests
         run: |
           uv run pytest --cov=py21cmsense --cov-config=.coveragerc --cov-report xml:./coverage.xml
