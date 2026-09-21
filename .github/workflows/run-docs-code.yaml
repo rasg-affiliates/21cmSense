@@ -30,7 +30,7 @@ jobs:
 
       - name: Install ska-ost-array-config
         run: |
-          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple "ska-ost-array-config>=5"
+          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple "ska-ost-array-config==5.0.0"
 
       - name: Install ipykernel
         run: |
