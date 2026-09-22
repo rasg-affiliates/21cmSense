@@ -49,6 +49,11 @@ dependencies = [
   "lunarsky>=1.0.0",
 ]
 
+[project.optional-dependencies]
+ska = [
+  "ska-ost-array-config>=5",
+]
+
 [dependency-groups]
 docs = [
   "sphinx>=1.3",
@@ -85,6 +90,10 @@ dev = [
 
 [project.scripts]
 sense = "py21cmsense.cli:main"
+
+[[tool.uv.index]]
+name = "ska-nexus"
+url = "https://artefact.skao.int/repository/pypi-internal/simple"
 
 [tool.ruff]
 line-length = 100

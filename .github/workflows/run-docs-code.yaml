@@ -28,10 +28,6 @@ jobs:
         run: |
           uv sync --all-extras --group doctest --group test
 
-      - name: Install ska-ost-array
-        run: |
-          uv pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple ska-ost-array-config
-
       - name: Install ipykernel
         run: |
           uv run python -m ipykernel install --user --name sense --display-name "sense"
