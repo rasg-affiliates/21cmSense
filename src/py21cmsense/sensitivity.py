@@ -698,6 +698,9 @@ class PowerSpectrum(Sensitivity):
             fl.attrs["foreground_model"] = self.foreground_model
             fl.attrs["horizon_buffer"] = self.horizon_buffer
             fl.attrs["k_unit"] = "1/Mpc"
+            fl.attrs["frequency"] = self.frequency.to_value("MHz")
+            fl.attrs["frequency_unit"] = "MHz"
+            fl.attrs["redshift"] = self.observation.redshift
 
         return filename
 
