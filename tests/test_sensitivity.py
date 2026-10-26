@@ -3,6 +3,7 @@
 import warnings
 from functools import wraps
 
+import h5py
 import hickle
 import numpy as np
 import pytest
@@ -130,6 +131,11 @@ def test_write_to_custom_filename(observation, tmp_path):
         ps = PowerSpectrum(observation=observation)
         out2 = ps.write(filename=out)
     assert out2 == out
+
+    with h5py.File(out, "r") as fl:
+        assert fl.attrs["frequency"] == ps.frequency.to_value("MHz")
+        assert fl.attrs["frequency_unit"] == "MHz"
+        assert fl.attrs["redshift"] == pytest.approx(ps.observation.redshift)
 
 
 def test_load_yaml_bad():
