@@ -5,18 +5,15 @@ from pathlib import Path
 import pytest
 from astropy.utils import iers
 
-
-@pytest.fixture(scope="session", autouse=True)
-def no_iers_download():
-    """Use the IERS tables bundled with astropy instead of downloading them.
-
-    The sub-millisecond UT1-UTC corrections in the auto-downloaded table make no
-    difference to any sensitivity calculation here, and downloading them makes the
-    test suite depend on the IERS datacenter being up (which, under ``-W error``,
-    turns an outage into a few dozen test failures).
-    """
-    with iers.conf.set_temp("auto_download", False), iers.conf.set_temp("auto_max_age", None):
-        yield
+# Use the IERS tables bundled with astropy (via astropy-iers-data) rather than
+# downloading the latest IERS-A table from datacenter.iers.org. The download makes
+# the test suite depend on a remote server, and a failed download raises an
+# IERSWarning that is turned into an error when running with ``-W error``.
+# Since the bundled table may be older than ``auto_max_age``, also allow
+# interpolating with its (stale) predictive values instead of raising an error;
+# sub-arcsecond Earth-orientation precision is irrelevant for the tests.
+iers.conf.auto_download = False
+iers.conf.auto_max_age = None
 
 
 @pytest.fixture(scope="session")
