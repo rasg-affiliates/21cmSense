@@ -11,8 +11,15 @@ from astropy import units
 from astropy.cosmology.units import littleh
 from spiceypy.utils.exceptions import SpiceUNKNOWNFRAME
 
-from py21cmsense import GaussianBeam, Observation, Observatory, PowerSpectrum, theory
-from py21cmsense.sensitivity import Sensitivity
+from py21cmsense import (
+    BaselineRange,
+    GaussianBeam,
+    Observation,
+    Observatory,
+    PowerSpectrum,
+    theory,
+)
+from py21cmsense.sensitivity import Sensitivity, _write_parameter
 
 
 def skip_on(exception, reason="Default reason"):
@@ -136,6 +143,51 @@ def test_write_to_custom_filename(observation, tmp_path):
         assert fl.attrs["frequency"] == ps.frequency.to_value("MHz")
         assert fl.attrs["frequency_unit"] == "MHz"
         assert fl.attrs["redshift"] == pytest.approx(ps.observation.redshift)
+
+
+def test_write_metadata(observation, tmp_path):
+    out = tmp_path / "metadata.h5"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ps = PowerSpectrum(
+            observation=observation.clone(
+                observatory=observation.observatory.clone(
+                    baseline_filters=(BaselineRange(bl_min=10 * units.m),)
+                )
+            )
+        )
+        ps.write(filename=out)
+
+    with h5py.File(out, "r") as fl:
+        meta = fl["metadata"]
+        obs = meta["observation"]
+        obsy = obs["observatory"]
+
+        assert meta.attrs["class"] == "PowerSpectrum"
+        assert meta.attrs["theory_model"] == type(ps.theory_model).__name__
+        assert meta.attrs["systematics_mask"] == "None"
+
+        # Everything needed to rebuild the array itself.
+        assert np.allclose(obsy["antpos"][:], ps.observation.observatory.antpos.to_value("m"))
+        assert obsy.attrs["antpos_unit"] == "m"
+        assert obsy.attrs["world"] == ps.observation.observatory.world
+        assert obsy["beam"].attrs["class"] == "GaussianBeam"
+        assert obsy["beam"].attrs["dish_size"] == ps.observation.observatory.beam.dish_size.value
+        assert obsy["baseline_filters"]["0"].attrs["bl_min"] == 10
+
+        assert obs.attrs["n_days"] == ps.observation.n_days
+        assert obs.attrs["integration_time"] == ps.observation.integration_time.value
+        assert obs["cosmo"].attrs["name"] == ps.observation.cosmo.name
+
+
+def test_write_parameter_fallbacks(tmp_path):
+    """Unitless arrays become datasets; anything else is recorded by name."""
+    with h5py.File(tmp_path / "params.h5", "w") as fl:
+        _write_parameter(fl, "array", np.array([1.0, 2.0]))
+        _write_parameter(fl, "callable", np.sin)
+
+        assert np.allclose(fl["array"][:], [1.0, 2.0])
+        assert fl.attrs["callable"] == "sin"
 
 
 def test_load_yaml_bad():
