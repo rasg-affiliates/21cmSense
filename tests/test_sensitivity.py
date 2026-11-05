@@ -180,6 +180,29 @@ def test_write_metadata(observation, tmp_path):
         assert obs["cosmo"].attrs["name"] == ps.observation.cosmo.name
 
 
+def test_write_hickle_object(observation, tmp_path):
+    out = tmp_path / "hickled.h5"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ps = PowerSpectrum(observation=observation)
+        ps.write(filename=tmp_path / "plain.h5")
+        ps.write(filename=out, hickle_object=True)
+
+    with h5py.File(tmp_path / "plain.h5", "r") as fl:
+        assert "sensitivity" not in fl
+
+    with h5py.File(out, "r") as fl:
+        assert "sensitivity" in fl
+
+    new = hickle.load(out, path="/sensitivity")
+    # The theory model is restored as a fresh instance and compares unequal, so the
+    # objects themselves do not, but everything that defines the observation does.
+    assert new.observation == ps.observation
+    assert new.foreground_model == ps.foreground_model
+    assert new.horizon_buffer == ps.horizon_buffer
+    assert type(new.theory_model) is type(ps.theory_model)
+
+
 def test_write_parameter_fallbacks(tmp_path):
     """Unitless arrays become datasets; anything else is recorded by name."""
     with h5py.File(tmp_path / "params.h5", "w") as fl:

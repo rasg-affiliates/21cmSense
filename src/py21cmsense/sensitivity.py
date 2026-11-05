@@ -142,6 +142,19 @@ class Sensitivity:
         """Clone the object with new parameters."""
         return attrs.evolve(self, **kwargs)
 
+    def __gethstate__(self) -> dict[str, Any]:
+        """Get the hickle state.
+
+        Only the parameters are kept. The cached properties and method caches hanging
+        off a used object are either unpicklable (the ``lru_cache`` wires) or large
+        (the uv coverage), and all of them are recomputed on demand anyway.
+        """
+        return attrs.asdict(self, recurse=False)
+
+    def __sethstate__(self, d: dict[str, Any]) -> None:
+        """Set the hickle state."""
+        self.__dict__.update(d)
+
     def at_frequency(self, frequency: un.Quantity[un.MHz]) -> Sensitivity:
         """Return a new object at a new frequency."""
         return self.clone(observation=self.observation.clone(frequency=frequency))
@@ -705,6 +718,7 @@ class PowerSpectrum(Sensitivity):
         sample: bool = True,
         prefix: str | None = None,
         direc: str | Path = ".",
+        hickle_object: bool = False,
     ) -> Path:
         """Save sensitivity results to HDF5 file.
 
@@ -713,6 +727,17 @@ class PowerSpectrum(Sensitivity):
         ``metadata`` group holding every parameter that went into the calculation --
         including the antenna layout -- so that the result can be interpreted and
         reproduced without the configuration that produced it.
+
+        Parameters
+        ----------
+        hickle_object
+            Whether to also store a hickled copy of this object in a ``sensitivity``
+            group, which can be read back with
+            ``hickle.load(filename, path="/sensitivity")``. This round-trips exactly
+            (apart from the theory model, which is restored as a fresh instance), but
+            the group is pickle-based, so it is only readable with 21cmSense installed,
+            and it dwarfs the rest of the file -- the observatory brings its cached
+            baseline arrays along, which is a few MB for a HERA-sized array.
 
         Returns
         -------
@@ -754,6 +779,9 @@ class PowerSpectrum(Sensitivity):
             fl.attrs["version"] = __version__
 
             _write_parameters(fl.create_group("metadata"), self)
+
+            if hickle_object:
+                hickle.dump(self, fl, path="/sensitivity")
 
         return filename
 
