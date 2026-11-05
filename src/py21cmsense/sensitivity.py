@@ -16,6 +16,7 @@ from collections.abc import Callable, Mapping
 from functools import cached_property
 from os import path
 from pathlib import Path
+from typing import Any
 
 import attrs
 import h5py
@@ -23,21 +24,67 @@ import hickle
 import numpy as np
 import tqdm
 from astropy import units as un
-from astropy.cosmology import LambdaCDM
+from astropy.cosmology import Cosmology, LambdaCDM
 from astropy.cosmology.units import littleh, with_H0
 from astropy.io.misc import yaml
 from attr import validators as vld
 from hickleable import hickleable
 from methodtools import lru_cache
 
+from . import __version__, config
 from . import _utils as ut
-from . import config
 from . import conversions as conv
 from . import observation as obs
 from . import units as tp
 from .theory import _ALL_THEORY_POWER_SPECTRA, EOS2021, TheoryModel
 
 logger = logging.getLogger(__name__)
+
+
+def _write_parameter(group: h5py.Group, name: str, value: Any) -> None:
+    """Write a single parameter into an HDF5 group.
+
+    Scalars become attributes, arrays become datasets, and anything made of further
+    parameters (an ``attrs`` class, a cosmology, a sequence) becomes a sub-group.
+    Objects that cannot be written out faithfully -- theory models, user-supplied
+    callables -- are recorded by name only.
+    """
+    if value is None:
+        group.attrs[name] = "None"
+    elif isinstance(value, un.Quantity):
+        if value.isscalar:
+            group.attrs[name] = value.value
+        else:
+            group[name] = value.value
+        group.attrs[f"{name}_unit"] = str(value.unit)
+    elif isinstance(value, str | bool | int | float | np.integer | np.floating):
+        group.attrs[name] = value
+    elif isinstance(value, np.ndarray):
+        group[name] = value
+    elif isinstance(value, Cosmology):
+        sub = group.create_group(name)
+        mapping = value.to_format("mapping")
+        mapping.pop("cosmology", None)
+        mapping.pop("meta", None)
+        for key, val in mapping.items():
+            _write_parameter(sub, key, val)
+    elif attrs.has(type(value)):
+        _write_parameters(group.create_group(name), value)
+    elif isinstance(value, tuple | list):
+        sub = group.create_group(name)
+        for i, item in enumerate(value):
+            _write_parameter(sub, str(i), item)
+    else:
+        group.attrs[name] = getattr(value, "__name__", type(value).__name__)
+
+
+def _write_parameters(group: h5py.Group, obj: Any) -> None:
+    """Write every ``attrs``-defined parameter of ``obj`` into an HDF5 group."""
+    group.attrs["class"] = type(obj).__name__
+    for field in attrs.fields(type(obj)):
+        # Private fields (e.g. Observatory._antpos) are public properties without the
+        # underscore, and that is the name users know them by.
+        _write_parameter(group, field.name.lstrip("_"), getattr(obj, field.name))
 
 
 @hickleable(evaluate_cached_properties=True)
@@ -94,6 +141,19 @@ class Sensitivity:
     def clone(self, **kwargs):
         """Clone the object with new parameters."""
         return attrs.evolve(self, **kwargs)
+
+    def __gethstate__(self) -> dict[str, Any]:
+        """Get the hickle state.
+
+        Only the parameters are kept. The cached properties and method caches hanging
+        off a used object are either unpicklable (the ``lru_cache`` wires) or large
+        (the uv coverage), and all of them are recomputed on demand anyway.
+        """
+        return attrs.asdict(self, recurse=False)
+
+    def __sethstate__(self, d: dict[str, Any]) -> None:
+        """Set the hickle state."""
+        self.__dict__.update(d)
 
     def at_frequency(self, frequency: un.Quantity[un.MHz]) -> Sensitivity:
         """Return a new object at a new frequency."""
@@ -658,8 +718,26 @@ class PowerSpectrum(Sensitivity):
         sample: bool = True,
         prefix: str | None = None,
         direc: str | Path = ".",
+        hickle_object: bool = False,
     ) -> Path:
         """Save sensitivity results to HDF5 file.
+
+        The file contains the 1D sensitivities and the theoretical power spectrum on a
+        common ``k`` grid, a few summary quantities as root attributes, and a
+        ``metadata`` group holding every parameter that went into the calculation --
+        including the antenna layout -- so that the result can be interpreted and
+        reproduced without the configuration that produced it.
+
+        Parameters
+        ----------
+        hickle_object
+            Whether to also store a hickled copy of this object in a ``sensitivity``
+            group, which can be read back with
+            ``hickle.load(filename, path="/sensitivity")``. This round-trips exactly
+            (apart from the theory model, which is restored as a fresh instance), but
+            the group is pickle-based, so it is only readable with 21cmSense installed,
+            and it dwarfs the rest of the file -- the observatory brings its cached
+            baseline arrays along, which is a few MB for a HERA-sized array.
 
         Returns
         -------
@@ -682,9 +760,6 @@ class PowerSpectrum(Sensitivity):
 
         logger.info(f"Writing sensitivies to '{filename}'")
         with h5py.File(filename, "w") as fl:
-            # TODO: We should be careful to try and write everything into this file
-            # i.e. all the parameters etc.
-
             for k, v in out.items():
                 if k == "both":
                     k = "sample+thermal"
@@ -698,6 +773,15 @@ class PowerSpectrum(Sensitivity):
             fl.attrs["foreground_model"] = self.foreground_model
             fl.attrs["horizon_buffer"] = self.horizon_buffer
             fl.attrs["k_unit"] = "1/Mpc"
+            fl.attrs["frequency"] = self.frequency.to_value("MHz")
+            fl.attrs["frequency_unit"] = "MHz"
+            fl.attrs["redshift"] = self.observation.redshift
+            fl.attrs["version"] = __version__
+
+            _write_parameters(fl.create_group("metadata"), self)
+
+            if hickle_object:
+                hickle.dump(self, fl, path="/sensitivity")
 
         return filename
 

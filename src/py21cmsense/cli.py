@@ -88,6 +88,12 @@ def grid_baselines(configfile, direc, outfile):
     help="whether to write the significance of the PS to screen",
 )
 @click.option(
+    "--hickle/--no-hickle",
+    "hickle_object",
+    default=False,
+    help="whether to also store a hickled copy of the sensitivity object in the output file",
+)
+@click.option(
     "-p/-P",
     "--plot/--no-plot",
     default=True,
@@ -103,6 +109,7 @@ def calc_sense(
     thermal,
     samplevar,
     write_significance,
+    hickle_object,
     plot,
     plot_title,
     prefix,
@@ -135,7 +142,14 @@ def calc_sense(
         f"Used {len(sensitivity.k1d)} bins between "
         f"{sensitivity.k1d.min()} and {sensitivity.k1d.max()}"
     )
-    sensitivity.write(filename=fname, thermal=thermal, sample=samplevar, direc=direc, prefix=prefix)
+    sensitivity.write(
+        filename=fname,
+        thermal=thermal,
+        sample=samplevar,
+        direc=direc,
+        prefix=prefix,
+        hickle_object=hickle_object,
+    )
 
     if write_significance:
         sig = sensitivity.calculate_significance(thermal=thermal, sample=samplevar)
